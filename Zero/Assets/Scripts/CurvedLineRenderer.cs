@@ -9,7 +9,7 @@ public class CurvedLineRenderer : MonoBehaviour
     public Transform StartPoint;
     public Transform PivotPoint;
     public Transform EndPoint;
-    public int VertexCount = 6;
+    public float VertexCount = 6;
     public float RoadWidth = 3;
     private List<string> _existingPoints = new List<string>();
     private bool _isDebugEnabled = false;
@@ -68,11 +68,7 @@ public class CurvedLineRenderer : MonoBehaviour
 
         // curvePoints.Add(startPosition);
         string lineName = line.name;
-        var vertexMultiplier = Vector3.Distance(startPosition,midPosition) + Vector3.Distance(midPosition,endPosition);
-        vertexMultiplier /=10;
-        Debug.Log("distance = "+vertexMultiplier);
-
-        for(float interpolationRatio = 0; interpolationRatio<=1;interpolationRatio+= 1 / vertexCount / vertexMultiplier)
+        for(float interpolationRatio = 0; interpolationRatio<=1;interpolationRatio+= 1/vertexCount)
         {
             var tangent1 = Vector3.Lerp(startPosition, midPosition, interpolationRatio);
             var tangent2 = Vector3.Lerp(midPosition, endPosition, interpolationRatio);
@@ -109,7 +105,7 @@ public class CurvedLineRenderer : MonoBehaviour
         }
 
         Vector3 forwardVector = newTargetPoint - newOriginPoint;
-        Vector3 upPoint = new Vector3(newOriginPoint[0],newOriginPoint[1]+ 3,newOriginPoint[2]);
+        Vector3 upPoint = (new Vector3(newOriginPoint[0],newOriginPoint[1]+ 3,newOriginPoint[2]));
         Vector3 upVector = upPoint - newOriginPoint;
         Vector3 rightVector = Vector3.Cross(forwardVector,upVector).normalized;
         var rightPoint = newOriginPoint + (rightVector * parallelWidth);
