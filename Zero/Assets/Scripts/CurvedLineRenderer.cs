@@ -9,7 +9,7 @@ public class CurvedLineRenderer : MonoBehaviour
     public Transform StartPoint;
     public Transform PivotPoint;
     public Transform EndPoint;
-    public float VertexCount = 6;
+    public float VertexMultiplier = 10;
     public float RoadWidth = 3;
     private List<string> _existingPoints = new List<string>();
     private bool _isDebugEnabled = false;
@@ -19,19 +19,13 @@ public class CurvedLineRenderer : MonoBehaviour
 
     }
 
-
     // Update is called once per frame
     void Update()
     {
 
         List<Vector3> mainLinePoints = new List<Vector3>(){StartPoint.position,PivotPoint.position,EndPoint.position}; 
-        
+        List<Vector3> curvePoints = CreateSmoothCurve(GetLineObject("PrimaryCurvedLine", new Color(0.1568f,1f,0.21f,1f)),mainLinePoints,VertexMultiplier);
 
-        List<Vector3> curvePoints = CreateSmoothCurve(GetLineObject("PrimaryCurvedLine", new Color(0.1568f,1f,0.21f,1f)),mainLinePoints,VertexCount);
-
-        // FindParallelPoints(curvePoints[0],curvePoints[1],RoadWidth);
-        // FindParallelPoints(curvePoints[1],curvePoints[2],RoadWidth);
-        // FindParallelPoints(curvePoints[2],curvePoints[3],RoadWidth);
         List<Vector3> rightParallelPoints = new List<Vector3>();
         List<Vector3> leftParallelPoints = new List<Vector3>();
         List<Vector3> parallelPoints = new List<Vector3>();
@@ -56,34 +50,31 @@ public class CurvedLineRenderer : MonoBehaviour
  
     }
 
-    List<Vector3> CreateSmoothCurve(GameObject line, List<Vector3> points, float vertexCount)
+    List<Vector3> CreateSmoothCurve(GameObject line, List<Vector3> points, float vertexMultiplier)
     {
-
-
         Vector3 startPosition = points[0];
         Vector3 midPosition  = points[1];
         Vector3 endPosition  = points[2];
 
         List<Vector3> curvePoints = new List<Vector3>();
 
-        // curvePoints.Add(startPosition);
-        string lineName = line.name;
+        var angle = Vector3.Angle(midPosition-startPosition,endPosition-midPosition);
+        var vertexCount = 100 / angle;
+        if(angle==0){
+            angle = 1;
+        }
+        if(vertexMultiplier>=0){
+            vertexCount *= vertexMultiplier;
+        }
+
         for(float interpolationRatio = 0; interpolationRatio<=1;interpolationRatio+= 1/vertexCount)
         {
             var tangent1 = Vector3.Lerp(startPosition, midPosition, interpolationRatio);
             var tangent2 = Vector3.Lerp(midPosition, endPosition, interpolationRatio);
             var curve = Vector3.Lerp(tangent1,tangent2,interpolationRatio);
             curvePoints.Add(curve);
-            // string sphereName = lineName+"_"+curve[0];
-            // if(_existingPoints.FirstOrDefault(e=> e.Contains(sphereName)) ==null)
-            // {
-            //     GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            //     sphere.name = sphereName;
-            //     sphere.transform.position = curve;
-            //     _existingPoints.Add(sphereName);
-            // }
         }
-        // curvePoints.Add(endPosition);
+        curvePoints.Add(endPosition);
         RenderLine(line,curvePoints);
         return curvePoints;
     }
@@ -93,6 +84,9 @@ public class CurvedLineRenderer : MonoBehaviour
         LineRenderer lineRenderer = line.GetComponent<LineRenderer>();
         lineRenderer.positionCount = linePoints.Count;
         lineRenderer.SetPositions(linePoints.ToArray());
+        if(_isDebugEnabled){
+            linePoints.ForEach(e=> DrawPointSphere(e));
+        }
     }
 
     List<Vector3> FindParallelPoints(Vector3 originPoint, Vector3 targetPoint, float parallelWidth, bool isReversed=false){
@@ -116,18 +110,12 @@ public class CurvedLineRenderer : MonoBehaviour
             rightPoint = leftPoint;
             leftPoint = temp;
         }
-
-        if(_isDebugEnabled){
-            Debug.DrawLine(newOriginPoint, newOriginPoint+forwardVector, Color.red, Mathf.Infinity);
-            Debug.DrawLine(newOriginPoint, upPoint, Color.green, Mathf.Infinity);
-            Debug.DrawLine(newOriginPoint, rightPoint, Color.red, Mathf.Infinity);
-            Debug.DrawLine(newOriginPoint, leftPoint, Color.yellow, Mathf.Infinity);
-            DrawPointSphere(newOriginPoint);
-            DrawPointSphere(rightPoint);
-            DrawPointSphere(newTargetPoint);
-            DrawPointSphere(leftPoint);
-            DrawPointSphere(upPoint);
-        }
+        // if(_isDebugEnabled){
+        //     Debug.DrawLine(newOriginPoint, newOriginPoint+forwardVector, Color.red, Mathf.Infinity);
+        //     Debug.DrawLine(newOriginPoint, upPoint, Color.green, Mathf.Infinity);
+        //     Debug.DrawLine(newOriginPoint, rightPoint, Color.red, Mathf.Infinity);
+        //     Debug.DrawLine(newOriginPoint, leftPoint, Color.yellow, Mathf.Infinity);
+        // }
 
         return new List<Vector3>(){rightPoint,leftPoint};
     }
