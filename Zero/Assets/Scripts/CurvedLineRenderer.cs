@@ -63,7 +63,7 @@ public class CurvedLineRenderer : MonoBehaviour
         if(angle==0){
             angle = 1;
         }
-        if(vertexMultiplier>=0){
+        if(vertexMultiplier>0){
             vertexCount *= vertexMultiplier;
         }
 
