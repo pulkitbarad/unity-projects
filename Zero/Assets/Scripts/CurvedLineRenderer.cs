@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class CurvedLineRenderer : MonoBehaviour
 {
@@ -18,12 +19,39 @@ public class CurvedLineRenderer : MonoBehaviour
     public float ConnectionMode = 0;
     private List<string> _existingPoints = new List<string>();
     private bool _isDebugEnabled = false;
-
     void Start()
     {
+        GameObject myGO;
+        GameObject myText;
+        Canvas myCanvas;
+        Text text;
+        RectTransform rectTransform;
 
+        // Canvas
+        myGO = new GameObject();
+        myGO.name = "TestCanvas";
+        myGO.AddComponent<Canvas>();
+
+        myCanvas = myGO.GetComponent<Canvas>();
+        myCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        myGO.AddComponent<CanvasScaler>();
+        myGO.AddComponent<GraphicRaycaster>();
+
+        // Text
+        myText = new GameObject();
+        myText.transform.parent = myGO.transform;
+        myText.name = "wibble";
+
+        text = myText.AddComponent<Text>();
+        text.font = (Font)Resources.Load("MyFont");
+        text.text = "wobble";
+        text.fontSize = 100;
+
+        // Text position
+        rectTransform = text.GetComponent<RectTransform>();
+        rectTransform.localPosition = new Vector3(0, 0, 0);
+        rectTransform.sizeDelta = new Vector2(400, 200);
     }
-
     // Update is called once per frame
     void Update()
     {
@@ -75,7 +103,6 @@ public class CurvedLineRenderer : MonoBehaviour
             RenderLine(GetLineObject("RightCurvedLine", new Color(0.156f, 1f, 0.972f, 1f)), rightParallelPoints);
             RenderLine(GetLineObject("LeftCurvedLine", new Color(0.96875f, 0.578f, 0.578f, 1f)), leftParallelPoints);
         }
-
     }
 
     List<Vector3> CreateBezierCurveFixedStart(GameObject line, List<Vector3> controlPoints, Vector3 fixedDirection, int vertexCount)
