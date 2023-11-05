@@ -15,16 +15,21 @@ public class CameraRotationAndZoom : MonoBehaviour
 
     private Vector3 _targetPosition;
 
-    private float _targetAngle;
-    private float _currentAngle;
+    private float _targetVerticalAngle;
+    private float _currentVerticalAngle;
+
+    private float _targetHorizontalAngle;
+    private float _currentHorizontalAngle;
 
     [SerializeField] private Vector2 _range = new(100, 100);
 
     private void Awake()
     {
         _targetPosition = _cameraHolder.localPosition;
-        _targetAngle = transform.eulerAngles.y;
-        _currentAngle = _targetAngle;
+        _targetVerticalAngle = transform.eulerAngles.y;
+        _currentVerticalAngle = _targetVerticalAngle;
+        _targetHorizontalAngle = transform.eulerAngles.x;
+        _currentHorizontalAngle = _targetVerticalAngle;
     }
 
     private void HandleTouchRotation()
@@ -35,22 +40,42 @@ public class CameraRotationAndZoom : MonoBehaviour
             var touch1 = Input.GetTouch(1);
             var delta0VerticalAngle = Vector2.Angle(touch0.deltaPosition, Vector2.up);
             var delta1VerticalAngle = Vector2.Angle(touch1.deltaPosition, Vector2.up);
+            var delta0HorizontalAngle = Vector2.Angle(touch0.deltaPosition, Vector2.right);
+            var delta1HorizontalAngle = Vector2.Angle(touch1.deltaPosition, Vector2.right);
+            var twoDeltaAngle = Vector2.Angle(touch1.deltaPosition, touch0.deltaPosition);
             var maxDeltaMagnitude = Math.Max(touch0.deltaPosition.magnitude, touch0.deltaPosition.magnitude);
-            var touchStartDistance = touch0.position.x - touch1.position.x;
+            var touchHorizontalStartDistance = touch0.position.x - touch1.position.x;
+            var touchVerticalStartDistance = touch0.position.y - touch1.position.y;
 
             if ((delta0VerticalAngle < _rotateAngleThreshold / 2
                     || delta0VerticalAngle > (180 - _rotateAngleThreshold / 2))
-                    && Math.Abs(touchStartDistance) > _pinchDistanceThreshold)
+                    && twoDeltaAngle < _rotateAngleThreshold / 2)
+            {
+                //Tilt
+                if (delta0VerticalAngle > 90 || delta1VerticalAngle > 90)
+                    _targetHorizontalAngle -= Math.Abs(maxDeltaMagnitude) / 100 * _rotationSpeed;
+                else
+                    _targetHorizontalAngle += Math.Abs(maxDeltaMagnitude) / 100 * _rotationSpeed;
+
+                _targetHorizontalAngle = Math.Abs(_targetHorizontalAngle % 90);
+                Debug.Log("_targetHorizontalAngle=" + _targetHorizontalAngle);
+
+                _currentHorizontalAngle = Mathf.Lerp(_currentHorizontalAngle, _targetHorizontalAngle, Time.deltaTime * _smoothing);
+                transform.rotation = Quaternion.AngleAxis(_currentHorizontalAngle, Vector3.right);
+            }
+            else if ((delta0HorizontalAngle < _rotateAngleThreshold / 2
+                    || delta0HorizontalAngle > (180 - _rotateAngleThreshold / 2))
+                    && Math.Abs(touchVerticalStartDistance) > _pinchDistanceThreshold)
             {
                 //Rotate
-                if ((touchStartDistance > 0 && delta0VerticalAngle > 90)
-                    || (touchStartDistance < 0 && delta1VerticalAngle > 90))
-                    _targetAngle -= Math.Abs(maxDeltaMagnitude) / 100 * _rotationSpeed;
+                if ((touchVerticalStartDistance > 0 && delta0HorizontalAngle > 90)
+                    || (touchVerticalStartDistance < 0 && delta1HorizontalAngle > 90))
+                    _targetVerticalAngle -= Math.Abs(maxDeltaMagnitude) / 100 * _rotationSpeed;
                 else
-                    _targetAngle += Math.Abs(maxDeltaMagnitude) / 100 * _rotationSpeed;
+                    _targetVerticalAngle += Math.Abs(maxDeltaMagnitude) / 100 * _rotationSpeed;
 
-                _currentAngle = Mathf.Lerp(_currentAngle, _targetAngle, Time.deltaTime * _smoothing);
-                transform.rotation = Quaternion.AngleAxis(_currentAngle, Vector3.up);
+                _currentVerticalAngle = Mathf.Lerp(_currentVerticalAngle, _targetVerticalAngle, Time.deltaTime * _smoothing);
+                transform.rotation = Quaternion.AngleAxis(_currentVerticalAngle, Vector3.up);
             }
             else
             {
@@ -90,10 +115,10 @@ public class CameraRotationAndZoom : MonoBehaviour
         if (Input.GetMouseButton(1))
         {
             //Support for mouse rotation
-            _targetAngle += Input.GetAxisRaw("Mouse X") * _rotationSpeed;
+            _targetVerticalAngle += Input.GetAxisRaw("Mouse X") * _rotationSpeed;
 
-            _currentAngle = Mathf.Lerp(_currentAngle, _targetAngle, Time.deltaTime * _smoothing);
-            transform.rotation = Quaternion.AngleAxis(_currentAngle, Vector3.up);
+            _currentVerticalAngle = Mathf.Lerp(_currentVerticalAngle, _targetVerticalAngle, Time.deltaTime * _smoothing);
+            transform.rotation = Quaternion.AngleAxis(_currentVerticalAngle, Vector3.up);
         }
 
     }
