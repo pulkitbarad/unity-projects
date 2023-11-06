@@ -129,8 +129,13 @@ public class CameraRotationAndZoom : MonoBehaviour
                 else if (_targetHorizontalAngle < 0)
                     _targetHorizontalAngle = 0;
 
-                _currentHorizontalAngle = Mathf.Lerp(_currentHorizontalAngle, _targetHorizontalAngle, Time.deltaTime * _smoothing);
-                _cameraHolder.transform.rotation = Quaternion.AngleAxis(_currentHorizontalAngle, Vector3.right);
+                // _currentHorizontalAngle = Mathf.Lerp(_currentHorizontalAngle, _targetHorizontalAngle, Time.deltaTime * _smoothing);
+                // _cameraHolder.transform.rotation = Quaternion.AngleAxis(_currentHorizontalAngle, Vector3.right);
+                _cameraHolder.transform.eulerAngles = 
+                    new Vector3(_targetHorizontalAngle,
+                        _cameraHolder.transform.eulerAngles.y,
+                        _cameraHolder.transform.eulerAngles.z
+                        );
             }
             else if (!isTiltInProgress && !isZoomInProgress
                    && IsOneGestureHorizontal(delta0HorizontalAngle)
@@ -232,36 +237,36 @@ public class CameraRotationAndZoom : MonoBehaviour
         if (vectorStartPoint0to1.magnitude < vectorCurrentPoints0to1.magnitude)
         {
             var distanceFromProjectionOn0 =
-                                            Math.Abs(
-                                                vectorCurrentPoints0to1.magnitude
-                                                * Math.Sin(
-                                                    Math.PI / 180 * Vector2.Angle(vectorCurrentPoints0to1,
-                                                        vectorDelta0)));
+                Math.Abs(
+                    vectorCurrentPoints0to1.magnitude
+                    * Math.Sin(
+                        Math.PI / 180 * Vector2.Angle(vectorCurrentPoints0to1,
+                            vectorDelta0)));
 
             var distanceFromProjectionOn1 =
-                                            Math.Abs(
-                                                vectorCurrentPoints0to1.magnitude
-                                                * Math.Sin(
-                                                    Math.PI / 180 * Vector2.Angle(vectorCurrentPoints1to0,
-                                                    vectorDelta1)));
+                Math.Abs(
+                    vectorCurrentPoints0to1.magnitude
+                    * Math.Sin(
+                        Math.PI / 180 * Vector2.Angle(vectorCurrentPoints1to0,
+                        vectorDelta1)));
 
             return Math.Min(distanceFromProjectionOn1, distanceFromProjectionOn0);
         }
         else
         {
             var distanceFromProjectionOn0 =
-                                            Math.Abs(
-                                                vectorCurrentPoints0to1.magnitude
-                                                * Math.Sin(
-                                                Math.PI / 180 * Vector2.Angle(vectorStartPoint0to1,
-                                                        vectorDelta0Reversed)));
+                Math.Abs(
+                    vectorCurrentPoints0to1.magnitude
+                    * Math.Sin(
+                    Math.PI / 180 * Vector2.Angle(vectorStartPoint0to1,
+                            vectorDelta0Reversed)));
 
             var distanceFromProjectionOn1 =
-                                            Math.Abs(
-                                                vectorCurrentPoints0to1.magnitude
-                                                * Math.Sin(
-                                                    Math.PI / 180 * Vector2.Angle(vectorStartPoint1to0,
-                                                        vectorDelta1Reversed)));
+                Math.Abs(
+                    vectorCurrentPoints0to1.magnitude
+                    * Math.Sin(
+                        Math.PI / 180 * Vector2.Angle(vectorStartPoint1to0,
+                            vectorDelta1Reversed)));
 
             return Math.Min(distanceFromProjectionOn1, distanceFromProjectionOn0);
         }
