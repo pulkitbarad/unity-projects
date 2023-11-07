@@ -18,41 +18,50 @@ public class CurvedLineRenderer : MonoBehaviour
     public float RoadWidth = 3;
     public float ConnectionMode = 0;
     private List<string> _existingPoints = new List<string>();
-    private bool _isDebugEnabled = false;
+    public bool IsDebugEnabled = false;
+
+    void Awake(){
+        // CommonController = GameObject.FindObjectOfType<CommonController>();
+
+    }
     void Start()
     {
-        GameObject myGO;
-        GameObject myText;
-        Canvas myCanvas;
-        Text text;
-        RectTransform rectTransform;
 
-        // Canvas
-        myGO = new GameObject();
-        myGO.name = "TestCanvas";
-        myGO.AddComponent<Canvas>();
 
-        myCanvas = myGO.GetComponent<Canvas>();
-        myCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        myGO.AddComponent<CanvasScaler>();
-        myGO.AddComponent<GraphicRaycaster>();
+        // GameObject myGO;
+        // GameObject myText;
+        // Canvas myCanvas;
+        // Text text;
+        // RectTransform rectTransform;
 
-        // Text
-        myText = new GameObject();
-        myText.transform.parent = myGO.transform;
-        myText.name = "wibble";
+        // // Canvas
+        // myGO = new GameObject();
+        // myGO.name = "TestCanvas";
+        // myGO.AddComponent<Canvas>();
 
-        text = myText.AddComponent<Text>();
-        text.font = (Font)Resources.Load("MyFont");
-        text.text = "wobble";
-        text.fontSize = 100;
+        // myCanvas = myGO.GetComponent<Canvas>();
+        // myCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        // myGO.AddComponent<CanvasScaler>();
+        // myGO.AddComponent<GraphicRaycaster>();
 
-        // Text position
-        rectTransform = text.GetComponent<RectTransform>();
-        rectTransform.localPosition = new Vector3(0, 0, 0);
-        rectTransform.sizeDelta = new Vector2(400, 200);
+        // // Text
+        // myText = new GameObject();
+        // myText.transform.parent = myGO.transform;
+        // myText.name = "wibble";
+
+        // text = myText.AddComponent<Text>();
+        // text.font = (Font)Resources.Load("MyFont");
+        // text.text = "wobble";
+        // text.fontSize = 100;
+
+        // // Text position
+        // rectTransform = text.GetComponent<RectTransform>();
+        // rectTransform.localPosition = new Vector3(0, 0, 0);
+        // rectTransform.sizeDelta = new Vector2(400, 200);
     }
     // Update is called once per frame
+
+
     void Update()
     {
 
@@ -65,7 +74,7 @@ public class CurvedLineRenderer : MonoBehaviour
         };
 
         List<Vector3> curvePoints = new List<Vector3>();
-        GameObject primaryLine = GetLineObject("PrimaryCurvedLine", new Color(0.1568f, 1f, 0.21f, 1f));
+        GameObject primaryLine = CommonController.GetLineObject("PrimaryCurvedLine", new Color(0.1568f, 1f, 0.21f, 1f));
 
         if (ConnectionMode == 1)
             curvePoints = CreateBezierCurveFixedStart(primaryLine, controlPoints, StartPoint.position - StartFixedPoint.position, 100);
@@ -100,8 +109,8 @@ public class CurvedLineRenderer : MonoBehaviour
 
                 }
             }
-            RenderLine(GetLineObject("RightCurvedLine", new Color(0.156f, 1f, 0.972f, 1f)), rightParallelPoints);
-            RenderLine(GetLineObject("LeftCurvedLine", new Color(0.96875f, 0.578f, 0.578f, 1f)), leftParallelPoints);
+            CommonController.RenderLine("RightCurvedLine", new Color(0.156f, 1f, 0.972f, 1f), rightParallelPoints.ToArray());
+            CommonController.RenderLine("LeftCurvedLine", new Color(0.96875f, 0.578f, 0.578f, 1f), leftParallelPoints.ToArray());
         }
     }
 
@@ -155,7 +164,7 @@ public class CurvedLineRenderer : MonoBehaviour
                 pathPoints.Add(point);
             }
         }
-        RenderLine(line, pathPoints);
+        CommonController.RenderLine(line.name, Color.red, pathPoints.ToArray());
         return pathPoints;
     }
 
@@ -203,21 +212,21 @@ public class CurvedLineRenderer : MonoBehaviour
             curvePoints.Add(curve);
         }
         curvePoints.Add(endPosition);
-        RenderLine(line, curvePoints);
+        CommonController.RenderLine(line.name, Color.red, curvePoints.ToArray());
         return curvePoints;
     }
 
-    void RenderLine(GameObject line, List<Vector3> linePoints)
-    {
+    // void RenderLine(GameObject line, List<Vector3> linePoints)
+    // {
 
-        LineRenderer lineRenderer = line.GetComponent<LineRenderer>();
-        lineRenderer.positionCount = linePoints.Count;
-        lineRenderer.SetPositions(linePoints.ToArray());
-        if (_isDebugEnabled)
-        {
-            linePoints.ForEach(e => DrawPointSphere(e));
-        }
-    }
+    //     LineRenderer lineRenderer = line.GetComponent<LineRenderer>();
+    //     lineRenderer.positionCount = linePoints.Count;
+    //     lineRenderer.SetPositions(linePoints.ToArray());
+    //     if (_isDebugEnabled)
+    //     {
+    //         linePoints.ForEach(e => DrawPointSphere(e));
+    //     }
+    // }
 
     List<Vector3> FindParallelPoints(Vector3 originPoint, Vector3 targetPoint, float parallelWidth, bool isReversed = false)
     {
@@ -253,34 +262,34 @@ public class CurvedLineRenderer : MonoBehaviour
         return new List<Vector3>() { rightPoint, leftPoint };
     }
 
-    GameObject GetLineObject(string lineName, Color lineColor)
-    {
-        GameObject primaryLine = GameObject.Find(lineName);
+    // GameObject GetLineObject(string lineName, Color lineColor)
+    // {
+    //     GameObject primaryLine = GameObject.Find(lineName);
 
-        if (primaryLine == null)
-        {
-            primaryLine = new GameObject(lineName);
-            LineRenderer primaryLineRenderer = primaryLine.AddComponent(typeof(LineRenderer)) as LineRenderer;
-            Material materialNeonLight = Resources.Load("NearestSphere") as Material;
-            primaryLineRenderer.SetMaterials(new List<Material>() { materialNeonLight });
-            primaryLineRenderer.material.SetColor("_Color", lineColor);
-            primaryLineRenderer.startWidth = 0.5f;
-            primaryLineRenderer.endWidth = 0.5f;
-            primaryLineRenderer.positionCount = 3;
-        }
+    //     if (primaryLine == null)
+    //     {
+    //         primaryLine = new GameObject(lineName);
+    //         LineRenderer primaryLineRenderer = primaryLine.AddComponent(typeof(LineRenderer)) as LineRenderer;
+    //         Material materialNeonLight = Resources.Load("NearestSphere") as Material;
+    //         primaryLineRenderer.SetMaterials(new List<Material>() { materialNeonLight });
+    //         primaryLineRenderer.material.SetColor("_Color", lineColor);
+    //         primaryLineRenderer.startWidth = 0.5f;
+    //         primaryLineRenderer.endWidth = 0.5f;
+    //         primaryLineRenderer.positionCount = 3;
+    //     }
 
-        return primaryLine;
-    }
+    //     return primaryLine;
+    // }
 
-    void DrawPointSphere(Vector3 point)
-    {
-        string sphereName = "Point_" + point[0];
-        if (_existingPoints.FirstOrDefault(e => e.Contains(sphereName)) == null)
-        {
-            GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            sphere.name = sphereName;
-            sphere.transform.position = point;
-            _existingPoints.Add(sphereName);
-        }
-    }
+    // void DrawPointSphere(Vector3 point)
+    // {
+    //     string sphereName = "Point_" + point[0];
+    //     if (_existingPoints.FirstOrDefault(e => e.Contains(sphereName)) == null)
+    //     {
+    //         GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+    //         sphere.name = sphereName;
+    //         sphere.transform.position = point;
+    //         _existingPoints.Add(sphereName);
+    //     }
+    // }
 }

@@ -14,6 +14,20 @@ public class CameraMotion : MonoBehaviour
     {
         _targetPosition = transform.position;
     }
+    void Start()
+    {
+
+    }
+    private void Update()
+    {
+        if (!CommonController.IsSingleTouchLocked)
+        {
+
+            CommonController.IsSingleTouchLocked = true;
+            HandleMove();
+            CommonController.IsSingleTouchLocked = false;
+        }
+    }
 
     private void HandleMove()
     {
@@ -55,11 +69,6 @@ public class CameraMotion : MonoBehaviour
                position.x < _range.x &&
                position.z > -_range.y &&
                position.z < _range.y;
-    }
-
-    private void Update()
-    {
-        HandleMove();
     }
 
 }

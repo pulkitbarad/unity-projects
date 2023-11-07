@@ -28,11 +28,13 @@ public class CameraRotationAndZoom : MonoBehaviour
     private bool isTiltInProgress = false;
     private Touch _startTouch0;
     private Touch _startTouch1;
-    private List<string> _existingPoints = new List<string>();
-    private bool _isDebugEnabled = false;
 
     [SerializeField] private Vector2 _range = new(100, 100);
 
+    void Start()
+    {
+
+    }
     private void Awake()
     {
         _targetPosition = _cameraHolder.localPosition;
@@ -79,9 +81,9 @@ public class CameraRotationAndZoom : MonoBehaviour
             }
             if (touch0.phase == TouchPhase.Ended || touch1.phase == TouchPhase.Ended)
             {
-                Debug.Log("Line Drawn");
-                RenderLine(GetLineObject("Touch0", Color.red), _startTouch0.position, touch0.position);
-                RenderLine(GetLineObject("Touch1", Color.yellow), _startTouch1.position, touch1.position);
+                // Debug.Log("Line Drawn");
+                // _customDebugger.RenderLine("Touch0", Color.red, lineWidth: 10f, pointSize: 20f, _startTouch0.position, touch0.position);
+                // _customDebugger.RenderLine("Touch1", Color.yellow, lineWidth: 10f, pointSize: 20f, _startTouch1.position, touch1.position);
 
                 // Debug.Log("Touch ended");
                 isZoomInProgress = false;
@@ -131,7 +133,7 @@ public class CameraRotationAndZoom : MonoBehaviour
 
                 // _currentHorizontalAngle = Mathf.Lerp(_currentHorizontalAngle, _targetHorizontalAngle, Time.deltaTime * _smoothing);
                 // _cameraHolder.transform.rotation = Quaternion.AngleAxis(_currentHorizontalAngle, Vector3.right);
-                _cameraHolder.transform.eulerAngles = 
+                _cameraHolder.transform.eulerAngles =
                     new Vector3(_targetHorizontalAngle,
                         _cameraHolder.transform.eulerAngles.y,
                         _cameraHolder.transform.eulerAngles.z
@@ -313,54 +315,15 @@ public class CameraRotationAndZoom : MonoBehaviour
 
     private void Update()
     {
-        HandleTouchRotation();
+
         HandleMouseRotation();
-        HandleMouseZoom();
-    }
-    GameObject GetLineObject(string lineName, Color lineColor)
-    {
-        GameObject primaryLine = GameObject.Find(lineName);
-
-        if (primaryLine == null)
+        if (!CommonController.IsMultiTouchLocked)
         {
-            primaryLine = new GameObject(lineName);
-            LineRenderer primaryLineRenderer = primaryLine.AddComponent(typeof(LineRenderer)) as LineRenderer;
-            Material materialNeonLight = Resources.Load("NearestSphere") as Material;
-            primaryLineRenderer.SetMaterials(new List<Material>() { materialNeonLight });
-            primaryLineRenderer.material.SetColor("_Color", lineColor);
-            primaryLineRenderer.startWidth = 0.5f;
-            primaryLineRenderer.endWidth = 0.5f;
-            primaryLineRenderer.positionCount = 3;
-        }
+            CommonController.IsMultiTouchLocked = true;
+            HandleTouchRotation();
+            HandleMouseZoom();
+            CommonController.IsMultiTouchLocked = false;
 
-        return primaryLine;
-    }
-    void RenderLine(GameObject line, params Vector2[] linePoints)
-    {
-
-        LineRenderer lineRenderer = line.GetComponent<LineRenderer>();
-        List<Vector3> linePoints3D = new List<Vector3>();
-        foreach (var point in linePoints)
-            linePoints3D.Add(point);
-        lineRenderer.positionCount = linePoints3D.Count;
-
-        lineRenderer.SetPositions(linePoints3D.ToArray());
-        if (_isDebugEnabled)
-        {
-            foreach (var point in linePoints3D)
-                DrawPointSphere(point);
-        }
-    }
-    void DrawPointSphere(Vector3 point)
-    {
-        string sphereName = "Point_" + point[0];
-        if (_existingPoints.FirstOrDefault(e => e.Contains(sphereName)) == null)
-        {
-            GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            sphere.name = sphereName;
-            sphere.transform.localScale = new Vector3(20, 20, 20);
-            sphere.transform.position = point;
-            _existingPoints.Add(sphereName);
         }
     }
 }
