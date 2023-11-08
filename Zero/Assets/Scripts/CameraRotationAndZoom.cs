@@ -317,13 +317,13 @@ public class CameraRotationAndZoom : MonoBehaviour
     {
 
         HandleMouseRotation();
-        if (!CommonController.IsMultiTouchLocked)
+        if (!CommonController.IsRoadBuildEnabled)
         {
-            CommonController.IsMultiTouchLocked = true;
             HandleTouchRotation();
             HandleMouseZoom();
-            CommonController.IsMultiTouchLocked = false;
-
         }
+        if (CommonController.IsRoadBuildEnabled)
+            Debug.Log("4 touch0.phase=" + Input.GetTouch(0).phase);
+
     }
 }

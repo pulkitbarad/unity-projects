@@ -20,12 +20,9 @@ public class CameraMotion : MonoBehaviour
     }
     private void Update()
     {
-        if (!CommonController.IsSingleTouchLocked)
+        if (!CommonController.IsRoadBuildEnabled)
         {
-
-            CommonController.IsSingleTouchLocked = true;
             HandleMove();
-            CommonController.IsSingleTouchLocked = false;
         }
     }
 

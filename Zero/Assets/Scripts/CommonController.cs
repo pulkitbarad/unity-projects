@@ -2,20 +2,57 @@ using System.Collections;
 using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
+using System;
+using System.Runtime.CompilerServices;
 
 public class CommonController : MonoBehaviour
 {
 
     private static List<string> _existingPoints = new();
     public static bool IsDebugEnabled = false;
-    public static bool IsSingleTouchLocked = false;
-    public static bool IsMultiTouchLocked = false;
+    // public static bool IsSingleTouchConsumed = false;
+    // public static bool IsDoubleTouchLocked = false;
+    public static bool IsRoadBuildEnabled = false;
 
     // Start is called before the first frame update
     void Start()
     {
 
     }
+
+    // public static void ExecuteTouchEventHandler(Func<int, int> handler, Func<int, bool> condition, bool IsSingleTouch = false, bool isDoubleTouch = false)
+    // {
+    //     if (IsSingleTouch)
+    //     {
+
+    //         if (Input.touchCount == 1)
+    //         {
+    //             if (Input.GetTouch(0).phase == TouchPhase.Ended){
+
+    //             }else if (Input.GetTouch(0).phase == TouchPhase.Began){
+
+    //             }
+
+
+    //                 if (!CommonController.IsSingleTouchConsumed)
+    //                 {
+    //                     CommonController.IsSingleTouchConsumed = true;
+    //                     handler(0);
+    //                 }
+
+    //         }
+    //     }
+    //     else if (isDoubleTouch)
+    //     {
+    //         if (Input.touchCount == 2)
+    //         {
+    //             CommonController.IsDoubleTouchLocked = true;
+    //             handler(0);
+    //         }
+
+    //     }
+
+    // }
 
     // Update is called once per frame
 
