@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 public class CameraMotion : MonoBehaviour
 {
@@ -20,7 +21,8 @@ public class CameraMotion : MonoBehaviour
     }
     private void Update()
     {
-        if (!CommonController.IsRoadBuildEnabled)
+
+        if (!CommonController.IsRoadBuildEnabled && CommonController.IsTouchOverNonUI())
         {
             HandleMove();
         }

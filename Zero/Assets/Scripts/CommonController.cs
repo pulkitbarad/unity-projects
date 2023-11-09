@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 using System.Runtime.CompilerServices;
+using UnityEngine.EventSystems;
 
 public class CommonController : MonoBehaviour
 {
@@ -20,40 +21,16 @@ public class CommonController : MonoBehaviour
 
     }
 
-    // public static void ExecuteTouchEventHandler(Func<int, int> handler, Func<int, bool> condition, bool IsSingleTouch = false, bool isDoubleTouch = false)
-    // {
-    //     if (IsSingleTouch)
-    //     {
 
-    //         if (Input.touchCount == 1)
-    //         {
-    //             if (Input.GetTouch(0).phase == TouchPhase.Ended){
+    //Touchphase Ended is ignored
+    public static bool IsTouchOverNonUI(bool suppressTouchEndEvent = true)
+    {
+        return
+        Input.touchCount > 0
+            && !EventSystem.current.IsPointerOverGameObject(Input.GetTouch(0).fingerId)
+            && (!suppressTouchEndEvent || Input.GetTouch(0).phase != TouchPhase.Ended);
 
-    //             }else if (Input.GetTouch(0).phase == TouchPhase.Began){
-
-    //             }
-
-
-    //                 if (!CommonController.IsSingleTouchConsumed)
-    //                 {
-    //                     CommonController.IsSingleTouchConsumed = true;
-    //                     handler(0);
-    //                 }
-
-    //         }
-    //     }
-    //     else if (isDoubleTouch)
-    //     {
-    //         if (Input.touchCount == 2)
-    //         {
-    //             CommonController.IsDoubleTouchLocked = true;
-    //             handler(0);
-    //         }
-
-    //     }
-
-    // }
-
+    }
     // Update is called once per frame
 
     public static GameObject GetLineObject(string lineName, Color lineColor)
@@ -124,9 +101,10 @@ public class CommonController : MonoBehaviour
                 DrawPointSphere(point, pointSize);
         }
     }
-    public static void DrawPointSphere(Vector3 point, float size = 20, Color? color = null)
+    public static GameObject DrawPointSphere(Vector3 point, float size = 20, Color? color = null)
     {
         string sphereName = "Point_" + point[0];
+        Debug.Log("sphereName=" + sphereName);
         if (_existingPoints.FirstOrDefault(e => e.Contains(sphereName)) == null)
         {
             GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
@@ -134,9 +112,15 @@ public class CommonController : MonoBehaviour
             sphere.transform.localScale = new Vector3(size, size, size);
             sphere.transform.position = point;
             var sphereRenderer = sphere.GetComponent<Renderer>();
+            Debug.Log("color=" + color.Value);
             if (color.HasValue)
                 sphereRenderer.material.color = color.Value;
             _existingPoints.Add(sphereName);
+            return sphere;
+        }
+        else
+        {
+            return GameObject.Find(sphereName);
         }
     }
 }

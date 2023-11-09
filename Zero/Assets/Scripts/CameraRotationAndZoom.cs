@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 public class CameraRotationAndZoom : MonoBehaviour
 {
@@ -53,6 +55,17 @@ public class CameraRotationAndZoom : MonoBehaviour
 
     }
 
+    private void Update()
+    {
+
+        if (!CommonController.IsRoadBuildEnabled && CommonController.IsTouchOverNonUI(suppressTouchEndEvent:false))
+        {
+            HandleMouseRotation();
+            HandleTouchRotation();
+            HandleMouseZoom();
+        }
+
+    }
     private void HandleTouchRotation()
     {
         if (Input.touchCount == 2)
@@ -61,13 +74,11 @@ public class CameraRotationAndZoom : MonoBehaviour
             var touch1 = Input.GetTouch(1);
             if (_startTouch0.deltaTime == -1000)
             {
-                Debug.Log("_startTouch0 assgined");
                 _startTouch0 = touch0;
 
             }
             if (_startTouch1.deltaTime == -1000)
             {
-                Debug.Log("_startTouch1 assgined");
                 _startTouch1 = touch1;
 
             }
@@ -313,17 +324,12 @@ public class CameraRotationAndZoom : MonoBehaviour
                position.z < _range.y;
     }
 
-    private void Update()
+    public static bool IsPointerOverGameObject(GameObject gameObject)
     {
-
-        HandleMouseRotation();
-        if (!CommonController.IsRoadBuildEnabled)
-        {
-            HandleTouchRotation();
-            HandleMouseZoom();
-        }
-        if (CommonController.IsRoadBuildEnabled)
-            Debug.Log("4 touch0.phase=" + Input.GetTouch(0).phase);
-
+        PointerEventData eventData = new PointerEventData(EventSystem.current);
+        eventData.position = Input.mousePosition;
+        List<RaycastResult> raysastResults = new List<RaycastResult>();
+        EventSystem.current.RaycastAll(eventData, raysastResults);
+        return raysastResults.Any(x => x.gameObject == gameObject);
     }
 }
