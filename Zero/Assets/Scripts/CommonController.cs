@@ -104,7 +104,6 @@ public class CommonController : MonoBehaviour
     public static GameObject DrawPointSphere(Vector3 point, float size = 20, Color? color = null)
     {
         string sphereName = "Point_" + point[0];
-        Debug.Log("sphereName=" + sphereName);
         if (_existingPoints.FirstOrDefault(e => e.Contains(sphereName)) == null)
         {
             GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
@@ -112,7 +111,6 @@ public class CommonController : MonoBehaviour
             sphere.transform.localScale = new Vector3(size, size, size);
             sphere.transform.position = point;
             var sphereRenderer = sphere.GetComponent<Renderer>();
-            Debug.Log("color=" + color.Value);
             if (color.HasValue)
                 sphereRenderer.material.color = color.Value;
             _existingPoints.Add(sphereName);

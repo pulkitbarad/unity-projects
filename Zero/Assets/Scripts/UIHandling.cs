@@ -15,6 +15,7 @@ public class UIHandling : MonoBehaviour
 
     [SerializeField] private Camera _mainCamera;
     [SerializeField] private GameObject _mainCameraHolder;
+    [SerializeField] private GameObject _mainCameraRoot;
 
     void Awake()
     {
@@ -45,7 +46,6 @@ public class UIHandling : MonoBehaviour
 
     private void HandleRoadBuilding()
     {
-
         var touch0 = Input.GetTouch(0);
         var touch0Position = touch0.position;
         Vector2 touch1Position = new Vector2(0, 0);
@@ -53,51 +53,41 @@ public class UIHandling : MonoBehaviour
             touch1Position = Input.GetTouch(1).position;
         else
         {
-            if (touch0Position.x > Screen.width * 1.20f)
-                touch1Position.x = touch0Position.x - Screen.width * 0.20f;
+            if (touch0Position.x > Screen.width * 1.1f)
+                touch1Position.x = touch0Position.x - Screen.width * 0.1f;
             else
-                touch1Position.x = touch0Position.x + Screen.width * 0.20f;
-            if (touch0Position.y > Screen.width * 1.20f)
-                touch1Position.y = touch0Position.y - Screen.width * 0.20f;
+                touch1Position.x = touch0Position.x + Screen.width * 0.1f;
+            if (touch0Position.y > Screen.width * 1.1f)
+                touch1Position.y = touch0Position.y - Screen.width * 0.1f;
             else
-                touch1Position.y = touch0Position.y + Screen.width * 0.20f;
+                touch1Position.y = touch0Position.y + Screen.width * 0.1f;
 
         }
-        CommonController.DrawPointSphere(new Vector3(20, 5, -434), color: Color.green, size: 10f);
-        CommonController.DrawPointSphere(new Vector3(100, 5, -434), color: Color.blue, size: 10f);
-        CommonController.IsRoadBuildEnabled = false;
-        // else if (touch0.phase == TouchPhase.Ended)
-        // {
-        //     CommonController.IsRoadBuildEnabled = false;
-        // }
+        // CommonController.DrawPointSphere(new Vector3(20, 5, -434), color: Color.green, size: 10f);
+        // CommonController.DrawPointSphere(new Vector3(100, 5, -434), color: Color.blue, size: 10f);
+        Debug.Log("touch0Position=" + touch0Position);
+        Debug.Log("touch1Position=" + touch1Position);
+        GetTerrainHitPoint(touch0Position, color: Color.green, size: 20f);
+        GetTerrainHitPoint(touch1Position, color: Color.blue, size: 20f);
 
+        CommonController.IsRoadBuildEnabled = false;
     }
 
-    private void DrawHitPoint(Vector2 touchPosition, Color color, float size)
+    private void GetTerrainHitPoint(Vector2 origin, Color color, float size)
     {
-        var touchPositionWorld = _mainCamera.ScreenToWorldPoint(touchPosition);
-        var sphereCollisionCasts = Physics.SphereCastAll(touchPositionWorld, size / 2, _mainCameraHolder.transform.forward);
-        Debug.Log("collision count=" + sphereCollisionCasts.Length);
+        var didRayHit = Physics.Raycast(_mainCamera.ScreenPointToRay(origin),
+                                        out RaycastHit _rayHit,
+                                        _mainCamera.farClipPlane,
+                                        LayerMask.GetMask("Ground"));
 
-        foreach (var sphereCollisionCast in sphereCollisionCasts)
+        if (didRayHit)
         {
-            Debug.Log("collision=" + sphereCollisionCast.point);
-
-            var correctedColor = color;
-
-            var collidingObjectName = sphereCollisionCast.collider.gameObject.name;
-            if (!String.IsNullOrEmpty(collidingObjectName)
-            && collidingObjectName.Equals("Terrain", StringComparison.InvariantCultureIgnoreCase)
-             )
-            {
-                Debug.Log("collidingObjectName=" + collidingObjectName);
-                var pointNewLocation = sphereCollisionCast.point;
-                pointNewLocation.x += size / 2;
-                pointNewLocation.y += size / 2;
-                pointNewLocation.z += size / 2;
-                CommonController.DrawPointSphere(sphereCollisionCast.point, color: correctedColor, size: size);
-            }
+            var pointNewLocation = _rayHit.point;
+            pointNewLocation.x += size / 2;
+            pointNewLocation.y += size / 2;
+            pointNewLocation.z += size / 2;
+            CommonController.DrawPointSphere(pointNewLocation, color: color, size: size);
         }
-        // CommonController.RenderLine("RayLine", Color.red, touchPosition, touchHit.point);
+
     }
 }
