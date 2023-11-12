@@ -103,7 +103,7 @@ public class CommonController : MonoBehaviour
     }
     public static GameObject DrawPointSphere(Vector3 point, float size = 20, Color? color = null)
     {
-        string sphereName = "Point_" + point[0];
+        string sphereName = "Point_" + point[0] + "_" + point[1] + "_" + point[2];
         if (_existingPoints.FirstOrDefault(e => e.Contains(sphereName)) == null)
         {
             GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
