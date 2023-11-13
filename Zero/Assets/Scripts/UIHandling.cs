@@ -74,7 +74,7 @@ public class UIHandling : MonoBehaviour
         CommonController.DrawPointSphere(point: endGroundPosition, color: Color.blue, size: 20f);
         CommonController.DrawPointSphere(point: control0GoundPosition, color: Color.black, size: 20f);
         CommonController.DrawPointSphere(point: control1GoundPosition, color: Color.grey, size: 20f);
-       
+
 
         CommonController.IsRoadBuildEnabled = false;
 
@@ -99,13 +99,14 @@ public class UIHandling : MonoBehaviour
     {
 
         var direction0To1 = endGroundPosition - startGroundPosition;
+        var direction1To0 = -direction0To1;
         var distance0To1 = direction0To1.magnitude;
 
         controlPoint0 = startGroundPosition;
         controlPoint1 = endGroundPosition;
         var rotationVector = Quaternion.AngleAxis(30f, Vector3.up);
-        controlPoint0 += rotationVector * direction0To1.normalized * distance0To1 * 0.5f;
-        controlPoint1 += rotationVector * direction0To1.normalized * distance0To1 * 0.5f;
+        controlPoint0 += rotationVector * direction0To1.normalized * distance0To1 * 0.25f;
+        controlPoint1 += rotationVector * direction1To0.normalized * distance0To1 * 0.25f;
 
     }
 
