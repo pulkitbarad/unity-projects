@@ -20,6 +20,7 @@ public class UIHandling : MonoBehaviour
 
     void Awake()
     {
+
         _mainCamera = GameObject.Find("MainCamera").GetComponent<Camera>();
         _mainCameraHolder = GameObject.Find("CameraHolder");
 
@@ -64,53 +65,48 @@ public class UIHandling : MonoBehaviour
                 touch1Position.y = touch0Position.y + Screen.width * 0.1f;
         }
 
-        GetStartAndEndPositions(touch0Position, touch1Position, out Vector2 startPosition, out Vector2 endPosition);
-        GetControlPoints(startPosition, endPosition, out Vector3 controlPoint0, out Vector3 controlPoint1);
+        GetStartAndEndPositions(touch0Position, touch1Position, out Vector2 startScreenPosition, out Vector2 endScreenPosition);
 
-        GetTerrainHitPoint(startPosition, out Vector3 startGoundPosition);
+        GetTerrainHitPoint(startScreenPosition, out Vector3 startGoundPosition);
+        GetTerrainHitPoint(endScreenPosition, out Vector3 endGroundPosition);
+        GetControlPoints(startGoundPosition, endGroundPosition, out Vector3 control0GoundPosition, out Vector3 control1GoundPosition);
         CommonController.DrawPointSphere(point: startGoundPosition, color: Color.green, size: 20f);
-        GetTerrainHitPoint(controlPoint0, out Vector3 control0GoundPosition);
-        CommonController.DrawPointSphere(point: control0GoundPosition, color: Color.black, size: 20f);
-        GetTerrainHitPoint(endPosition, out Vector3 endGroundPosition);
         CommonController.DrawPointSphere(point: endGroundPosition, color: Color.blue, size: 20f);
-        GetTerrainHitPoint(controlPoint1, out Vector3 control1GoundPosition);
+        CommonController.DrawPointSphere(point: control0GoundPosition, color: Color.black, size: 20f);
         CommonController.DrawPointSphere(point: control1GoundPosition, color: Color.grey, size: 20f);
-        Debug.Log("startGoundPosition=" + startGoundPosition);
-        Debug.Log("control0GoundPosition=" + control0GoundPosition);
-        Debug.Log("endGroundPosition=" + endGroundPosition);
-        Debug.Log("control1GoundPosition=" + control1GoundPosition);
+       
 
         CommonController.IsRoadBuildEnabled = false;
 
     }
 
-    private void GetStartAndEndPositions(Vector2 touch0Position, Vector2 touch1Position, out Vector2 startPosition, out Vector2 endPosition)
+    private void GetStartAndEndPositions(Vector2 touch0Position, Vector2 touch1Position, out Vector2 startScreenPosition, out Vector2 endScreenPosition)
     {
         var screenCenter = GetScreenCenter();
         var distanceFromCenterTo0 = Vector2.Distance(touch0Position, screenCenter);
         var distanceFromCenterTo1 = Vector2.Distance(touch0Position, screenCenter);
 
-        startPosition = touch0Position;
-        endPosition = touch1Position;
+        startScreenPosition = touch0Position;
+        endScreenPosition = touch1Position;
         if (distanceFromCenterTo0 > distanceFromCenterTo1)
         {
-            startPosition = touch1Position;
-            endPosition = touch0Position;
+            startScreenPosition = touch1Position;
+            endScreenPosition = touch0Position;
         }
 
     }
-    private void GetControlPoints(Vector3 startGoundPosition, Vector3 endGroundPosition, out Vector3 controlPoint0, out Vector3 controlPoint1)
+    private void GetControlPoints(Vector3 startGroundPosition, Vector3 endGroundPosition, out Vector3 controlPoint0, out Vector3 controlPoint1)
     {
 
-        var directionFrom0To1 = endGroundPosition - startGoundPosition;
+        var direction0To1 = endGroundPosition - startGroundPosition;
+        var distance0To1 = direction0To1.magnitude;
 
-        var parallelWidth = 100f;
+        controlPoint0 = startGroundPosition;
+        controlPoint1 = endGroundPosition;
+        var rotationVector = Quaternion.AngleAxis(30f, Vector3.up);
+        controlPoint0 += rotationVector * direction0To1.normalized * distance0To1 * 0.5f;
+        controlPoint1 += rotationVector * direction0To1.normalized * distance0To1 * 0.5f;
 
-        Vector3 rightVector = Vector3.Cross(directionFrom0To1, Vector3.up);
-        Vector3 leftVector = Vector3.Cross(-directionFrom0To1, Vector3.up).normalized;
-        Debug.DrawRay(startGoundPosition, rightVector);
-        controlPoint0 = startGoundPosition + (rightVector * parallelWidth);
-        controlPoint1 = endGroundPosition + (leftVector * parallelWidth);
     }
 
     private Vector2 GetScreenCenter()
