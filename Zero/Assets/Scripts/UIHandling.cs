@@ -69,15 +69,9 @@ public class UIHandling : MonoBehaviour
 
         GetTerrainHitPoint(startScreenPosition, out Vector3 startGoundPosition);
         GetTerrainHitPoint(endScreenPosition, out Vector3 endGroundPosition);
-        GetControlPoints(startGoundPosition, endGroundPosition, out Vector3 control0GoundPosition, out Vector3 control1GoundPosition);
-        CommonController.DrawPointSphere(point: startGoundPosition, color: Color.green, size: 20f);
-        CommonController.DrawPointSphere(point: endGroundPosition, color: Color.blue, size: 20f);
-        CommonController.DrawPointSphere(point: control0GoundPosition, color: Color.black, size: 20f);
-        CommonController.DrawPointSphere(point: control1GoundPosition, color: Color.grey, size: 20f);
-
-
+        var newLinePoints = CommonController.CurvedLine.FindBazierLinePoints(startGoundPosition, endGroundPosition, 100);
+        CommonController.TestRendrer.RenderLine("Road_center", Color.blue, 20, newLinePoints.ToArray());
         CommonController.IsRoadBuildEnabled = false;
-
     }
 
     private void GetStartAndEndPositions(Vector2 touch0Position, Vector2 touch1Position, out Vector2 startScreenPosition, out Vector2 endScreenPosition)
