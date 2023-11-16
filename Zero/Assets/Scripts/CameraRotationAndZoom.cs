@@ -9,14 +9,7 @@ using UnityEngine.UI;
 
 public class CameraRotationAndZoom : MonoBehaviour
 {
-    [SerializeField] private float _zoomSpeed = 2f;
-    [SerializeField] private float _rotationSpeed = 5f;
-    [SerializeField] private float _tiltSpeed = 2f;
-    [SerializeField] private float _smoothing = 2f;
-    [SerializeField] private float _pinchDistanceThreshold = 50f;
-    [SerializeField] private float _rotateAngleThreshold = 10f;
-    [SerializeField] private Transform _cameraHolder;
-    private Vector3 _cameraDirection => transform.InverseTransformDirection(_cameraHolder.forward);
+    private Vector3 _cameraDirection;
 
     private Vector3 _targetPosition;
 
@@ -39,10 +32,12 @@ public class CameraRotationAndZoom : MonoBehaviour
     }
     private void Awake()
     {
-        _targetPosition = _cameraHolder.localPosition;
-        _targetVerticalAngle = _cameraHolder.eulerAngles.y;
+        _cameraDirection = CommonController.MainCameraRoot.transform.InverseTransformDirection(CommonController.MainCameraHolder.transform.forward);
+
+        _targetPosition = CommonController.MainCameraHolder.transform.localPosition;
+        _targetVerticalAngle = CommonController.MainCameraHolder.transform.eulerAngles.y;
         _currentVerticalAngle = _targetVerticalAngle;
-        _targetHorizontalAngle = _cameraHolder.eulerAngles.x;
+        _targetHorizontalAngle = CommonController.MainCameraHolder.transform.eulerAngles.x;
         _currentHorizontalAngle = _targetHorizontalAngle;
         _startTouch0 = new Touch
         {
@@ -58,7 +53,7 @@ public class CameraRotationAndZoom : MonoBehaviour
     private void Update()
     {
 
-        if (!CommonController.IsRoadBuildEnabled && CommonController.IsTouchOverNonUI(suppressTouchEndEvent:false))
+        if (!CommonController.IsRoadMenuActive && CommonController.IsTouchOverNonUI(suppressTouchEndEvent: false))
         {
             HandleMouseRotation();
             HandleTouchRotation();
@@ -72,6 +67,8 @@ public class CameraRotationAndZoom : MonoBehaviour
         {
             var touch0 = Input.GetTouch(0);
             var touch1 = Input.GetTouch(1);
+            Debug.Log("_startTouch0.deltaTime="+ _startTouch0.deltaTime);
+            Debug.Log("_startTouch1.deltaTime=" + _startTouch1.deltaTime);
             if (_startTouch0.deltaTime == -1000)
             {
                 _startTouch0 = touch0;
@@ -86,10 +83,7 @@ public class CameraRotationAndZoom : MonoBehaviour
 
             if (maxDeltaMagnitude <= 0)
                 return;
-            if (touch0.phase == TouchPhase.Began && touch1.phase == TouchPhase.Began)
-            {
-                // Debug.Log("Touch started");
-            }
+          
             if (touch0.phase == TouchPhase.Ended || touch1.phase == TouchPhase.Ended)
             {
                 // Debug.Log("Line Drawn");
@@ -126,33 +120,33 @@ public class CameraRotationAndZoom : MonoBehaviour
 
             if (!isRotateInProgress && !isZoomInProgress
                 && AreBothGesturesVertical(delta0VerticalAngle, delta1VerticalAngle)
-                && pinchParallelDistance > _pinchDistanceThreshold)
+                && pinchParallelDistance > CommonController.MainCameraPinchDistanceThreshold)
             {
                 //Lock the current movement for rotate only
                 if (touch0.phase == TouchPhase.Began || touch1.phase == TouchPhase.Began)
                     isTiltInProgress = true;
                 //Vertical tilt gesture
                 if (delta0VerticalAngle > 90 || delta1VerticalAngle > 90)
-                    _targetHorizontalAngle += Math.Abs(maxDeltaMagnitude) / 100 * _tiltSpeed;
+                    _targetHorizontalAngle += Math.Abs(maxDeltaMagnitude) / 100 * CommonController.MainCameraTiltSpeed;
                 else
-                    _targetHorizontalAngle -= Math.Abs(maxDeltaMagnitude) / 100 * _tiltSpeed;
+                    _targetHorizontalAngle -= Math.Abs(maxDeltaMagnitude) / 100 * CommonController.MainCameraTiltSpeed;
 
                 if (_targetHorizontalAngle > 90)
                     _targetHorizontalAngle = 90;
                 else if (_targetHorizontalAngle < 0)
                     _targetHorizontalAngle = 0;
 
-                // _currentHorizontalAngle = Mathf.Lerp(_currentHorizontalAngle, _targetHorizontalAngle, Time.deltaTime * _smoothing);
+                // _currentHorizontalAngle = Mathf.Lerp(_currentHorizontalAngle, _targetHorizontalAngle, Time.deltaTime * CommonController.MainCameraSmoothing);
                 // _cameraHolder.transform.rotation = Quaternion.AngleAxis(_currentHorizontalAngle, Vector3.right);
-                _cameraHolder.transform.eulerAngles =
+                CommonController.MainCameraHolder.transform.eulerAngles =
                     new Vector3(_targetHorizontalAngle,
-                        _cameraHolder.transform.eulerAngles.y,
-                        _cameraHolder.transform.eulerAngles.z
+                        CommonController.MainCameraHolder.transform.eulerAngles.y,
+                        CommonController.MainCameraHolder.transform.eulerAngles.z
                         );
             }
             else if (!isTiltInProgress && !isZoomInProgress
                    && IsOneGestureHorizontal(delta0HorizontalAngle)
-                   && pinchParallelDistance > _pinchDistanceThreshold)
+                   && pinchParallelDistance > CommonController.MainCameraPinchDistanceThreshold)
             {
                 //Lock the current movement for rotate only
                 if (touch0.phase == TouchPhase.Began || touch1.phase == TouchPhase.Began)
@@ -161,16 +155,16 @@ public class CameraRotationAndZoom : MonoBehaviour
                 //Horizontal rotate gesture
                 if ((touch0.position.y > touch1.position.y && delta0HorizontalAngle > 90)
                     || (touch0.position.y < touch1.position.y && delta1HorizontalAngle > 90))
-                    _targetVerticalAngle += Math.Abs(maxDeltaMagnitude) / 100 * _rotationSpeed;
+                    _targetVerticalAngle += Math.Abs(maxDeltaMagnitude) / 100 * CommonController.MainCameraRotationSpeed;
                 else
-                    _targetVerticalAngle -= Math.Abs(maxDeltaMagnitude) / 100 * _rotationSpeed;
+                    _targetVerticalAngle -= Math.Abs(maxDeltaMagnitude) / 100 * CommonController.MainCameraRotationSpeed;
 
-                _currentVerticalAngle = Mathf.Lerp(_currentVerticalAngle, _targetVerticalAngle, Time.deltaTime * _smoothing);
+                _currentVerticalAngle = Mathf.Lerp(_currentVerticalAngle, _targetVerticalAngle, Time.deltaTime * CommonController.MainCameraSmoothing);
                 transform.rotation = Quaternion.AngleAxis(_currentVerticalAngle, Vector3.up);
             }
             else if (!isTiltInProgress && !isZoomInProgress
                     && IsOneGestureVertical(delta0VerticalAngle)
-                    && pinchParallelDistance > _pinchDistanceThreshold)
+                    && pinchParallelDistance > CommonController.MainCameraPinchDistanceThreshold)
             {
                 //Lock the current movement for rotate only
                 if (touch0.phase == TouchPhase.Began || touch1.phase == TouchPhase.Began)
@@ -179,16 +173,16 @@ public class CameraRotationAndZoom : MonoBehaviour
                 //Vertical rotate gesture
                 if ((touch0.position.x > touch1.position.x && delta0VerticalAngle > 90)
                     || (touch0.position.x < touch1.position.x && delta1VerticalAngle > 90))
-                    _targetVerticalAngle -= Math.Abs(maxDeltaMagnitude) / 100 * _rotationSpeed;
+                    _targetVerticalAngle -= Math.Abs(maxDeltaMagnitude) / 100 * CommonController.MainCameraRotationSpeed;
                 else
-                    _targetVerticalAngle += Math.Abs(maxDeltaMagnitude) / 100 * _rotationSpeed;
+                    _targetVerticalAngle += Math.Abs(maxDeltaMagnitude) / 100 * CommonController.MainCameraRotationSpeed;
 
-                _currentVerticalAngle = Mathf.Lerp(_currentVerticalAngle, _targetVerticalAngle, Time.deltaTime * _smoothing);
+                _currentVerticalAngle = Mathf.Lerp(_currentVerticalAngle, _targetVerticalAngle, Time.deltaTime * CommonController.MainCameraSmoothing);
                 transform.rotation = Quaternion.AngleAxis(_currentVerticalAngle, Vector3.up);
             }
             else if (!isTiltInProgress && !isRotateInProgress
-                    && (twoDeltaAngle < _rotateAngleThreshold || twoDeltaAngle > 180 - _rotateAngleThreshold)
-                    && pinchParallelDistance < _pinchDistanceThreshold)
+                    && (twoDeltaAngle < CommonController.MainCameraRotateAngleThreshold || twoDeltaAngle > 180 - CommonController.MainCameraRotateAngleThreshold)
+                    && pinchParallelDistance < CommonController.MainCameraPinchDistanceThreshold)
             {
 
                 //Lock the current movement for zoom only
@@ -200,28 +194,28 @@ public class CameraRotationAndZoom : MonoBehaviour
 
                 if (IsTouchPinchingOut(touch0, touch1, _startTouch0, _startTouch1))
                     //If Zoom-in, inverse the direction
-                    nextTargetPosition = _targetPosition + _cameraDirection * (maxDeltaMagnitude / 10 * _zoomSpeed);
+                    nextTargetPosition = _targetPosition + _cameraDirection * (maxDeltaMagnitude / 10 * CommonController.MainCameraZoomSpeed);
                 else
-                    nextTargetPosition = _targetPosition - _cameraDirection * (maxDeltaMagnitude / 10 * _zoomSpeed);
+                    nextTargetPosition = _targetPosition - _cameraDirection * (maxDeltaMagnitude / 10 * CommonController.MainCameraZoomSpeed);
 
                 // if (IsInBounds(nextTargetPosition)) 
                 _targetPosition = nextTargetPosition;
-                _cameraHolder.localPosition = Vector3.Lerp(_cameraHolder.localPosition, nextTargetPosition, Time.deltaTime * _smoothing);
+                CommonController.MainCameraHolder.transform.localPosition = Vector3.Lerp(CommonController.MainCameraHolder.transform.localPosition, nextTargetPosition, Time.deltaTime * CommonController.MainCameraSmoothing);
             }
         }
     }
     private bool AreBothGesturesVertical(float delta0VerticalAngle, float delta1VerticalAngle)
     {
-        return (delta0VerticalAngle < _rotateAngleThreshold && delta1VerticalAngle < _rotateAngleThreshold)
-                || delta0VerticalAngle > (180 - _rotateAngleThreshold) && delta1VerticalAngle > (180 - _rotateAngleThreshold);
+        return (delta0VerticalAngle < CommonController.MainCameraRotateAngleThreshold && delta1VerticalAngle < CommonController.MainCameraRotateAngleThreshold)
+                || delta0VerticalAngle > (180 - CommonController.MainCameraRotateAngleThreshold) && delta1VerticalAngle > (180 - CommonController.MainCameraRotateAngleThreshold);
     }
     private bool IsOneGestureVertical(float delta0VerticalAngle)
     {
-        return delta0VerticalAngle < _rotateAngleThreshold || delta0VerticalAngle > (180 - _rotateAngleThreshold);
+        return delta0VerticalAngle < CommonController.MainCameraRotateAngleThreshold || delta0VerticalAngle > (180 - CommonController.MainCameraRotateAngleThreshold);
     }
     private bool IsOneGestureHorizontal(float delta0HorizontalAngle)
     {
-        return delta0HorizontalAngle < _rotateAngleThreshold || delta0HorizontalAngle > (180 - _rotateAngleThreshold);
+        return delta0HorizontalAngle < CommonController.MainCameraRotateAngleThreshold || delta0HorizontalAngle > (180 - CommonController.MainCameraRotateAngleThreshold);
     }
     private double ParallelDistance(params Touch[] touches)
     {
@@ -300,9 +294,9 @@ public class CameraRotationAndZoom : MonoBehaviour
         if (Input.GetMouseButton(1))
         {
             //Support for mouse rotation
-            _targetVerticalAngle += Input.GetAxisRaw("Mouse X") * _rotationSpeed;
+            _targetVerticalAngle += Input.GetAxisRaw("Mouse X") * CommonController.MainCameraRotationSpeed;
 
-            _currentVerticalAngle = Mathf.Lerp(_currentVerticalAngle, _targetVerticalAngle, Time.deltaTime * _smoothing);
+            _currentVerticalAngle = Mathf.Lerp(_currentVerticalAngle, _targetVerticalAngle, Time.deltaTime * CommonController.MainCameraSmoothing);
             transform.rotation = Quaternion.AngleAxis(_currentVerticalAngle, Vector3.up);
         }
 
@@ -310,10 +304,10 @@ public class CameraRotationAndZoom : MonoBehaviour
     private void HandleMouseZoom()
     {
         float _input = Input.GetAxisRaw("Mouse ScrollWheel");
-        Vector3 nextTargetPosition = _targetPosition + _cameraDirection * (_input * _zoomSpeed);
+        Vector3 nextTargetPosition = _targetPosition + _cameraDirection * (_input * CommonController.MainCameraZoomSpeed);
         // if (IsInBounds(nextTargetPosition)) _targetPosition = nextTargetPosition;
         _targetPosition = nextTargetPosition;
-        _cameraHolder.localPosition = Vector3.Lerp(_cameraHolder.localPosition, _targetPosition, Time.deltaTime * _smoothing);
+        CommonController.MainCameraHolder.transform.localPosition = Vector3.Lerp(CommonController.MainCameraHolder.transform.localPosition, _targetPosition, Time.deltaTime * CommonController.MainCameraSmoothing);
     }
 
     private bool IsInBounds(Vector3 position)

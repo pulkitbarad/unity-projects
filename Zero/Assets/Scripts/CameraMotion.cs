@@ -22,7 +22,7 @@ public class CameraMotion : MonoBehaviour
     private void Update()
     {
 
-        if (!CommonController.IsRoadBuildEnabled && CommonController.IsTouchOverNonUI())
+        if (!CommonController.IsRoadMenuActive && CommonController.IsTouchOverNonUI())
         {
             HandleMove();
         }

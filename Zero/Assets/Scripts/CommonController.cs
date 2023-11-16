@@ -2,6 +2,7 @@ using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UIElements;
 
 public class CommonController : MonoBehaviour
 {
@@ -10,25 +11,80 @@ public class CommonController : MonoBehaviour
     public static bool IsDebugEnabled = false;
     // public static bool IsSingleTouchConsumed = false;
     // public static bool IsDoubleTouchLocked = false;
-    public static bool IsRoadBuildEnabled = false;
+    public static bool IsRoadMenuActive = false;
     private static List<GameObject> _lineObjectPool = new();
     private static int _lineObjectPoolCount = 100;
+    public static float MainCameraMoveSpeed = 1f;
+    public static float MainCameraSmoothing = 2f;
+    public static float MainCameraZoomSpeed = 2f;
+    public static float MainCameraRotationSpeed = 5f;
+    public static float MainCameraTiltSpeed = 2f;
+    public static float MainCameraPinchDistanceThreshold = 50f;
+    public static float MainCameraRotateAngleThreshold = 10f;
+    public static GameObject StartControlObject;
+    public static GameObject StartObject;
+    public static GameObject EndControlObject;
+    public static GameObject EndObject;
+    public static Camera MainCamera;
+    public static GameObject MainCameraHolder;
+    public static GameObject MainCameraRoot;
+    public static GameObject ButtonRoad;
 
     // Start is called before the first frame update
     void Start()
     {
         TestRendrer.InstantiateLinePool();
+        DeactivateRoadControlPoints();
     }
 
-
-    //Touchphase Ended is ignored
     public static bool IsTouchOverNonUI(bool suppressTouchEndEvent = true)
     {
         return
         Input.touchCount > 0
             && !EventSystem.current.IsPointerOverGameObject(Input.GetTouch(0).fingerId)
             && (!suppressTouchEndEvent || Input.GetTouch(0).phase != TouchPhase.Ended);
+    }
 
+    public static void HandleRoadObjectsDrag()
+    {
+        CommonController.HandleGameObjectDrag(CommonController.StartObject);
+        CommonController.HandleGameObjectDrag(CommonController.StartControlObject);
+        CommonController.HandleGameObjectDrag(CommonController.EndControlObject);
+        CommonController.HandleGameObjectDrag(CommonController.EndObject);
+    }
+    private static bool HandleGameObjectDrag(GameObject gameObject)
+    {
+        if (Input.touchCount > 0
+                && !EventSystem.current.IsPointerOverGameObject(Input.GetTouch(0).fingerId)
+                && (Input.GetTouch(0).phase == TouchPhase.Moved
+                    || Input.GetTouch(0).phase == TouchPhase.Stationary))
+        {
+            Touch touch0 = Input.GetTouch(0);
+            Ray touchPointRay = MainCamera.ScreenPointToRay(touch0.position);
+            gameObject.SetActive(true);
+            if (
+                Physics.Raycast(touchPointRay, out RaycastHit hit)
+                    && hit.transform == gameObject.transform)
+            {
+                gameObject.transform.position = touch0.position;
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    public static void DeactivateRoadControlPoints()
+    {
+        StartObject.transform.position = Vector3.zero;
+        StartControlObject.transform.position = Vector3.zero;
+        EndControlObject.transform.position = Vector3.zero;
+        EndObject.transform.position = Vector3.zero;
+
+        StartObject.SetActive(false);
+        StartControlObject.SetActive(false);
+        EndControlObject.SetActive(false);
+        EndObject.SetActive(false);
     }
 
     public static class TestRendrer
@@ -37,28 +93,12 @@ public class CommonController : MonoBehaviour
         public static void InstantiateLinePool()
         {
 
-            GameObject temp = new GameObject();
             for (int i = 0; i < _lineObjectPoolCount; i++)
             {
-                temp.AddComponent<LineRenderer>();
+                GameObject temp = new();
                 temp.SetActive(false);
                 _lineObjectPool.Add(temp);
             }
-        }
-
-        private static GameObject GetLineFromPool(string name)
-        {
-            for (int i = 0; i < _lineObjectPoolCount; i++)
-            {
-                var lineObject = _lineObjectPool[i];
-                if (!lineObject.activeInHierarchy)
-                {
-                    lineObject.name = name;
-                    lineObject.SetActive(true);
-                    return lineObject;
-                }
-            }
-            return null;
         }
 
         public static void ReleaseLineObjectToPool(string name)
@@ -93,85 +133,48 @@ public class CommonController : MonoBehaviour
                         newLineObject.name = name;
                         newLineObject.SetActive(true);
                         lineObject = newLineObject;
+                        break;
                     }
                 }
                 if (lineObject == null)
                 {
                     lineObject = new GameObject(name);
                 }
+                LineRenderer primaryLineRenderer = lineObject.AddComponent(typeof(LineRenderer)) as LineRenderer;
+                Material materialNeonLight = Resources.Load("NearestSphere") as Material;
+                primaryLineRenderer.SetMaterials(new List<Material>() { materialNeonLight });
+                primaryLineRenderer.material.SetColor("_Color", color);
+                primaryLineRenderer.startWidth = width;
+                primaryLineRenderer.endWidth = width;
+                primaryLineRenderer.positionCount = 3;
             }
-            LineRenderer primaryLineRenderer = lineObject.AddComponent(typeof(LineRenderer)) as LineRenderer;
-            Material materialNeonLight = Resources.Load("NearestSphere") as Material;
-            primaryLineRenderer.SetMaterials(new List<Material>() { materialNeonLight });
-            primaryLineRenderer.material.SetColor("_Color", color);
-            primaryLineRenderer.startWidth = width;
-            primaryLineRenderer.endWidth = width;
-            primaryLineRenderer.positionCount = 3;
 
             return lineObject;
         }
         public static void RenderLine(
-            string lineName,
-            Color lineColor,
-            float width= 10f,
+            string name,
+            Color color,
+            float width = 10f,
+            float pointSize = 20f,
             params Vector3[] linePoints)
         {
 
-            GameObject lineObject = GameObject.Find(lineName);
-
-            if (lineObject == null)
-            {
-                lineObject = GetLineObject(lineName, lineColor,width:width);
-            }
-
+            GameObject lineObject = GameObject.Find(name) ?? GetLineObject(name, color, width: width);
             LineRenderer lineRenderer = lineObject.GetComponent<LineRenderer>();
             lineRenderer.positionCount = linePoints.Length;
 
             lineRenderer.SetPositions(linePoints);
             if (IsDebugEnabled)
             {
-                foreach (var point in linePoints)
-                    RenderPointSphere(point);
-            }
-        }
-        public static void RenderLine(
-            string lineName,
-            Color lineColor,
-            float lineWidth = 10,
-            float pointSize = 20,
-            params Vector2[] linePoints)
-        {
-
-            GameObject lineObject = GameObject.Find(lineName);
-
-            if (lineObject == null)
-            {
-                lineObject = new GameObject(lineName);
-                LineRenderer primaryLineRenderer = lineObject.AddComponent(typeof(LineRenderer)) as LineRenderer;
-                primaryLineRenderer.material = new Material(Shader.Find("Legacy Shaders/Particles/Alpha Blended Premultiply"));
-                primaryLineRenderer.material.SetColor("_Color", lineColor);
-                primaryLineRenderer.startWidth = lineWidth;
-                primaryLineRenderer.endWidth = lineWidth;
-                primaryLineRenderer.positionCount = 3;
-            }
-
-
-            LineRenderer lineRenderer = lineObject.GetComponent<LineRenderer>();
-            List<Vector3> linePoints3D = new List<Vector3>();
-            foreach (var point in linePoints)
-                linePoints3D.Add(point);
-            lineRenderer.positionCount = linePoints3D.Count;
-
-            lineRenderer.SetPositions(linePoints3D.ToArray());
-            if (IsDebugEnabled)
-            {
-                foreach (var point in linePoints3D)
-                    RenderPointSphere(point, pointSize);
+                for (int i = 0; i < linePoints.Length; i++)
+                {
+                    RenderPointSphere(point: linePoints[i], size: pointSize, color: Color.yellow);
+                }
             }
         }
         public static GameObject RenderPointSphere(
             Vector3 point,
-            float size = 20,
+            float size = 20f,
             Color? color = null)
         {
             string sphereName = "Point_" + point[0] + "_" + point[1] + "_" + point[2];
@@ -182,8 +185,7 @@ public class CommonController : MonoBehaviour
                 sphere.transform.localScale = new Vector3(size, size, size);
                 sphere.transform.position = point;
                 var sphereRenderer = sphere.GetComponent<Renderer>();
-                if (color.HasValue)
-                    sphereRenderer.material.color = color.Value;
+                sphereRenderer.material.color = color ?? Color.yellow;
                 _existingPoints.Add(sphereName);
                 return sphere;
             }
@@ -195,37 +197,50 @@ public class CommonController : MonoBehaviour
     }
     public static class CurvedLine
     {
-        public static List<Vector3> FindBazierLinePoints(
-            Vector3 startPoint,
-            Vector3 endPoint,
-            int vertexCount)
-        {
-            var startToEndDirection = endPoint - startPoint;
-            var startToEndDistance = startToEndDirection.magnitude;
-            Vector3 p0 = startPoint;
-            Vector3 p1 = startToEndDirection.normalized * startToEndDistance * 0.33f;
-            Vector3 p2 = startToEndDirection.normalized * startToEndDistance * 0.67f;
-            Vector3 p3 = endPoint;
 
-            List<Vector3> pathPoints = new List<Vector3>();
+        public static void FindBazierLinePoints(
+            GameObject startObject,
+            GameObject endObject,
+            int vertexCount,
+            GameObject startControlObject,
+            GameObject endControlObject,
+            out List<Vector3> bazierLinePoints)
+        {
+            Vector3 startPointPosition = startObject.transform.position;
+            Vector3 endPointPosition = endObject.transform.position;
+            var startToEndDirection = endPointPosition - startPointPosition;
+            var startToEndDistance = startToEndDirection.magnitude;
+            if (startControlObject.activeInHierarchy && startControlObject.transform.position == Vector3.zero)
+            {
+                startControlObject.transform.position = 0.33f * startToEndDistance * startToEndDirection.normalized;
+
+            }
+            if (endControlObject.activeInHierarchy && endControlObject.transform.position == Vector3.zero)
+            {
+                endControlObject.transform.position = 0.67f * startToEndDistance * startToEndDirection.normalized;
+
+            }
+            Vector3 p0 = startPointPosition;
+            Vector3 p1 = startControlObject.transform.position;
+            Vector3 p2 = endControlObject.transform.position;
+            Vector3 p3 = endPointPosition;
+
+            bazierLinePoints = new List<Vector3>();
 
             for (int s = 0; s < 1; s += 3)
             {
                 if (s == 0)
                 {
-                    pathPoints.Add(BezierPathCalculation(p0, p1, p2, p3, 0.0f));
+                    bazierLinePoints.Add(BezierPathCalculation(p0, p1, p2, p3, 0.0f));
                 }
 
                 for (int p = 0; p < (vertexCount); p++)
                 {
                     float t = 1.0f / (vertexCount) * p;
-                    Vector3 point = new();
-                    point = BezierPathCalculation(p0, p1, p2, p3, t);
-                    pathPoints.Add(point);
+                    Vector3 point = BezierPathCalculation(p0, p1, p2, p3, t);
+                    bazierLinePoints.Add(point);
                 }
             }
-            return pathPoints;
-
         }
 
         public static List<List<Vector3>> FindParallelLines(
@@ -330,7 +345,7 @@ public class CommonController : MonoBehaviour
                 curvePoints.Add(curve);
             }
             curvePoints.Add(endPosition);
-            TestRendrer.RenderLine(line.name, Color.red, width: 10f,curvePoints.ToArray());
+            TestRendrer.RenderLine(line.name, Color.red, width: 10f, linePoints: curvePoints.ToArray());
             return curvePoints;
         }
 
