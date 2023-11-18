@@ -6,30 +6,32 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using Unity.VisualScripting;
-//using UnityEngine.UIElements;
 
 public class UIHandling : MonoBehaviour
 {
-    private Vector3 _mainCameraTargetPosition;
+    private bool _isZoomInProgress = false;
+    private bool _isRotateInProgress = false;
+    private bool _isTiltInProgress = false;
 
-    void Awake()
-    {
-
-        //_mainCameraRoot = GameObject.Find("MainCameraRoot");
-        //_mainCameraHolder = GameObject.Find("MainCameraHolder");
-        //_mainCamera = GameObject.Find("MainCamera").GetComponent<Camera>();
-
-        _mainCameraTargetPosition = CommonController.MainCameraRoot.transform.position;
-
-    }
     void Start()
     {
-        Button btn = CommonController.ButtonRoad.GetComponent<Button>();
-        btn.onClick.AddListener(OnClickButtonRoad);
+
+        //_mainCameraTargetPosition = CommonController.MainCameraHolder.transform.localPosition;
+        //_mainCameraTargetVerticalAngle = CommonController.MainCameraHolder.transform.eulerAngles.y;
+        //_currentVerticalAngle = _targetVerticalAngle;
+        //_targetHorizontalAngle = CommonController.MainCameraHolder.transform.eulerAngles.x;
+        //_currentHorizontalAngle = _targetHorizontalAngle;
+
     }
 
     void Update()
     {
+        CommonController.RunWhileButtonIsDown(CommonController.ZoomInButton, true, CommonController.MainCameraZoomSpeed, CommonController.CameraMovement.ZoomCamera);
+        CommonController.RunWhileButtonIsDown(CommonController.ZoomOutButton, false, CommonController.MainCameraZoomSpeed, CommonController.CameraMovement.ZoomCamera);
+        CommonController.RunWhileButtonIsDown(CommonController.RotateClockwiseButton, true, CommonController.MainCameraRotationSpeed, CommonController.CameraMovement.RotateCamera);
+        CommonController.RunWhileButtonIsDown(CommonController.RotateAntiClockwiseButton, false, CommonController.MainCameraRotationSpeed, CommonController.CameraMovement.RotateCamera);
+        CommonController.RunWhileButtonIsDown(CommonController.TiltUpButton, true, CommonController.MainCameraTiltSpeed, CommonController.CameraMovement.TiltCamera);
+        CommonController.RunWhileButtonIsDown(CommonController.TiltDownButton, false, CommonController.MainCameraTiltSpeed, CommonController.CameraMovement.TiltCamera);
         if (CommonController.IsTouchOverNonUI())
         {
             if (CommonController.IsRoadMenuActive)
@@ -38,7 +40,7 @@ public class UIHandling : MonoBehaviour
             }
             else
             {
-                HandleCameraMovement();
+                CommonController.CameraMovement.MoveCamera();
             }
         }
     }
@@ -46,27 +48,10 @@ public class UIHandling : MonoBehaviour
     void OnClickButtonRoad()
     {
         CommonController.IsRoadMenuActive = true;
-
-        Debug.Log("Tap on screen to build road");
-    }
-
-    private void HandleCameraMovement()
-    {
-
-        var touch = Input.GetTouch(0);
-
-        Vector3 right = -CommonController.MainCameraRoot.transform.right * touch.deltaPosition.x;
-        Vector3 forward = -CommonController.MainCameraRoot.transform.forward * touch.deltaPosition.y;
-        var input = (forward + right);
-        Vector3 nextTargetPosition = _mainCameraTargetPosition + input / 10 * CommonController.MainCameraMoveSpeed;
-        _mainCameraTargetPosition = nextTargetPosition;
-        CommonController.MainCameraRoot.transform.position = Vector3.Lerp(CommonController.MainCameraRoot.transform.position, nextTargetPosition, Time.deltaTime * 100 * CommonController.MainCameraSmoothing);
-
     }
 
     private void HandleBuildRoad()
     {
-
 
         if (CommonController.StartObject.transform.position.Equals(Vector3.zero)
             && CommonController.EndObject.transform.position.Equals(Vector3.zero))
@@ -160,6 +145,5 @@ public class UIHandling : MonoBehaviour
 
         }
         return groundPosition;
-
     }
 }

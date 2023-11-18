@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UIElements;
+using System;
 
 public class CommonController : MonoBehaviour
 {
@@ -13,14 +14,16 @@ public class CommonController : MonoBehaviour
     // public static bool IsDoubleTouchLocked = false;
     public static bool IsRoadMenuActive = false;
     private static List<GameObject> _lineObjectPool = new();
-    private static int _lineObjectPoolCount = 100;
-    public static float MainCameraMoveSpeed = 1f;
-    public static float MainCameraSmoothing = 2f;
-    public static float MainCameraZoomSpeed = 2f;
-    public static float MainCameraRotationSpeed = 5f;
-    public static float MainCameraTiltSpeed = 2f;
-    public static float MainCameraPinchDistanceThreshold = 50f;
-    public static float MainCameraRotateAngleThreshold = 10f;
+    private static int _lineObjectPoolCount;
+    public static float MainCameraMoveSpeed;
+    public static float MainCameraSmoothing;
+    public static float MainCameraZoomSpeed;
+    public static float MainCameraZoomSpeedTouch;
+    public static float MainCameraRotationSpeed;
+    public static float MainCameraTiltSpeed;
+    public static float MainCameraTiltSpeedTouch;
+    public static float MainCameraPinchDistanceThreshold;
+    public static float MainCameraRotateAngleThreshold;
     public static GameObject StartControlObject;
     public static GameObject StartObject;
     public static GameObject EndControlObject;
@@ -28,7 +31,13 @@ public class CommonController : MonoBehaviour
     public static Camera MainCamera;
     public static GameObject MainCameraHolder;
     public static GameObject MainCameraRoot;
-    public static GameObject ButtonRoad;
+    public static GameObject CurvedRoadButton;
+    public static GameObject ZoomInButton;
+    public static GameObject ZoomOutButton;
+    public static GameObject RotateClockwiseButton;
+    public static GameObject RotateAntiClockwiseButton;
+    public static GameObject TiltUpButton;
+    public static GameObject TiltDownButton;
 
     // Start is called before the first frame update
     void Start()
@@ -71,6 +80,27 @@ public class CommonController : MonoBehaviour
             }
         }
         return false;
+    }
+
+    public static void RunWhileButtonIsDown(GameObject button, bool direction, float magnitude, Action<bool, float> onButtonDown)
+    {
+        if (Input.touchCount > 0
+                && EventSystem.current.IsPointerOverGameObject(Input.GetTouch(0).fingerId)
+                && Input.GetTouch(0).phase == TouchPhase.Stationary
+                )
+        {
+            PointerEventData eventData = new(EventSystem.current)
+            {
+                position = Input.GetTouch(0).position
+            };
+            List<RaycastResult> results = new();
+            EventSystem.current.RaycastAll(eventData, results);
+            Debug.Log("hit object=" + results.First().gameObject.name);
+            if (results.First().gameObject.name.Equals(button.name))
+            {
+                onButtonDown(direction, magnitude);
+            }
+        }
     }
 
 
@@ -193,6 +223,98 @@ public class CommonController : MonoBehaviour
             {
                 return GameObject.Find(sphereName);
             }
+        }
+    }
+
+    public static class CameraMovement
+    {
+
+        public static void MoveCamera()
+        {
+            var touch = Input.GetTouch(0);
+            Vector3 mainCameraTargetPosition = CommonController.MainCameraRoot.transform.position;
+
+            Vector3 right = -CommonController.MainCameraRoot.transform.right * touch.deltaPosition.x;
+            Vector3 forward = -CommonController.MainCameraRoot.transform.forward * touch.deltaPosition.y;
+            var input = (forward + right);
+            Vector3 nextTargetPosition = mainCameraTargetPosition + input / 10 * CommonController.MainCameraMoveSpeed;
+            CommonController.MainCameraRoot.transform.position
+                = Vector3.Lerp(
+                    a: CommonController.MainCameraRoot.transform.position,
+                    b: nextTargetPosition,
+                    t: Time.deltaTime * 100 * CommonController.MainCameraSmoothing);
+
+        }
+
+        public static void TiltCamera(bool isTiltup, float magnitude)
+        {
+            float targetHorizontalAngle = CommonController.MainCameraHolder.transform.eulerAngles.x;
+            if (isTiltup)
+
+                targetHorizontalAngle -= magnitude;
+            else
+                targetHorizontalAngle += magnitude;
+
+            if (targetHorizontalAngle > 90)
+                targetHorizontalAngle = 90;
+            else if (targetHorizontalAngle < 0)
+                targetHorizontalAngle = 0;
+            Debug.Log("Tilt action");
+
+            CommonController.MainCameraHolder.transform.eulerAngles =
+                new Vector3(targetHorizontalAngle,
+                    CommonController.MainCameraHolder.transform.eulerAngles.y,
+                    CommonController.MainCameraHolder.transform.eulerAngles.z
+                    );
+
+        }
+
+        public static void RotateCamera(bool isRotateClockwise, float magnitude)
+        {
+            var currentVerticalAngle = CommonController.MainCameraHolder.transform.eulerAngles.y;
+            var targetVerticalAngle = currentVerticalAngle;
+            if (isRotateClockwise)
+                targetVerticalAngle += magnitude;
+            else
+                targetVerticalAngle -= magnitude;
+            Debug.Log("Rotate action");
+
+            currentVerticalAngle = Mathf.Lerp(currentVerticalAngle, targetVerticalAngle, Time.deltaTime * CommonController.MainCameraSmoothing);
+            CommonController.MainCameraHolder.transform.rotation = Quaternion.AngleAxis(currentVerticalAngle, Vector3.up);
+
+        }
+
+        public static void ZoomCamera(bool isZoomIn, float magnitude)
+        {
+            Vector3 cameraDirection =
+                CommonController
+                .MainCameraRoot
+                .transform
+                .InverseTransformDirection(
+                    CommonController
+                    .MainCameraHolder
+                    .transform
+                    .forward);
+
+            Vector3 currentPosition = CommonController.MainCameraHolder.transform.localPosition;
+            Vector3 targetPosition = currentPosition;
+
+            if (isZoomIn)
+                //If Zoom-in, inverse the direction
+                targetPosition += magnitude * cameraDirection;
+            else
+                targetPosition -= magnitude * cameraDirection;
+
+            Debug.Log("Zooming action");
+            // if (IsInBounds(nextTargetPosition)) 
+            CommonController.MainCameraHolder.transform.localPosition =
+                Vector3.Lerp(
+                    a: currentPosition,
+                    b: targetPosition,
+                    t: Time.deltaTime * CommonController.MainCameraSmoothing);
+
+            //CommonController.MainCameraHolder.transform.localPosition = targetPosition;
+
         }
     }
     public static class CurvedLine
