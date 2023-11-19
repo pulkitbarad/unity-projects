@@ -9,29 +9,16 @@ using Unity.VisualScripting;
 
 public class UIHandling : MonoBehaviour
 {
-    private bool _isZoomInProgress = false;
-    private bool _isRotateInProgress = false;
-    private bool _isTiltInProgress = false;
 
     void Start()
     {
-
-        //_mainCameraTargetPosition = CommonController.MainCameraHolder.transform.localPosition;
-        //_mainCameraTargetVerticalAngle = CommonController.MainCameraHolder.transform.eulerAngles.y;
-        //_currentVerticalAngle = _targetVerticalAngle;
-        //_targetHorizontalAngle = CommonController.MainCameraHolder.transform.eulerAngles.x;
-        //_currentHorizontalAngle = _targetHorizontalAngle;
 
     }
 
     void Update()
     {
-        CommonController.RunWhileButtonIsDown(CommonController.ZoomInButton, true, CommonController.MainCameraZoomSpeed, CommonController.CameraMovement.ZoomCamera);
-        CommonController.RunWhileButtonIsDown(CommonController.ZoomOutButton, false, CommonController.MainCameraZoomSpeed, CommonController.CameraMovement.ZoomCamera);
-        CommonController.RunWhileButtonIsDown(CommonController.RotateClockwiseButton, true, CommonController.MainCameraRotationSpeed, CommonController.CameraMovement.RotateCamera);
-        CommonController.RunWhileButtonIsDown(CommonController.RotateAntiClockwiseButton, false, CommonController.MainCameraRotationSpeed, CommonController.CameraMovement.RotateCamera);
-        CommonController.RunWhileButtonIsDown(CommonController.TiltUpButton, true, CommonController.MainCameraTiltSpeed, CommonController.CameraMovement.TiltCamera);
-        CommonController.RunWhileButtonIsDown(CommonController.TiltDownButton, false, CommonController.MainCameraTiltSpeed, CommonController.CameraMovement.TiltCamera);
+        HandleButtonEvents();
+
         if (CommonController.IsTouchOverNonUI())
         {
             if (CommonController.IsRoadMenuActive)
@@ -43,6 +30,43 @@ public class UIHandling : MonoBehaviour
                 CommonController.CameraMovement.MoveCamera();
             }
         }
+    }
+
+    void HandleButtonEvents()
+    {
+        CommonController.RunWhileTouchHold(
+            button: CommonController.ZoomInButton,
+            directionFlag: true,
+            magnitude: CommonController.MainCameraZoomSpeed,
+            onButtonDown: CommonController.CameraMovement.ZoomCamera);
+        CommonController.RunWhileTouchHold(
+            button: CommonController.ZoomOutButton,
+            directionFlag: false,
+            magnitude: CommonController.MainCameraZoomSpeed,
+            onButtonDown: CommonController.CameraMovement.ZoomCamera);
+
+        CommonController.RunWhileTouchHold(
+            button: CommonController.RotateClockwiseButton,
+            directionFlag: true,
+            magnitude: CommonController.MainCameraRotationSpeed,
+            onButtonDown: CommonController.CameraMovement.RotateCamera);
+        CommonController.RunWhileTouchHold(
+            button: CommonController.RotateAntiClockwiseButton,
+            directionFlag: false,
+            magnitude: CommonController.MainCameraRotationSpeed,
+            onButtonDown: CommonController.CameraMovement.RotateCamera);
+
+        CommonController.RunWhileTouchHold(
+            button: CommonController.TiltUpButton,
+            directionFlag: true,
+            magnitude: CommonController.MainCameraTiltSpeed,
+            onButtonDown: CommonController.CameraMovement.TiltCamera);
+        CommonController.RunWhileTouchHold(
+            button: CommonController.TiltDownButton,
+            directionFlag: false,
+            magnitude: CommonController.MainCameraTiltSpeed,
+            onButtonDown: CommonController.CameraMovement.TiltCamera);
+
     }
 
     void OnClickButtonRoad()
@@ -108,8 +132,8 @@ public class UIHandling : MonoBehaviour
             startScreenPosition = touch1Position;
             endScreenPosition = touch0Position;
         }
-        CommonController.StartObject.transform.position = GetTerrainHitPoint(startScreenPosition);
-        CommonController.EndObject.transform.position = GetTerrainHitPoint(endScreenPosition);
+        CommonController.StartObject.transform.position = CommonController.CameraMovement.GetTerrainHitPoint(startScreenPosition);
+        CommonController.EndObject.transform.position = CommonController.CameraMovement.GetTerrainHitPoint(endScreenPosition);
     }
     private void GetControlPoints(Vector3 startGroundPosition, Vector3 endGroundPosition, out Vector3 controlPoint0, out Vector3 controlPoint1)
     {
@@ -129,21 +153,5 @@ public class UIHandling : MonoBehaviour
     private Vector2 GetScreenCenter()
     {
         return new Vector2(Screen.width / 2, Screen.height / 2);
-    }
-
-    private Vector3 GetTerrainHitPoint(Vector2 origin)
-    {
-        Vector3 groundPosition = Vector3.zero;
-
-        if (
-            Physics.Raycast(ray: CommonController.MainCamera.ScreenPointToRay(origin),
-                hitInfo: out RaycastHit _rayHit,
-                maxDistance: CommonController.MainCamera.farClipPlane,
-                layerMask: LayerMask.GetMask("Ground")))
-        {
-            groundPosition = _rayHit.point;
-
-        }
-        return groundPosition;
     }
 }

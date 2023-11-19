@@ -11,21 +11,12 @@ public class CameraRotationAndZoom : MonoBehaviour
 {
     private bool isZoomInProgress = false;
     private bool isTiltInProgress = false;
-    private Touch _startTouch0;
-    private Touch _startTouch1;
 
     [SerializeField] private Vector2 _range = new(100, 100);
 
     private void Awake()
     {
-        _startTouch0 = new Touch
-        {
-            deltaTime = -1000
-        };
-        _startTouch1 = new Touch
-        {
-            deltaTime = -1000
-        };
+
     }
 
     private void Update()
@@ -42,19 +33,8 @@ public class CameraRotationAndZoom : MonoBehaviour
         {
             var touch0 = Input.GetTouch(0);
             var touch1 = Input.GetTouch(1);
-            Debug.Log("_startTouch0.deltaTime=" + _startTouch0.deltaTime);
-            Debug.Log("_startTouch1.deltaTime=" + _startTouch1.deltaTime);
-            if (_startTouch0.deltaTime == -1000)
-            {
-                _startTouch0 = touch0;
 
-            }
-            if (_startTouch1.deltaTime == -1000)
-            {
-                _startTouch1 = touch1;
-
-            }
-            var maxDeltaMagnitude = Math.Max(touch0.deltaPosition.magnitude, touch1.deltaPosition.magnitude);
+            var maxDeltaMagnitude = Math.Abs(Math.Max(touch0.deltaPosition.magnitude, touch1.deltaPosition.magnitude));
 
             if (maxDeltaMagnitude <= 0)
                 return;
@@ -63,24 +43,13 @@ public class CameraRotationAndZoom : MonoBehaviour
             {
                 isZoomInProgress = false;
                 isTiltInProgress = false;
-                _startTouch0 = new Touch
-                {
-                    deltaTime = -1000
-                };
-                _startTouch1 = new Touch
-                {
-                    deltaTime = -1000
-                };
-
             }
             var touch0DeltaPosition = touch0.deltaPosition;
             var touch1DeltaPosition = touch1.deltaPosition;
             var delta0VerticalAngle = Vector2.Angle(touch0DeltaPosition, Vector2.up);
             var delta1VerticalAngle = Vector2.Angle(touch1DeltaPosition, Vector2.up);
-            var twoDeltaAngle = Vector2.Angle(touch1DeltaPosition, touch0DeltaPosition);
 
-
-
+            Debug.Log("IsTouchPinchingOut=" + CommonController.CameraMovement.IsTouchPinchingOut(touch0, touch1));
             if (!isZoomInProgress
                 && AreBothGesturesVertical(delta0VerticalAngle, delta1VerticalAngle))
             {
@@ -89,16 +58,14 @@ public class CameraRotationAndZoom : MonoBehaviour
                     isTiltInProgress = true;
                 //Vertical tilt gesture
                 if (delta0VerticalAngle > 90 || delta1VerticalAngle > 90)
-                    CommonController.CameraMovement.TiltCamera(isTiltup: false, magnitude: Math.Abs(maxDeltaMagnitude) / 100 * CommonController.MainCameraTiltSpeedTouch);
+                    CommonController.CameraMovement.TiltCamera(isTiltup: false, magnitude: maxDeltaMagnitude / 100 * CommonController.MainCameraTiltSpeedTouch);
                 else
-                    CommonController.CameraMovement.TiltCamera(isTiltup: true, magnitude: Math.Abs(maxDeltaMagnitude) / 100 * CommonController.MainCameraTiltSpeedTouch);
+                    CommonController.CameraMovement.TiltCamera(isTiltup: true, magnitude: maxDeltaMagnitude / 100 * CommonController.MainCameraTiltSpeedTouch);
             }
-            else if (!isTiltInProgress
-                && (twoDeltaAngle < CommonController.MainCameraRotateAngleThreshold || twoDeltaAngle > 180 - CommonController.MainCameraRotateAngleThreshold)
-               )
+            else if (!isTiltInProgress)
             {
 
-                if (IsTouchPinchingOut(touch0, touch1, _startTouch0, _startTouch1))
+                if (CommonController.CameraMovement.IsTouchPinchingOut(touch0, touch1))
                     //If Zoom-in, inverse the direction
                     CommonController.CameraMovement.ZoomCamera(isZoomIn: true, magnitude: maxDeltaMagnitude / 10 * CommonController.MainCameraZoomSpeedTouch);
                 else
@@ -106,16 +73,16 @@ public class CameraRotationAndZoom : MonoBehaviour
             }
         }
     }
+
+
     private bool AreBothGesturesVertical(float delta0VerticalAngle, float delta1VerticalAngle)
     {
         return (delta0VerticalAngle < CommonController.MainCameraRotateAngleThreshold
-                || delta0VerticalAngle > (180 - CommonController.MainCameraRotateAngleThreshold));
+                && delta1VerticalAngle < CommonController.MainCameraRotateAngleThreshold)
+            || (delta0VerticalAngle > (180 - CommonController.MainCameraRotateAngleThreshold)
+                && delta1VerticalAngle > (180 - CommonController.MainCameraRotateAngleThreshold));
     }
 
-    public bool IsTouchPinchingOut(Touch touch0, Touch touch1, Touch startTouch0, Touch startTouch1)
-    {
-        return (startTouch0.position - startTouch1.position).magnitude < (touch0.position - touch1.position).magnitude;
-    }
     private void HandleMouseZoom()
     {
         Vector3 cameraDirection =

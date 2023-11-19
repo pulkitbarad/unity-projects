@@ -82,11 +82,11 @@ public class CommonController : MonoBehaviour
         return false;
     }
 
-    public static void RunWhileButtonIsDown(GameObject button, bool direction, float magnitude, Action<bool, float> onButtonDown)
+    public static void RunWhileTouchHold(GameObject button, bool directionFlag, float magnitude, Action<bool, float> onButtonDown)
     {
         if (Input.touchCount > 0
                 && EventSystem.current.IsPointerOverGameObject(Input.GetTouch(0).fingerId)
-                && Input.GetTouch(0).phase == TouchPhase.Stationary
+                //&& Input.GetTouch(0).phase == TouchPhase.Stationary
                 )
         {
             PointerEventData eventData = new(EventSystem.current)
@@ -95,10 +95,9 @@ public class CommonController : MonoBehaviour
             };
             List<RaycastResult> results = new();
             EventSystem.current.RaycastAll(eventData, results);
-            Debug.Log("hit object=" + results.First().gameObject.name);
             if (results.First().gameObject.name.Equals(button.name))
             {
-                onButtonDown(direction, magnitude);
+                onButtonDown(directionFlag, magnitude);
             }
         }
     }
@@ -231,19 +230,27 @@ public class CommonController : MonoBehaviour
 
         public static void MoveCamera()
         {
-            var touch = Input.GetTouch(0);
-            Vector3 mainCameraTargetPosition = CommonController.MainCameraRoot.transform.position;
+            if (Input.touchCount == 1)
+            {
+                var touch = Input.GetTouch(0);
+                if (touch.deltaPosition.magnitude > 0)
+                {
+                    Vector3 touchTargetPosition = GetTerrainHitPoint(touch.position);
+                    Vector3 touchStartPosition = GetTerrainHitPoint(touch.position - touch.deltaPosition);
 
-            Vector3 right = -CommonController.MainCameraRoot.transform.right * touch.deltaPosition.x;
-            Vector3 forward = -CommonController.MainCameraRoot.transform.forward * touch.deltaPosition.y;
-            var input = (forward + right);
-            Vector3 nextTargetPosition = mainCameraTargetPosition + input / 10 * CommonController.MainCameraMoveSpeed;
-            CommonController.MainCameraRoot.transform.position
-                = Vector3.Lerp(
-                    a: CommonController.MainCameraRoot.transform.position,
-                    b: nextTargetPosition,
-                    t: Time.deltaTime * 100 * CommonController.MainCameraSmoothing);
+                    Vector3 currentCameraPosition = CommonController.MainCameraRoot.transform.position;
+                    Vector3 targetCameraPosition =
+                        ((touchStartPosition - touchTargetPosition).normalized
+                            * CommonController.MainCameraMoveSpeed)
+                        + currentCameraPosition;
 
+                    CommonController.MainCameraRoot.transform.position
+                        = Vector3.Lerp(
+                            a: currentCameraPosition,
+                            b: targetCameraPosition,
+                            t: Time.deltaTime * 100 * CommonController.MainCameraSmoothing);
+                }
+            }
         }
 
         public static void TiltCamera(bool isTiltup, float magnitude)
@@ -259,7 +266,6 @@ public class CommonController : MonoBehaviour
                 targetHorizontalAngle = 90;
             else if (targetHorizontalAngle < 0)
                 targetHorizontalAngle = 0;
-            Debug.Log("Tilt action");
 
             CommonController.MainCameraHolder.transform.eulerAngles =
                 new Vector3(targetHorizontalAngle,
@@ -271,16 +277,20 @@ public class CommonController : MonoBehaviour
 
         public static void RotateCamera(bool isRotateClockwise, float magnitude)
         {
-            var currentVerticalAngle = CommonController.MainCameraHolder.transform.eulerAngles.y;
+            var currentVerticalAngle = CommonController.MainCameraRoot.transform.eulerAngles.y;
             var targetVerticalAngle = currentVerticalAngle;
             if (isRotateClockwise)
                 targetVerticalAngle += magnitude;
             else
                 targetVerticalAngle -= magnitude;
-            Debug.Log("Rotate action");
 
-            currentVerticalAngle = Mathf.Lerp(currentVerticalAngle, targetVerticalAngle, Time.deltaTime * CommonController.MainCameraSmoothing);
-            CommonController.MainCameraHolder.transform.rotation = Quaternion.AngleAxis(currentVerticalAngle, Vector3.up);
+            //currentVerticalAngle = Mathf.Lerp(currentVerticalAngle, targetVerticalAngle, Time.deltaTime * CommonController.MainCameraSmoothing);
+            //CommonController.MainCameraHolder.transform.rotation = Quaternion.AngleAxis(currentVerticalAngle, Vector3.up);
+            CommonController.MainCameraRoot.transform.eulerAngles =
+                new Vector3(CommonController.MainCameraRoot.transform.eulerAngles.x,
+                    targetVerticalAngle,
+                    CommonController.MainCameraRoot.transform.eulerAngles.z
+                    );
 
         }
 
@@ -305,16 +315,37 @@ public class CommonController : MonoBehaviour
             else
                 targetPosition -= magnitude * cameraDirection;
 
-            Debug.Log("Zooming action");
-            // if (IsInBounds(nextTargetPosition)) 
-            CommonController.MainCameraHolder.transform.localPosition =
-                Vector3.Lerp(
-                    a: currentPosition,
-                    b: targetPosition,
-                    t: Time.deltaTime * CommonController.MainCameraSmoothing);
-
+              if (targetPosition.y > 3 && targetPosition.y < 3000)
+            {
+                CommonController.MainCameraHolder.transform.localPosition =
+                    Vector3.Lerp(
+                        a: currentPosition,
+                        b: targetPosition,
+                        t: Time.deltaTime * CommonController.MainCameraSmoothing);
+            }
             //CommonController.MainCameraHolder.transform.localPosition = targetPosition;
+        }
 
+        public static bool IsTouchPinchingOut(Touch touch0, Touch touch1)
+        {
+            Vector2 startTouch0 = (touch0.position - touch0.deltaPosition);
+            Vector2 startTouch1 = (touch1.position - touch1.deltaPosition);
+            return (startTouch0 - startTouch1).magnitude < (touch0.position - touch1.position).magnitude;
+        }
+        public static Vector3 GetTerrainHitPoint(Vector2 origin)
+        {
+            Vector3 groundPosition = Vector3.zero;
+
+            if (
+                Physics.Raycast(ray: CommonController.MainCamera.ScreenPointToRay(origin),
+                    hitInfo: out RaycastHit _rayHit,
+                    maxDistance: CommonController.MainCamera.farClipPlane,
+                    layerMask: LayerMask.GetMask("Ground")))
+            {
+                groundPosition = _rayHit.point;
+
+            }
+            return groundPosition;
         }
     }
     public static class CurvedLine

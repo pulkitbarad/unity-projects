@@ -4,11 +4,11 @@ using UnityEngine;
 
 public class CommonConfiguration : MonoBehaviour
 {
-    [SerializeField] private float MainCameraMoveSpeed = 1f;
+    [SerializeField] private float MainCameraMoveSpeed = 4f;
     [SerializeField] private float MainCameraSmoothing = 2f;
     [SerializeField] private float MainCameraZoomSpeed = 100f;
-    [SerializeField] private float MainCameraZoomSpeedTouch = 2f;
-    [SerializeField] private float MainCameraRotationSpeed = 5f;
+    [SerializeField] private float MainCameraZoomSpeedTouch = 100f;
+    [SerializeField] private float MainCameraRotationSpeed = 1f;
     [SerializeField] private float MainCameraTiltSpeed = 2f;
     [SerializeField] private float MainCameraTiltSpeedTouch = 2f;
     [SerializeField] private float MainCameraPinchDistanceThreshold = 50f;
