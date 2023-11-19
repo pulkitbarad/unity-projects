@@ -4,11 +4,15 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UIElements;
 using System;
+using UnityEngine.SocialPlatforms;
 
 public class CommonController : MonoBehaviour
 {
 
     private static List<string> _existingPoints = new();
+    private static bool isZoomInProgress = false;
+    private static bool isTiltInProgress = false;
+
     public static bool IsDebugEnabled = false;
     // public static bool IsSingleTouchConsumed = false;
     // public static bool IsDoubleTouchLocked = false;
@@ -315,7 +319,7 @@ public class CommonController : MonoBehaviour
             else
                 targetPosition -= magnitude * cameraDirection;
 
-              if (targetPosition.y > 3 && targetPosition.y < 3000)
+            if (targetPosition.y > 3 && targetPosition.y < 3000)
             {
                 CommonController.MainCameraHolder.transform.localPosition =
                     Vector3.Lerp(
@@ -324,6 +328,84 @@ public class CommonController : MonoBehaviour
                         t: Time.deltaTime * CommonController.MainCameraSmoothing);
             }
             //CommonController.MainCameraHolder.transform.localPosition = targetPosition;
+        }
+
+        public static void HandleTouchZoomAndTilt()
+        {
+            if (Input.touchCount == 2)
+            {
+                var touch0 = Input.GetTouch(0);
+                var touch1 = Input.GetTouch(1);
+
+                var maxDeltaMagnitude = Math.Abs(Math.Max(touch0.deltaPosition.magnitude, touch1.deltaPosition.magnitude));
+
+                if (maxDeltaMagnitude <= 0)
+                    return;
+
+                if (touch0.phase == TouchPhase.Ended || touch1.phase == TouchPhase.Ended)
+                {
+                    isZoomInProgress = false;
+                    isTiltInProgress = false;
+                }
+                var touch0DeltaPosition = touch0.deltaPosition;
+                var touch1DeltaPosition = touch1.deltaPosition;
+                var delta0VerticalAngle = Vector2.Angle(touch0DeltaPosition, Vector2.up);
+                var delta1VerticalAngle = Vector2.Angle(touch1DeltaPosition, Vector2.up);
+
+                if (!isZoomInProgress
+                    && AreBothGesturesVertical(delta0VerticalAngle, delta1VerticalAngle))
+                {
+                    //Lock the current movement for tilt only
+                    if (touch0.phase == TouchPhase.Began || touch1.phase == TouchPhase.Began)
+                        isTiltInProgress = true;
+                    //Vertical tilt gesture
+                    if (delta0VerticalAngle > 90 || delta1VerticalAngle > 90)
+                        CommonController.CameraMovement.TiltCamera(isTiltup: false, magnitude: maxDeltaMagnitude / 100 * CommonController.MainCameraTiltSpeedTouch);
+                    else
+                        CommonController.CameraMovement.TiltCamera(isTiltup: true, magnitude: maxDeltaMagnitude / 100 * CommonController.MainCameraTiltSpeedTouch);
+                }
+                else if (!isTiltInProgress)
+                {
+
+                    if (CommonController.CameraMovement.IsTouchPinchingOut(touch0, touch1))
+                        //If Zoom-in, inverse the direction
+                        CommonController.CameraMovement.ZoomCamera(isZoomIn: true, magnitude: maxDeltaMagnitude / 10 * CommonController.MainCameraZoomSpeedTouch);
+                    else
+                        CommonController.CameraMovement.ZoomCamera(isZoomIn: false, magnitude: maxDeltaMagnitude / 10 * CommonController.MainCameraZoomSpeedTouch);
+                }
+            }
+        }
+
+
+
+        public static void HandleMouseZoom()
+        {
+            Vector3 cameraDirection =
+                CommonController
+                .MainCameraRoot
+                .transform
+                .InverseTransformDirection(
+                    CommonController
+                    .MainCameraHolder
+                    .transform
+                    .forward);
+
+            float _input = Input.GetAxisRaw("Mouse ScrollWheel");
+            var currentPosition = CommonController.MainCameraHolder.transform.localPosition;
+            Vector3 targetPosition = currentPosition + cameraDirection * (_input * CommonController.MainCameraZoomSpeed);
+            // if (IsInBounds(nextTargetPosition)) _targetPosition = nextTargetPosition;
+            CommonController.MainCameraHolder.transform.localPosition
+                = Vector3.Lerp(
+                    CommonController.MainCameraHolder.transform.localPosition,
+                    targetPosition,
+                    Time.deltaTime * CommonController.MainCameraSmoothing);
+        }
+        public static bool AreBothGesturesVertical(float delta0VerticalAngle, float delta1VerticalAngle)
+        {
+            return (delta0VerticalAngle < CommonController.MainCameraRotateAngleThreshold
+                    && delta1VerticalAngle < CommonController.MainCameraRotateAngleThreshold)
+                || (delta0VerticalAngle > (180 - CommonController.MainCameraRotateAngleThreshold)
+                    && delta1VerticalAngle > (180 - CommonController.MainCameraRotateAngleThreshold));
         }
 
         public static bool IsTouchPinchingOut(Touch touch0, Touch touch1)
@@ -347,6 +429,7 @@ public class CommonController : MonoBehaviour
             }
             return groundPosition;
         }
+
     }
     public static class CurvedLine
     {

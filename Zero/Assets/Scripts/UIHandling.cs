@@ -28,6 +28,8 @@ public class UIHandling : MonoBehaviour
             else
             {
                 CommonController.CameraMovement.MoveCamera();
+                CommonController.CameraMovement.HandleTouchZoomAndTilt();
+                //CommonController.CameraMovement.HandleMouseZoom();
             }
         }
     }

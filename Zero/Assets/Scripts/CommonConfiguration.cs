@@ -10,7 +10,7 @@ public class CommonConfiguration : MonoBehaviour
     [SerializeField] private float MainCameraZoomSpeedTouch = 100f;
     [SerializeField] private float MainCameraRotationSpeed = 1f;
     [SerializeField] private float MainCameraTiltSpeed = 2f;
-    [SerializeField] private float MainCameraTiltSpeedTouch = 2f;
+    [SerializeField] private float MainCameraTiltSpeedTouch = 10f;
     [SerializeField] private float MainCameraPinchDistanceThreshold = 50f;
     [SerializeField] private float MainCameraRotateAngleThreshold = 10f;
     [SerializeField] private GameObject StartControlObject;
