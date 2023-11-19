@@ -86,7 +86,11 @@ public class CommonController : MonoBehaviour
         return false;
     }
 
-    public static void RunWhileTouchHold(GameObject button, bool directionFlag, float magnitude, Action<bool, float> onButtonDown)
+    public static void RunWhileTouchHold(
+        GameObject button,
+        bool directionFlag,
+        float magnitude,
+        Action<bool, float> onButtonDown)
     {
         if (Input.touchCount > 0
                 && EventSystem.current.IsPointerOverGameObject(Input.GetTouch(0).fingerId)
@@ -173,7 +177,8 @@ public class CommonController : MonoBehaviour
                 {
                     lineObject = new GameObject(name);
                 }
-                LineRenderer primaryLineRenderer = lineObject.AddComponent(typeof(LineRenderer)) as LineRenderer;
+                LineRenderer primaryLineRenderer = 
+                    lineObject.AddComponent(typeof(LineRenderer)) as LineRenderer;
                 Material materialNeonLight = Resources.Load("NearestSphere") as Material;
                 primaryLineRenderer.SetMaterials(new List<Material>() { materialNeonLight });
                 primaryLineRenderer.material.SetColor("_Color", color);
@@ -192,7 +197,8 @@ public class CommonController : MonoBehaviour
             params Vector3[] linePoints)
         {
 
-            GameObject lineObject = GameObject.Find(name) ?? GetLineObject(name, color, width: width);
+            GameObject lineObject = 
+                GameObject.Find(name) ?? GetLineObject(name, color, width: width);
             LineRenderer lineRenderer = lineObject.GetComponent<LineRenderer>();
             lineRenderer.positionCount = linePoints.Length;
 
@@ -360,18 +366,26 @@ public class CommonController : MonoBehaviour
                         isTiltInProgress = true;
                     //Vertical tilt gesture
                     if (delta0VerticalAngle > 90 || delta1VerticalAngle > 90)
-                        CommonController.CameraMovement.TiltCamera(isTiltup: false, magnitude: maxDeltaMagnitude / 100 * CommonController.MainCameraTiltSpeedTouch);
+                        CommonController.CameraMovement.TiltCamera(
+                            isTiltup: false,
+                            magnitude: maxDeltaMagnitude / 100 * CommonController.MainCameraTiltSpeedTouch);
                     else
-                        CommonController.CameraMovement.TiltCamera(isTiltup: true, magnitude: maxDeltaMagnitude / 100 * CommonController.MainCameraTiltSpeedTouch);
+                        CommonController.CameraMovement.TiltCamera(
+                            isTiltup: true,
+                            magnitude: maxDeltaMagnitude / 100 * CommonController.MainCameraTiltSpeedTouch);
                 }
                 else if (!isTiltInProgress)
                 {
 
                     if (CommonController.CameraMovement.IsTouchPinchingOut(touch0, touch1))
                         //If Zoom-in, inverse the direction
-                        CommonController.CameraMovement.ZoomCamera(isZoomIn: true, magnitude: maxDeltaMagnitude / 10 * CommonController.MainCameraZoomSpeedTouch);
+                        CommonController.CameraMovement.ZoomCamera(
+                            isZoomIn: true,
+                            magnitude: maxDeltaMagnitude / 10 * CommonController.MainCameraZoomSpeedTouch);
                     else
-                        CommonController.CameraMovement.ZoomCamera(isZoomIn: false, magnitude: maxDeltaMagnitude / 10 * CommonController.MainCameraZoomSpeedTouch);
+                        CommonController.CameraMovement.ZoomCamera(
+                            isZoomIn: false,
+                            magnitude: maxDeltaMagnitude / 10 * CommonController.MainCameraZoomSpeedTouch);
                 }
             }
         }
