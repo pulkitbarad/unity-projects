@@ -10,8 +10,11 @@ public class CommonController : MonoBehaviour
 {
 
     private static List<string> _existingPoints = new();
-    private static bool isZoomInProgress = false;
-    private static bool isTiltInProgress = false;
+    private static bool _IsZoomInProgress = false;
+    private static bool _IsTiltInProgress = false;
+    private static bool _IsMoveInProgress = false;
+    private static bool _IsDragInProgress = false;
+    private static string _ObjectBeingDragged = "";
 
     public static bool IsDebugEnabled = false;
     // public static bool IsSingleTouchConsumed = false;
@@ -58,35 +61,127 @@ public class CommonController : MonoBehaviour
             && (!suppressTouchEndEvent || Input.GetTouch(0).phase != TouchPhase.Ended);
     }
 
-    public static void HandleRoadObjectsDrag()
+    public static bool HandleRoadObjectsDrag()
     {
-        CommonController.HandleGameObjectDrag(CommonController.StartObject);
-        CommonController.HandleGameObjectDrag(CommonController.StartControlObject);
-        CommonController.HandleGameObjectDrag(CommonController.EndControlObject);
-        CommonController.HandleGameObjectDrag(CommonController.EndObject);
+        var areControlsActivated = false;
+        if (Input.touchCount > 0)
+        {
+
+            if (CommonController.IsRoadMenuActive)
+            {
+                var touch0 = Input.GetTouch(0);
+                if (CommonController.StartObject.transform.position.Equals(Vector3.zero)
+                && CommonController.EndObject.transform.position.Equals(Vector3.zero)
+                )
+                {
+                    Debug.Log("phase at initialization=" + touch0.phase);
+                    InitializeStartAndEndPositions();
+                    Debug.Log("Initialization complete");
+                    areControlsActivated = true;
+                }
+                else
+                {
+
+                    if (!CommonController.StartObject.transform.position.Equals(Vector3.zero))
+                    {
+                        areControlsActivated =
+                        CommonController.HandleGameObjectDrag(CommonController.StartObject)
+                        || CommonController.HandleGameObjectDrag(CommonController.StartControlObject);
+                    }
+                    if (!CommonController.EndObject.transform.position.Equals(Vector3.zero))
+                    {
+                        areControlsActivated =
+                        CommonController.HandleGameObjectDrag(CommonController.EndControlObject)
+                        || CommonController.HandleGameObjectDrag(CommonController.EndObject);
+                    }
+                }
+
+            }
+        }
+        return areControlsActivated;
     }
     private static bool HandleGameObjectDrag(GameObject gameObject)
     {
-        if (Input.touchCount > 0
-                && !EventSystem.current.IsPointerOverGameObject(Input.GetTouch(0).fingerId)
-                && (Input.GetTouch(0).phase == TouchPhase.Moved
-                    || Input.GetTouch(0).phase == TouchPhase.Stationary))
+
+        if (Input.touchCount > 0)
         {
-            Touch touch0 = Input.GetTouch(0);
-            Ray touchPointRay = MainCamera.ScreenPointToRay(touch0.position);
-            gameObject.SetActive(true);
-            if (
-                Physics.Raycast(touchPointRay, out RaycastHit hit)
-                    && hit.transform == gameObject.transform)
+            var touch0 = Input.GetTouch(0);
+            if (!_IsMoveInProgress)
             {
-                gameObject.transform.position = touch0.position;
-                return true;
+
+                if (touch0.phase == TouchPhase.Ended)
+                {
+                    _IsDragInProgress = false;
+                    _ObjectBeingDragged = "";
+
+                }
+                else if (touch0.phase == TouchPhase.Began)
+                {
+                    _IsDragInProgress = true;
+                    _ObjectBeingDragged = "";
+
+                }
+
+                if (!EventSystem.current.IsPointerOverGameObject(touch0.fingerId)
+                    && touch0.phase == TouchPhase.Moved
+                    && touch0.deltaPosition.magnitude > 0)
+                {
+                    Ray touchPointRay = MainCamera.ScreenPointToRay(touch0.position);
+                    gameObject.SetActive(true);
+                    if (
+                        Physics.Raycast(touchPointRay, out RaycastHit hit)
+                            && hit.transform.position == gameObject.transform.position)
+                    {
+                        Debug.Log("hit.transform=" + hit.transform);
+                        gameObject.transform.position = CameraMovement.GetTerrainHitPoint(touch0.position);
+                        return true;
+                    }
+                }
             }
         }
+
         return false;
     }
+    private static void InitializeStartAndEndPositions()
+    {
+        Vector3 startObjectPosition, endObjectPosition;
+        startObjectPosition = CommonController.CameraMovement.GetTerrainHitPoint(Input.GetTouch(0).position);
+        CommonController.StartObject.transform.position = endObjectPosition = startObjectPosition;
+        endObjectPosition.z += 200f;
+        CommonController.EndObject.transform.position = endObjectPosition;
+        CommonController.StartObject.SetActive(true);
+        CommonController.EndObject.SetActive(true);
+    }
 
-    public static void RunWhileTouchHold(
+    public static void RebuildRoad()
+    {
+
+        // CommonController.CurvedLine.FindBazierLinePoints(
+        //     startObject: CommonController.StartObject,
+        //     endObject: CommonController.EndObject,
+        //     vertexCount: 10,
+        //     startControlObject: CommonController.StartControlObject,
+        //     endControlObject: CommonController.EndControlObject,
+        //     bazierLinePoints: out List<Vector3> bazierLinePoints);
+
+        // CommonController.IsDebugEnabled = false;
+        // CommonController.TestRendrer.RenderLine(
+        //     name: "Road_center",
+        //     color: Color.blue,
+        //     width: 10,
+        //     pointSize: 20,
+        //     linePoints: bazierLinePoints.ToArray());
+
+        // CommonController.IsDebugEnabled = false;
+    }
+
+
+    private static Vector2 GetScreenCenterPoint()
+    {
+        return new Vector2(Screen.width / 2, Screen.height / 2);
+    }
+
+    public static void InvokeOnTapHold(
         GameObject button,
         bool directionFlag,
         float magnitude,
@@ -106,6 +201,28 @@ public class CommonController : MonoBehaviour
             if (results.First().gameObject.name.Equals(button.name))
             {
                 onButtonDown(directionFlag, magnitude);
+            }
+        }
+    }
+
+    public static void InvokeOnTap(
+        GameObject button,
+        Action onButtonDown)
+    {
+        if (Input.touchCount > 0
+                && EventSystem.current.IsPointerOverGameObject(Input.GetTouch(0).fingerId)
+                //&& Input.GetTouch(0).phase == TouchPhase.Stationary
+                )
+        {
+            PointerEventData eventData = new(EventSystem.current)
+            {
+                position = Input.GetTouch(0).position
+            };
+            List<RaycastResult> results = new();
+            EventSystem.current.RaycastAll(eventData, results);
+            if (results.First().gameObject.name.Equals(button.name))
+            {
+                onButtonDown();
             }
         }
     }
@@ -177,7 +294,7 @@ public class CommonController : MonoBehaviour
                 {
                     lineObject = new GameObject(name);
                 }
-                LineRenderer primaryLineRenderer = 
+                LineRenderer primaryLineRenderer =
                     lineObject.AddComponent(typeof(LineRenderer)) as LineRenderer;
                 Material materialNeonLight = Resources.Load("NearestSphere") as Material;
                 primaryLineRenderer.SetMaterials(new List<Material>() { materialNeonLight });
@@ -197,7 +314,7 @@ public class CommonController : MonoBehaviour
             params Vector3[] linePoints)
         {
 
-            GameObject lineObject = 
+            GameObject lineObject =
                 GameObject.Find(name) ?? GetLineObject(name, color, width: width);
             LineRenderer lineRenderer = lineObject.GetComponent<LineRenderer>();
             lineRenderer.positionCount = linePoints.Length;
@@ -242,11 +359,20 @@ public class CommonController : MonoBehaviour
         {
             if (Input.touchCount == 1)
             {
-                var touch = Input.GetTouch(0);
-                if (touch.deltaPosition.magnitude > 0)
+                var touch0 = Input.GetTouch(0);
+                if (touch0.phase == TouchPhase.Ended)
                 {
-                    Vector3 touchTargetPosition = GetTerrainHitPoint(touch.position);
-                    Vector3 touchStartPosition = GetTerrainHitPoint(touch.position - touch.deltaPosition);
+                    _IsMoveInProgress = false;
+                }
+                else if (touch0.phase == TouchPhase.Began)
+                {
+                    _IsMoveInProgress = true;
+                }
+                if (touch0.phase == TouchPhase.Moved && touch0.deltaPosition.magnitude > 0)
+                {
+                    Debug.Log("moving screen=");
+                    Vector3 touchTargetPosition = GetTerrainHitPoint(touch0.position);
+                    Vector3 touchStartPosition = GetTerrainHitPoint(touch0.position - touch0.deltaPosition);
 
                     Vector3 currentCameraPosition = CommonController.MainCameraRoot.transform.position;
                     Vector3 targetCameraPosition =
@@ -343,27 +469,31 @@ public class CommonController : MonoBehaviour
                 var touch0 = Input.GetTouch(0);
                 var touch1 = Input.GetTouch(1);
 
-                var maxDeltaMagnitude = Math.Abs(Math.Max(touch0.deltaPosition.magnitude, touch1.deltaPosition.magnitude));
+                var maxDeltaMagnitude =
+                    Math.Abs(
+                        Math.Max(
+                            touch0.deltaPosition.magnitude,
+                            touch1.deltaPosition.magnitude));
 
                 if (maxDeltaMagnitude <= 0)
                     return;
 
                 if (touch0.phase == TouchPhase.Ended || touch1.phase == TouchPhase.Ended)
                 {
-                    isZoomInProgress = false;
-                    isTiltInProgress = false;
+                    _IsZoomInProgress = false;
+                    _IsTiltInProgress = false;
                 }
                 var touch0DeltaPosition = touch0.deltaPosition;
                 var touch1DeltaPosition = touch1.deltaPosition;
                 var delta0VerticalAngle = Vector2.Angle(touch0DeltaPosition, Vector2.up);
                 var delta1VerticalAngle = Vector2.Angle(touch1DeltaPosition, Vector2.up);
 
-                if (!isZoomInProgress
+                if (!_IsZoomInProgress
                     && AreBothGesturesVertical(delta0VerticalAngle, delta1VerticalAngle))
                 {
                     //Lock the current movement for tilt only
                     if (touch0.phase == TouchPhase.Began || touch1.phase == TouchPhase.Began)
-                        isTiltInProgress = true;
+                        _IsTiltInProgress = true;
                     //Vertical tilt gesture
                     if (delta0VerticalAngle > 90 || delta1VerticalAngle > 90)
                         CommonController.CameraMovement.TiltCamera(
@@ -374,7 +504,7 @@ public class CommonController : MonoBehaviour
                             isTiltup: true,
                             magnitude: maxDeltaMagnitude / 100 * CommonController.MainCameraTiltSpeedTouch);
                 }
-                else if (!isTiltInProgress)
+                else if (!_IsTiltInProgress)
                 {
 
                     if (CommonController.CameraMovement.IsTouchPinchingOut(touch0, touch1))
@@ -406,7 +536,10 @@ public class CommonController : MonoBehaviour
 
             float _input = Input.GetAxisRaw("Mouse ScrollWheel");
             var currentPosition = CommonController.MainCameraHolder.transform.localPosition;
-            Vector3 targetPosition = currentPosition + cameraDirection * (_input * CommonController.MainCameraZoomSpeed);
+            Vector3 targetPosition =
+                currentPosition
+                + (cameraDirection
+                    * _input * CommonController.MainCameraZoomSpeed);
             // if (IsInBounds(nextTargetPosition)) _targetPosition = nextTargetPosition;
             CommonController.MainCameraHolder.transform.localPosition
                 = Vector3.Lerp(
@@ -460,14 +593,18 @@ public class CommonController : MonoBehaviour
             Vector3 endPointPosition = endObject.transform.position;
             var startToEndDirection = endPointPosition - startPointPosition;
             var startToEndDistance = startToEndDirection.magnitude;
-            if (startControlObject.activeInHierarchy && startControlObject.transform.position == Vector3.zero)
+            if (startControlObject.activeInHierarchy
+                && startControlObject.transform.position == Vector3.zero)
             {
-                startControlObject.transform.position = 0.33f * startToEndDistance * startToEndDirection.normalized;
+                startControlObject.transform.position =
+                    0.33f * startToEndDistance * startToEndDirection.normalized;
 
             }
-            if (endControlObject.activeInHierarchy && endControlObject.transform.position == Vector3.zero)
+            if (endControlObject.activeInHierarchy
+                && endControlObject.transform.position == Vector3.zero)
             {
-                endControlObject.transform.position = 0.67f * startToEndDistance * startToEndDirection.normalized;
+                endControlObject.transform.position =
+                    0.67f * startToEndDistance * startToEndDirection.normalized;
 
             }
             Vector3 p0 = startPointPosition;
