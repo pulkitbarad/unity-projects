@@ -6,18 +6,32 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using Unity.VisualScripting;
+using UnityEngine.InputSystem;
 
 public class UIHandling : MonoBehaviour
 {
 
-    void Start()
+    private PlayerInput playerInput;
+
+    void Awake()
     {
+        playerInput = GetComponent<PlayerInput>();
+    }
+
+    public void OnMove(InputValue value){
+
+        Debug.Log("value="+value.Get<Vector2>());
+
+    }
+    public void OnLook(InputValue value){
+
+        Debug.Log("value="+value.Get<Vector2>());
 
     }
 
     void Update()
     {
-        HandleButtonEvents();
+        // HandleButtonEvents();
 
         if (CommonController.IsTouchOverNonUI())
         {
@@ -27,8 +41,8 @@ public class UIHandling : MonoBehaviour
             }
             else
             {
-                CommonController.CameraMovement.MoveCamera();
-                CommonController.CameraMovement.HandleTouchZoomAndTilt();
+                // CommonController.CameraMovement.MoveCamera();
+                // CommonController.CameraMovement.HandleTouchZoomAndTilt();
             }
         }
     }
