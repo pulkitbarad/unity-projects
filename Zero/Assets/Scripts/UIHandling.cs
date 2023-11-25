@@ -9,51 +9,56 @@ public class UIHandling : MonoBehaviour
 
     private bool _isZoomInButtonDown = false;
     private bool _isZoomOutButtonDown = false;
-
-    private DefaultActions _defaultActions;
-    private InputAction _moveAction;
-    private InputAction _lookAction;
+    private MainActions _mainActions;
     private InputAction _zoomInAction;
     private InputAction _zoomOutAction;
+    private InputAction _moveAction;
+    private InputAction _lookAction;
 
     void Awake()
     {
-        _defaultActions = new DefaultActions();
     }
-    // void OnEnable()
-    // {
-    // }
-
-    // void OnDisable()
-    // {
-
-    // }
 
     void Start()
     {
+        _mainActions = new MainActions();
+        _moveAction = _mainActions.Player.Move;
+        _lookAction = _mainActions.Player.Look;
+        _zoomOutAction = _mainActions.Player.ZoomOut;
+        _zoomInAction = _mainActions.Player.ZoomIn;
 
-        _moveAction = _defaultActions.NewActionMap.Move;
-        // _defaultActions.NewActionMap.Move.performed += OnMove;
-        _moveAction.Enable();
-        _lookAction = _defaultActions.NewActionMap.Look;
-        // _defaultActions.NewActionMap.Look.performed += OnMove;
-        _lookAction.Enable();
-        _zoomInAction = _defaultActions.NewActionMap.ZoomIn;
-        _defaultActions.NewActionMap.ZoomIn.performed += OnZoomIn;
-        _zoomInAction.Enable();
-        _zoomOutAction = _defaultActions.NewActionMap.ZoomOut;
-        _defaultActions.NewActionMap.ZoomOut.performed += OnZoomOut;
         _zoomOutAction.Enable();
+        _zoomInAction.Enable();
+        _moveAction.Enable();
+        _lookAction.Enable();
     }
-    void FixedUpdate()
+
+    void Update()
     {
+
+        if (_zoomOutAction.phase != InputActionPhase.Waiting)
+            Debug.Log("_zoomOutAction= " + _zoomOutAction.phase);
+        if (_zoomOutAction.phase == InputActionPhase.Performed)
+        {
+            CommonController.CameraMovement.ZoomCamera(-100f);
+        }
+        if (_zoomInAction.phase == InputActionPhase.Performed)
+        {
+            CommonController.CameraMovement.ZoomCamera(100f);
+        }
+        if (_moveAction.phase == InputActionPhase.Started)
+        {
+            CommonController.CameraMovement.MoveCamera(_moveAction.ReadValue<Vector2>());
+        }
+        if (_lookAction.phase == InputActionPhase.Started)
+        {
+            CommonController.CameraMovement.TiltCamera(_lookAction.ReadValue<Vector2>().y);
+            CommonController.CameraMovement.RotateCamera(_lookAction.ReadValue<Vector2>().x);
+        }
+        // if (_zoomOutAction.triggered)
+        //     Debug.Log("test");
+
         // HandleButtonEvents();
-
-        Vector2 moveDir = _moveAction.ReadValue<Vector2>();
-        Vector2 lookDir = _lookAction.ReadValue<Vector2>();
-        Debug.Log("moveDir=" + moveDir);
-        Debug.Log("lookDir=" + lookDir);
-
         // if (CommonController.IsTouchOverNonUI())
         // {
         //     if (CommonController.HandleRoadObjectsDrag())
@@ -69,81 +74,18 @@ public class UIHandling : MonoBehaviour
     }
 
 
-    private void OnZoomIn(InputAction.CallbackContext context)
-    {
-        Debug.Log("zoom in");
-
-    }
-
-    private void OnZoomOut(InputAction.CallbackContext context)
-    {
-        Debug.Log("zoom out");
-
-    }
-
-    // public void OnMove(InputAction.CallbackContext context)
-    // {
-    //     // CommonController.CameraMovement.MoveCamera(value.Get<Vector2>());
-
-    //     Debug.Log("move value=" + context.action.ReadValue<Vector2>());
-
-    // }
-    // public void OnLook(InputAction.CallbackContext context)
-    // {
-
-    //     // CommonController.CameraMovement.TiltCamera(value.Get<Vector2>().y);
-    //     CommonController.CameraMovement.RotateCamera(context.action.ReadValue<Vector2>().x);
-
-    // }
-
-    // public void OnZoomIn(InputValue value)
-    // {
-    //     // CommonController.CameraMovement.TiltCamera(value.Get<Vector2>().y);
-    //     // CommonController.CameraMovement.RotateCamera(value.Get<float>());
-    //     _isZoomInButtonDown = !_isZoomInButtonDown;
-    //     Debug.Log("zoom in value=" + value.Get<float>());
-    //     if (_isZoomInButtonDown)
-    //     {
-    //         Debug.Log("zoom in started");
-    //     }
-    //     else
-    //     {
-    //         Debug.Log("zoom in finished");
-    //     }
-
-    // }
-
-    // public void OnZoomOut(InputValue value)
-    // {
-    //     // CommonController.CameraMovement.TiltCamera(value.Get<Vector2>().y);
-    //     // CommonController.CameraMovement.RotateCamera(value.Get<float>());
-    //     _isZoomOutButtonDown = !_isZoomOutButtonDown;
-    //     Debug.Log("zoom out value=" + value.Get<float>());
-    //     if (_isZoomOutButtonDown)
-    //     {
-    //         Debug.Log("zoom out started");
-    //     }
-    //     else
-    //     {
-    //         Debug.Log("zoom out finished");
-
-    //     }
-
-    // }
-
-
     void HandleButtonEvents()
     {
-        CommonController.InvokeOnTapHold(
-            button: CommonController.ZoomInButton,
-            directionFlag: true,
-            magnitude: CommonController.MainCameraZoomSpeed,
-            onButtonDown: CommonController.CameraMovement.ZoomCamera);
-        CommonController.InvokeOnTapHold(
-            button: CommonController.ZoomOutButton,
-            directionFlag: false,
-            magnitude: CommonController.MainCameraZoomSpeed,
-            onButtonDown: CommonController.CameraMovement.ZoomCamera);
+        // CommonController.InvokeOnTapHold(
+        //     button: CommonController.ZoomInButton,
+        //     directionFlag: true,
+        //     magnitude: CommonController.MainCameraZoomSpeed,
+        //     onButtonDown: CommonController.CameraMovement.ZoomCamera);
+        // CommonController.InvokeOnTapHold(
+        //     button: CommonController.ZoomOutButton,
+        //     directionFlag: false,
+        //     magnitude: CommonController.MainCameraZoomSpeed,
+        //     onButtonDown: CommonController.CameraMovement.ZoomCamera);
 
         // CommonController.InvokeOnTapHold(
         //     button: CommonController.RotateClockwiseButton,

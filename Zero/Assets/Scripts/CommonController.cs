@@ -405,7 +405,7 @@ public class CommonController : MonoBehaviour
 
         }
 
-        public static void ZoomCamera(bool isZoomIn, float magnitude)
+        public static void ZoomCamera(float magnitude)
         {
             Vector3 cameraDirection =
                 CommonController
@@ -420,11 +420,7 @@ public class CommonController : MonoBehaviour
             Vector3 currentPosition = CommonController.MainCameraHolder.transform.localPosition;
             Vector3 targetPosition = currentPosition;
 
-            if (isZoomIn)
-                //If Zoom-in, inverse the direction
-                targetPosition += magnitude * cameraDirection;
-            else
-                targetPosition -= magnitude * cameraDirection;
+            targetPosition += magnitude * cameraDirection;
 
             if (targetPosition.y > 3 && targetPosition.y < 3000)
             {

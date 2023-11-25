@@ -4879,7 +4879,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1458476509}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: eee93064f3f94f24e85b202ab3a76c11, type: 3}
   m_Name: 
@@ -4896,7 +4896,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 62899f850307741f2a39c98a8b639597, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_Actions: {fileID: -944628639613478452, guid: fbb9a089cfc34994a90fdcc9a738fc64,
+  m_Actions: {fileID: -944628639613478452, guid: 1ec06049da66890468717d8d94312f1d,
     type: 3}
   m_NotificationBehavior: 0
   m_UIInputModule: {fileID: 0}
@@ -4909,18 +4909,10 @@ MonoBehaviour:
   m_ControlsChangedEvent:
     m_PersistentCalls:
       m_Calls: []
-  m_ActionEvents:
-  - m_PersistentCalls:
-      m_Calls: []
-    m_ActionId: ce99edc6-707d-43d3-a1d7-9b765ce413dd
-    m_ActionName: New action map/Move
-  - m_PersistentCalls:
-      m_Calls: []
-    m_ActionId: 379b5ec6-2059-4b2c-9623-1ade2f2fa27d
-    m_ActionName: New action map/Look
+  m_ActionEvents: []
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
-  m_DefaultActionMap: NewActionMap
+  m_DefaultActionMap: Player
   m_SplitScreenIndex: -1
   m_Camera: {fileID: 0}
 --- !u!1 &1468427560
