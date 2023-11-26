@@ -64,12 +64,30 @@ public partial class @MainActions: IInputActionCollection2, IDisposable
                     ""initialStateCheck"": false
                 },
                 {
-                    ""name"": ""Touch"",
-                    ""type"": ""PassThrough"",
+                    ""name"": ""Touch0Position"",
+                    ""type"": ""Value"",
                     ""id"": ""c71b6efd-3e2c-4f7c-8dff-074af427d9bb"",
                     ""expectedControlType"": ""Vector2"",
                     ""processors"": """",
                     ""interactions"": """",
+                    ""initialStateCheck"": true
+                },
+                {
+                    ""name"": ""Touch1Position"",
+                    ""type"": ""Value"",
+                    ""id"": ""49405dd7-5ee3-4058-b03e-a67651155940"",
+                    ""expectedControlType"": ""Vector2"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": true
+                },
+                {
+                    ""name"": ""Touch1Contact"",
+                    ""type"": ""Button"",
+                    ""id"": ""c4c09a3a-77f2-46fb-b716-24ccdb43bc74"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": ""Press(behavior=2)"",
                     ""initialStateCheck"": false
                 }
             ],
@@ -240,37 +258,37 @@ public partial class @MainActions: IInputActionCollection2, IDisposable
                     ""isPartOfComposite"": false
                 },
                 {
-                    ""name"": ""Touch0"",
-                    ""id"": ""c4060dfd-a68f-4ccf-ae15-c6ad63f56089"",
-                    ""path"": ""OneModifier"",
-                    ""interactions"": """",
-                    ""processors"": """",
-                    ""groups"": """",
-                    ""action"": ""Touch"",
-                    ""isComposite"": true,
-                    ""isPartOfComposite"": false
-                },
-                {
-                    ""name"": ""modifier"",
-                    ""id"": ""32dae231-8b6a-43f1-9ec3-58f6352724cb"",
-                    ""path"": ""<Touchscreen>/touch0/press"",
-                    ""interactions"": """",
-                    ""processors"": """",
-                    ""groups"": """",
-                    ""action"": ""Touch"",
-                    ""isComposite"": false,
-                    ""isPartOfComposite"": true
-                },
-                {
-                    ""name"": ""binding"",
-                    ""id"": ""193d965a-1eee-466a-aa13-04384119e46d"",
+                    ""name"": """",
+                    ""id"": ""02ce6956-074c-4599-8a8a-74977e4b583a"",
                     ""path"": ""<Touchscreen>/touch0/position"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
-                    ""action"": ""Touch"",
+                    ""action"": ""Touch0Position"",
                     ""isComposite"": false,
-                    ""isPartOfComposite"": true
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""357f7545-6b87-4a21-9475-6696629ccaab"",
+                    ""path"": ""<Touchscreen>/touch1/position"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Touch1Position"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""ccc14f12-eada-4a3c-b690-b7999001f7a5"",
+                    ""path"": ""<Touchscreen>/touch1/press"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Touch1Contact"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         },
@@ -860,7 +878,9 @@ public partial class @MainActions: IInputActionCollection2, IDisposable
         m_Player_Look = m_Player.FindAction("Look", throwIfNotFound: true);
         m_Player_ZoomOut = m_Player.FindAction("ZoomOut", throwIfNotFound: true);
         m_Player_ZoomIn = m_Player.FindAction("ZoomIn", throwIfNotFound: true);
-        m_Player_Touch = m_Player.FindAction("Touch", throwIfNotFound: true);
+        m_Player_Touch0Position = m_Player.FindAction("Touch0Position", throwIfNotFound: true);
+        m_Player_Touch1Position = m_Player.FindAction("Touch1Position", throwIfNotFound: true);
+        m_Player_Touch1Contact = m_Player.FindAction("Touch1Contact", throwIfNotFound: true);
         // UI
         m_UI = asset.FindActionMap("UI", throwIfNotFound: true);
         m_UI_Navigate = m_UI.FindAction("Navigate", throwIfNotFound: true);
@@ -938,7 +958,9 @@ public partial class @MainActions: IInputActionCollection2, IDisposable
     private readonly InputAction m_Player_Look;
     private readonly InputAction m_Player_ZoomOut;
     private readonly InputAction m_Player_ZoomIn;
-    private readonly InputAction m_Player_Touch;
+    private readonly InputAction m_Player_Touch0Position;
+    private readonly InputAction m_Player_Touch1Position;
+    private readonly InputAction m_Player_Touch1Contact;
     public struct PlayerActions
     {
         private @MainActions m_Wrapper;
@@ -947,7 +969,9 @@ public partial class @MainActions: IInputActionCollection2, IDisposable
         public InputAction @Look => m_Wrapper.m_Player_Look;
         public InputAction @ZoomOut => m_Wrapper.m_Player_ZoomOut;
         public InputAction @ZoomIn => m_Wrapper.m_Player_ZoomIn;
-        public InputAction @Touch => m_Wrapper.m_Player_Touch;
+        public InputAction @Touch0Position => m_Wrapper.m_Player_Touch0Position;
+        public InputAction @Touch1Position => m_Wrapper.m_Player_Touch1Position;
+        public InputAction @Touch1Contact => m_Wrapper.m_Player_Touch1Contact;
         public InputActionMap Get() { return m_Wrapper.m_Player; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -969,9 +993,15 @@ public partial class @MainActions: IInputActionCollection2, IDisposable
             @ZoomIn.started += instance.OnZoomIn;
             @ZoomIn.performed += instance.OnZoomIn;
             @ZoomIn.canceled += instance.OnZoomIn;
-            @Touch.started += instance.OnTouch;
-            @Touch.performed += instance.OnTouch;
-            @Touch.canceled += instance.OnTouch;
+            @Touch0Position.started += instance.OnTouch0Position;
+            @Touch0Position.performed += instance.OnTouch0Position;
+            @Touch0Position.canceled += instance.OnTouch0Position;
+            @Touch1Position.started += instance.OnTouch1Position;
+            @Touch1Position.performed += instance.OnTouch1Position;
+            @Touch1Position.canceled += instance.OnTouch1Position;
+            @Touch1Contact.started += instance.OnTouch1Contact;
+            @Touch1Contact.performed += instance.OnTouch1Contact;
+            @Touch1Contact.canceled += instance.OnTouch1Contact;
         }
 
         private void UnregisterCallbacks(IPlayerActions instance)
@@ -988,9 +1018,15 @@ public partial class @MainActions: IInputActionCollection2, IDisposable
             @ZoomIn.started -= instance.OnZoomIn;
             @ZoomIn.performed -= instance.OnZoomIn;
             @ZoomIn.canceled -= instance.OnZoomIn;
-            @Touch.started -= instance.OnTouch;
-            @Touch.performed -= instance.OnTouch;
-            @Touch.canceled -= instance.OnTouch;
+            @Touch0Position.started -= instance.OnTouch0Position;
+            @Touch0Position.performed -= instance.OnTouch0Position;
+            @Touch0Position.canceled -= instance.OnTouch0Position;
+            @Touch1Position.started -= instance.OnTouch1Position;
+            @Touch1Position.performed -= instance.OnTouch1Position;
+            @Touch1Position.canceled -= instance.OnTouch1Position;
+            @Touch1Contact.started -= instance.OnTouch1Contact;
+            @Touch1Contact.performed -= instance.OnTouch1Contact;
+            @Touch1Contact.canceled -= instance.OnTouch1Contact;
         }
 
         public void RemoveCallbacks(IPlayerActions instance)
@@ -1177,7 +1213,9 @@ public partial class @MainActions: IInputActionCollection2, IDisposable
         void OnLook(InputAction.CallbackContext context);
         void OnZoomOut(InputAction.CallbackContext context);
         void OnZoomIn(InputAction.CallbackContext context);
-        void OnTouch(InputAction.CallbackContext context);
+        void OnTouch0Position(InputAction.CallbackContext context);
+        void OnTouch1Position(InputAction.CallbackContext context);
+        void OnTouch1Contact(InputAction.CallbackContext context);
     }
     public interface IUIActions
     {

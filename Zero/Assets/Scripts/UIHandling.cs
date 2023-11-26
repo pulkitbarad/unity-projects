@@ -3,18 +3,19 @@ using System.Collections;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Controls;
 
 public class UIHandling : MonoBehaviour
 {
 
-    private bool _isZoomInButtonDown = false;
-    private bool _isZoomOutButtonDown = false;
     private MainActions _mainActions;
     private InputAction _zoomInAction;
     private InputAction _zoomOutAction;
     private InputAction _moveAction;
     private InputAction _lookAction;
-    private InputAction _touchAction;
+    private InputAction _touch0Action;
+    private InputAction _touch1Action;
+    private InputAction _touch1ContactAction;
 
     void Awake()
     {
@@ -27,23 +28,43 @@ public class UIHandling : MonoBehaviour
         _lookAction = _mainActions.Player.Look;
         _zoomOutAction = _mainActions.Player.ZoomOut;
         _zoomInAction = _mainActions.Player.ZoomIn;
-        _touchAction = _mainActions.Player.Touch;
+        _touch0Action = _mainActions.Player.Touch0Position;
+        _touch1Action = _mainActions.Player.Touch1Position;
+        _touch1ContactAction = _mainActions.Player.Touch1Contact;
+        _mainActions.Player.Touch1Contact.started += OnMultiTouchStart;
+        _mainActions.Player.Touch1Contact.canceled += OnMultiTouchEnd;
 
         _zoomOutAction.Enable();
         _zoomInAction.Enable();
         _moveAction.Enable();
         _lookAction.Enable();
-        _touchAction.Enable();
+        _touch0Action.Enable();
+        _touch1Action.Enable();
+        _touch1ContactAction.Enable();
     }
 
     void Update()
     {
 
-        if (_touchAction.phase != InputActionPhase.Waiting)
+        if (_touch1ContactAction.phase == InputActionPhase.Performed)
         {
-            Debug.Log("touch phase=" + _touchAction.phase);
-
+            Vector2 currentTouch0 = _touch0Action.ReadValue<Vector2>();
+            Vector2 currentTouch1 = _touch1Action.ReadValue<Vector2>();
+            CommonController.CameraMovement.TiltCamera(currentTouch0, currentTouch1);
         }
+        // if (_touch1ContactAction.phase == InputActionPhase.Started)
+        // {
+        //     startTouch0 = _touch0Action.ReadValue<Vector2>();
+        //     startTouch1 = _touch1Action.ReadValue<Vector2>();
+        //     Debug.Log("multi touch startTouch0=" + startTouch0);
+        //     Debug.Log("multi touch startTouch1=" + startTouch1);
+
+        // }
+        // if (_touch1ContactAction.phase == InputActionPhase.Canceled)
+        // {
+        //     Debug.Log("multi touch end=");
+
+        // }
 
         if (_zoomOutAction.phase == InputActionPhase.Performed)
         {
@@ -76,6 +97,19 @@ public class UIHandling : MonoBehaviour
         //         // CommonController.CameraMovement.HandleTouchZoomAndTilt();
         //     }
         // }
+    }
+
+    private void OnMultiTouchStart(InputAction.CallbackContext context)
+    {
+        Debug.Log("Started");
+        CommonController.StartTouch0 = _touch0Action.ReadValue<Vector2>();
+        CommonController.StartTouch1 = _touch1Action.ReadValue<Vector2>();
+    }
+    private void OnMultiTouchEnd(InputAction.CallbackContext context)
+    {
+        Debug.Log("Cancelled");
+        CommonController.StartTouch0 = Vector2.zero;
+        CommonController.StartTouch1 = Vector2.zero;
     }
 
 

@@ -9,8 +9,7 @@ public class CommonConfiguration : MonoBehaviour
     [SerializeField] private float MainCameraZoomSpeed = 100f;
     [SerializeField] private float MainCameraZoomSpeedTouch = 100f;
     [SerializeField] private float MainCameraRotationSpeed = 1f;
-    [SerializeField] private float MainCameraTiltSpeed = 2f;
-    [SerializeField] private float MainCameraTiltSpeedTouch = 10f;
+    [SerializeField] private float MainCameraTiltSpeed = 1f;
     [SerializeField] private float MainCameraPinchDistanceThreshold = 50f;
     [SerializeField] private float MainCameraRotateAngleThreshold = 10f;
     [SerializeField] private GameObject StartControlObject;
@@ -37,7 +36,6 @@ public class CommonConfiguration : MonoBehaviour
         CommonController.MainCameraZoomSpeedTouch = MainCameraZoomSpeedTouch;
         CommonController.MainCameraRotationSpeed = MainCameraRotationSpeed;
         CommonController.MainCameraTiltSpeed = MainCameraTiltSpeed;
-        CommonController.MainCameraTiltSpeedTouch = MainCameraTiltSpeedTouch;
         CommonController.MainCameraPinchDistanceThreshold = MainCameraPinchDistanceThreshold;
         CommonController.MainCameraRotateAngleThreshold = MainCameraRotateAngleThreshold;
         CommonController.StartControlObject = StartControlObject;

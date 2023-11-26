@@ -20,6 +20,8 @@ public class CommonController : MonoBehaviour
     // public static bool IsSingleTouchConsumed = false;
     // public static bool IsDoubleTouchLocked = false;
     public static bool IsRoadMenuActive = false;
+    public static Vector2 StartTouch0 = Vector2.zero;
+    public static Vector2 StartTouch1 = Vector2.zero;
     private static List<GameObject> _lineObjectPool = new();
     private static int _lineObjectPoolCount;
     public static float MainCameraMoveSpeed;
@@ -374,6 +376,41 @@ public class CommonController : MonoBehaviour
         {
             float targetHorizontalAngle = CommonController.MainCameraHolder.transform.eulerAngles.x;
             targetHorizontalAngle += magnitude;
+
+            if (targetHorizontalAngle > 90)
+                targetHorizontalAngle = 90;
+            else if (targetHorizontalAngle < 0)
+                targetHorizontalAngle = 0;
+
+            CommonController.MainCameraHolder.transform.eulerAngles =
+                new Vector3(targetHorizontalAngle,
+                    CommonController.MainCameraHolder.transform.eulerAngles.y,
+                    CommonController.MainCameraHolder.transform.eulerAngles.z
+                    );
+
+        }
+
+        public static void TiltCamera(Vector2 currentTouch0, Vector2 currentTouch1)
+        {
+            var touch0Delta = currentTouch0 - CommonController.StartTouch0;
+            var touch1Delta = currentTouch1 - CommonController.StartTouch1;
+
+            float targetHorizontalAngle = CommonController.MainCameraHolder.transform.eulerAngles.x;
+            var maxDeltaMagnitude = Math.Abs(Math.Max(touch0Delta.magnitude, touch1Delta.magnitude));
+            if (maxDeltaMagnitude < 0)
+                return;
+            var delta0VerticalAngle = Vector2.Angle(touch0Delta, Vector2.up);
+            var delta1VerticalAngle = Vector2.Angle(touch1Delta, Vector2.up);
+            Debug.Log("delta0VerticalAngle="+delta0VerticalAngle);
+            Debug.Log("delta1VerticalAngle="+delta1VerticalAngle);
+            Debug.Log("maxDeltaMagnitude="+maxDeltaMagnitude);
+            if (CommonController.CameraMovement.AreBothGesturesVertical(delta0VerticalAngle, delta1VerticalAngle))
+            {
+                if (delta0VerticalAngle > 90 || delta1VerticalAngle > 90)
+                    targetHorizontalAngle += Math.Abs(maxDeltaMagnitude) / 100 * CommonController.MainCameraTiltSpeed;
+                else
+                    targetHorizontalAngle -= Math.Abs(maxDeltaMagnitude) / 100 * CommonController.MainCameraTiltSpeed;
+            }
 
             if (targetHorizontalAngle > 90)
                 targetHorizontalAngle = 90;
