@@ -14,6 +14,7 @@ public class UIHandling : MonoBehaviour
     private InputAction _zoomOutAction;
     private InputAction _moveAction;
     private InputAction _lookAction;
+    private InputAction _touchAction;
 
     void Awake()
     {
@@ -26,25 +27,31 @@ public class UIHandling : MonoBehaviour
         _lookAction = _mainActions.Player.Look;
         _zoomOutAction = _mainActions.Player.ZoomOut;
         _zoomInAction = _mainActions.Player.ZoomIn;
+        _touchAction = _mainActions.Player.Touch;
 
         _zoomOutAction.Enable();
         _zoomInAction.Enable();
         _moveAction.Enable();
         _lookAction.Enable();
+        _touchAction.Enable();
     }
 
     void Update()
     {
 
-        if (_zoomOutAction.phase != InputActionPhase.Waiting)
-            Debug.Log("_zoomOutAction= " + _zoomOutAction.phase);
+        if (_touchAction.phase != InputActionPhase.Waiting)
+        {
+            Debug.Log("touch phase=" + _touchAction.phase);
+
+        }
+
         if (_zoomOutAction.phase == InputActionPhase.Performed)
         {
-            CommonController.CameraMovement.ZoomCamera(-100f);
+            CommonController.CameraMovement.TiltCamera(-1f);
         }
         if (_zoomInAction.phase == InputActionPhase.Performed)
         {
-            CommonController.CameraMovement.ZoomCamera(100f);
+            CommonController.CameraMovement.TiltCamera(1f);
         }
         if (_moveAction.phase == InputActionPhase.Started)
         {
@@ -52,12 +59,10 @@ public class UIHandling : MonoBehaviour
         }
         if (_lookAction.phase == InputActionPhase.Started)
         {
-            CommonController.CameraMovement.TiltCamera(_lookAction.ReadValue<Vector2>().y);
-            CommonController.CameraMovement.RotateCamera(_lookAction.ReadValue<Vector2>().x);
+            // CommonController.CameraMovement.TiltCamera(_lookAction.ReadValue<Vector2>().y);
+            CommonController.CameraMovement.ZoomCamera(_lookAction.ReadValue<Vector2>().y * 100f);
+            CommonController.CameraMovement.RotateCamera(-1f * _lookAction.ReadValue<Vector2>().x);
         }
-        // if (_zoomOutAction.triggered)
-        //     Debug.Log("test");
-
         // HandleButtonEvents();
         // if (CommonController.IsTouchOverNonUI())
         // {

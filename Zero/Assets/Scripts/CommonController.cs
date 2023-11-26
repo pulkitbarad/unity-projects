@@ -357,17 +357,15 @@ public class CommonController : MonoBehaviour
 
         public static void MoveCamera(Vector2 direction)
         {
-            Debug.Log("moving screen=");
-            Vector3 currentCameraPosition = CommonController.MainCameraRoot.transform.position;
-            Vector3 targetDirection = new(direction.x, 0, direction.y);
-            Vector3 targetCameraPosition =
-                (targetDirection
-                    * CommonController.MainCameraMoveSpeed)
-                + currentCameraPosition;
+            Transform cameraRootTransform = CommonController.MainCameraRoot.transform;
+            Vector3 right = cameraRootTransform.right * direction.x;
+            Vector3 forward = cameraRootTransform.forward * direction.y;
+            var input = (forward + right).normalized;
 
+            Vector3 targetCameraPosition = cameraRootTransform.position + input * CommonController.MainCameraMoveSpeed;
             CommonController.MainCameraRoot.transform.position
                 = Vector3.Lerp(
-                    a: currentCameraPosition,
+                    a: cameraRootTransform.position,
                     b: targetCameraPosition,
                     t: Time.deltaTime * 100 * CommonController.MainCameraSmoothing);
         }
@@ -395,14 +393,13 @@ public class CommonController : MonoBehaviour
             var currentVerticalAngle = CommonController.MainCameraRoot.transform.eulerAngles.y;
             var targetVerticalAngle = currentVerticalAngle;
             targetVerticalAngle += magnitude * CommonController.MainCameraRotationSpeed;
-            //currentVerticalAngle = Mathf.Lerp(currentVerticalAngle, targetVerticalAngle, Time.deltaTime * CommonController.MainCameraSmoothing);
-            //CommonController.MainCameraHolder.transform.rotation = Quaternion.AngleAxis(currentVerticalAngle, Vector3.up);
+            // currentVerticalAngle = Mathf.Lerp(currentVerticalAngle, targetVerticalAngle, Time.deltaTime * CommonController.MainCameraSmoothing);
+            // CommonController.MainCameraHolder.transform.rotation = Quaternion.AngleAxis(currentVerticalAngle, Vector3.up);
             CommonController.MainCameraRoot.transform.eulerAngles =
                 new Vector3(CommonController.MainCameraRoot.transform.eulerAngles.x,
                     targetVerticalAngle,
                     CommonController.MainCameraRoot.transform.eulerAngles.z
                     );
-
         }
 
         public static void ZoomCamera(float magnitude)
@@ -430,7 +427,6 @@ public class CommonController : MonoBehaviour
                         b: targetPosition,
                         t: Time.deltaTime * CommonController.MainCameraSmoothing);
             }
-            //CommonController.MainCameraHolder.transform.localPosition = targetPosition;
         }
 
         // public static void HandleTouchZoomAndTilt()
