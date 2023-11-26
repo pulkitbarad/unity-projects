@@ -454,6 +454,8 @@ public class CommonController : MonoBehaviour
             Vector3 currentPosition = CommonController.MainCameraHolder.transform.localPosition;
             Vector3 targetPosition = currentPosition;
 
+            Debug.Log("Zoom magnitude="+magnitude);
+
             targetPosition += magnitude * cameraDirection;
 
             if (targetPosition.y > 3 && targetPosition.y < 3000)

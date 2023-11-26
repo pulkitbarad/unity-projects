@@ -68,11 +68,11 @@ public class UIHandling : MonoBehaviour
 
         if (_zoomOutAction.phase == InputActionPhase.Performed)
         {
-            CommonController.CameraMovement.TiltCamera(-1f);
+            CommonController.CameraMovement.ZoomCamera(-1f * CommonController.MainCameraZoomSpeed);
         }
         if (_zoomInAction.phase == InputActionPhase.Performed)
         {
-            CommonController.CameraMovement.TiltCamera(1f);
+            CommonController.CameraMovement.ZoomCamera(CommonController.MainCameraZoomSpeed);
         }
         if (_moveAction.phase == InputActionPhase.Started)
         {
@@ -81,7 +81,7 @@ public class UIHandling : MonoBehaviour
         if (_lookAction.phase == InputActionPhase.Started)
         {
             // CommonController.CameraMovement.TiltCamera(_lookAction.ReadValue<Vector2>().y);
-            CommonController.CameraMovement.ZoomCamera(_lookAction.ReadValue<Vector2>().y * 100f);
+            CommonController.CameraMovement.TiltCamera(_lookAction.ReadValue<Vector2>().y);
             CommonController.CameraMovement.RotateCamera(-1f * _lookAction.ReadValue<Vector2>().x);
         }
         // HandleButtonEvents();
