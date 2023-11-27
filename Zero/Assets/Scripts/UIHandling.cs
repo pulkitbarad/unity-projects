@@ -19,6 +19,7 @@ public class UIHandling : MonoBehaviour
 
     void Awake()
     {
+        CommonController.CameraInitialHeight = CommonController.MainCameraHolder.transform.localPosition.y;
     }
 
     void Start()
@@ -50,21 +51,9 @@ public class UIHandling : MonoBehaviour
         {
             Vector2 currentTouch0 = _touch0Action.ReadValue<Vector2>();
             Vector2 currentTouch1 = _touch1Action.ReadValue<Vector2>();
-            CommonController.CameraMovement.TiltCamera(currentTouch0, currentTouch1);
+            // CommonController.CameraMovement.TiltCamera(currentTouch0, currentTouch1);
+            CommonController.CameraMovement.ZoomCamera(currentTouch0, currentTouch1);
         }
-        // if (_touch1ContactAction.phase == InputActionPhase.Started)
-        // {
-        //     startTouch0 = _touch0Action.ReadValue<Vector2>();
-        //     startTouch1 = _touch1Action.ReadValue<Vector2>();
-        //     Debug.Log("multi touch startTouch0=" + startTouch0);
-        //     Debug.Log("multi touch startTouch1=" + startTouch1);
-
-        // }
-        // if (_touch1ContactAction.phase == InputActionPhase.Canceled)
-        // {
-        //     Debug.Log("multi touch end=");
-
-        // }
 
         if (_zoomOutAction.phase == InputActionPhase.Performed)
         {
@@ -80,9 +69,16 @@ public class UIHandling : MonoBehaviour
         }
         if (_lookAction.phase == InputActionPhase.Started)
         {
-            // CommonController.CameraMovement.TiltCamera(_lookAction.ReadValue<Vector2>().y);
-            CommonController.CameraMovement.TiltCamera(_lookAction.ReadValue<Vector2>().y);
-            CommonController.CameraMovement.RotateCamera(-1f * _lookAction.ReadValue<Vector2>().x);
+            float verticalValue = _lookAction.ReadValue<Vector2>().y;
+            float horizontalValue = _lookAction.ReadValue<Vector2>().x;
+            if (Math.Abs(verticalValue) > 0.5)
+            {
+                CommonController.CameraMovement.TiltCamera(verticalValue);
+            }
+            if (Math.Abs(horizontalValue) > 0.5)
+            {
+                CommonController.CameraMovement.RotateCamera(-1f * _lookAction.ReadValue<Vector2>().x);
+            }
         }
         // HandleButtonEvents();
         // if (CommonController.IsTouchOverNonUI())
@@ -101,13 +97,11 @@ public class UIHandling : MonoBehaviour
 
     private void OnMultiTouchStart(InputAction.CallbackContext context)
     {
-        Debug.Log("Started");
         CommonController.StartTouch0 = _touch0Action.ReadValue<Vector2>();
         CommonController.StartTouch1 = _touch1Action.ReadValue<Vector2>();
     }
     private void OnMultiTouchEnd(InputAction.CallbackContext context)
     {
-        Debug.Log("Cancelled");
         CommonController.StartTouch0 = Vector2.zero;
         CommonController.StartTouch1 = Vector2.zero;
     }
@@ -147,12 +141,6 @@ public class UIHandling : MonoBehaviour
         //     directionFlag: false,
         //     magnitude: CommonController.MainCameraTiltSpeed,
         //     onButtonDown: CommonController.CameraMovement.TiltCamera);
-        CommonController.InvokeOnTap(
-              button: CommonController.CurvedRoadButton,
-              onButtonDown: () =>
-                {
-                    CommonController.IsRoadMenuActive = true;
-                });
 
     }
 

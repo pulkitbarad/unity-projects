@@ -10,16 +10,14 @@ public class CommonController : MonoBehaviour
 {
 
     private static List<string> _existingPoints = new();
-    private static bool _IsZoomInProgress = false;
-    private static bool _IsTiltInProgress = false;
-    private static bool _IsMoveInProgress = false;
-    private static bool _IsDragInProgress = false;
     private static string _ObjectBeingDragged = "";
+    private static bool _IsDragInProgress = false;
 
     public static bool IsDebugEnabled = false;
     // public static bool IsSingleTouchConsumed = false;
     // public static bool IsDoubleTouchLocked = false;
     public static bool IsRoadMenuActive = false;
+    public static float CameraInitialHeight = 0f;
     public static Vector2 StartTouch0 = Vector2.zero;
     public static Vector2 StartTouch1 = Vector2.zero;
     private static List<GameObject> _lineObjectPool = new();
@@ -27,12 +25,9 @@ public class CommonController : MonoBehaviour
     public static float MainCameraMoveSpeed;
     public static float MainCameraSmoothing;
     public static float MainCameraZoomSpeed;
-    public static float MainCameraZoomSpeedTouch;
     public static float MainCameraRotationSpeed;
     public static float MainCameraTiltSpeed;
-    public static float MainCameraTiltSpeedTouch;
-    public static float MainCameraPinchDistanceThreshold;
-    public static float MainCameraRotateAngleThreshold;
+    public static float MainCameraTiltAngleThreshold;
     public static GameObject StartControlObject;
     public static GameObject StartObject;
     public static GameObject EndControlObject;
@@ -40,13 +35,7 @@ public class CommonController : MonoBehaviour
     public static Camera MainCamera;
     public static GameObject MainCameraHolder;
     public static GameObject MainCameraRoot;
-    public static GameObject CurvedRoadButton;
-    public static GameObject ZoomInButton;
-    public static GameObject ZoomOutButton;
-    public static GameObject RotateClockwiseButton;
-    public static GameObject RotateAntiClockwiseButton;
-    public static GameObject TiltUpButton;
-    public static GameObject TiltDownButton;
+
 
     // Start is called before the first frame update
     void Start()
@@ -108,36 +97,34 @@ public class CommonController : MonoBehaviour
         if (Input.touchCount > 0)
         {
             var touch0 = Input.GetTouch(0);
-            if (!_IsMoveInProgress)
+
+
+            if (touch0.phase == TouchPhase.Ended)
             {
+                _IsDragInProgress = false;
+                _ObjectBeingDragged = "";
 
-                if (touch0.phase == TouchPhase.Ended)
+            }
+            else if (touch0.phase == TouchPhase.Began)
+            {
+                _IsDragInProgress = true;
+                _ObjectBeingDragged = "";
+
+            }
+
+            if (!EventSystem.current.IsPointerOverGameObject(touch0.fingerId)
+                && touch0.phase == TouchPhase.Moved
+                && touch0.deltaPosition.magnitude > 0)
+            {
+                Ray touchPointRay = MainCamera.ScreenPointToRay(touch0.position);
+                gameObject.SetActive(true);
+                if (
+                    Physics.Raycast(touchPointRay, out RaycastHit hit)
+                        && hit.transform.position == gameObject.transform.position)
                 {
-                    _IsDragInProgress = false;
-                    _ObjectBeingDragged = "";
-
-                }
-                else if (touch0.phase == TouchPhase.Began)
-                {
-                    _IsDragInProgress = true;
-                    _ObjectBeingDragged = "";
-
-                }
-
-                if (!EventSystem.current.IsPointerOverGameObject(touch0.fingerId)
-                    && touch0.phase == TouchPhase.Moved
-                    && touch0.deltaPosition.magnitude > 0)
-                {
-                    Ray touchPointRay = MainCamera.ScreenPointToRay(touch0.position);
-                    gameObject.SetActive(true);
-                    if (
-                        Physics.Raycast(touchPointRay, out RaycastHit hit)
-                            && hit.transform.position == gameObject.transform.position)
-                    {
-                        Debug.Log("hit.transform=" + hit.transform);
-                        gameObject.transform.position = CameraMovement.GetTerrainHitPoint(touch0.position);
-                        return true;
-                    }
+                    Debug.Log("hit.transform=" + hit.transform);
+                    gameObject.transform.position = CameraMovement.GetTerrainHitPoint(touch0.position);
+                    return true;
                 }
             }
         }
@@ -364,7 +351,16 @@ public class CommonController : MonoBehaviour
             Vector3 forward = cameraRootTransform.forward * direction.y;
             var input = (forward + right).normalized;
 
-            Vector3 targetCameraPosition = cameraRootTransform.position + input * CommonController.MainCameraMoveSpeed;
+
+            float moveSpeed =
+                CommonController.MainCameraMoveSpeed
+                * CommonController.MainCameraHolder.transform.localPosition.y
+                / CameraInitialHeight;
+
+            Vector3 targetCameraPosition =
+                cameraRootTransform.position + (moveSpeed * input);
+
+
             CommonController.MainCameraRoot.transform.position
                 = Vector3.Lerp(
                     a: cameraRootTransform.position,
@@ -372,71 +368,89 @@ public class CommonController : MonoBehaviour
                     t: Time.deltaTime * 100 * CommonController.MainCameraSmoothing);
         }
 
-        public static void TiltCamera(float magnitude)
-        {
-            float targetHorizontalAngle = CommonController.MainCameraHolder.transform.eulerAngles.x;
-            targetHorizontalAngle += magnitude;
-
-            if (targetHorizontalAngle > 90)
-                targetHorizontalAngle = 90;
-            else if (targetHorizontalAngle < 0)
-                targetHorizontalAngle = 0;
-
-            CommonController.MainCameraHolder.transform.eulerAngles =
-                new Vector3(targetHorizontalAngle,
-                    CommonController.MainCameraHolder.transform.eulerAngles.y,
-                    CommonController.MainCameraHolder.transform.eulerAngles.z
-                    );
-
-        }
-
         public static void TiltCamera(Vector2 currentTouch0, Vector2 currentTouch1)
         {
             var touch0Delta = currentTouch0 - CommonController.StartTouch0;
             var touch1Delta = currentTouch1 - CommonController.StartTouch1;
 
-            float targetHorizontalAngle = CommonController.MainCameraHolder.transform.eulerAngles.x;
             var maxDeltaMagnitude = Math.Abs(Math.Max(touch0Delta.magnitude, touch1Delta.magnitude));
             if (maxDeltaMagnitude < 0)
                 return;
             var delta0VerticalAngle = Vector2.Angle(touch0Delta, Vector2.up);
             var delta1VerticalAngle = Vector2.Angle(touch1Delta, Vector2.up);
-            Debug.Log("delta0VerticalAngle="+delta0VerticalAngle);
-            Debug.Log("delta1VerticalAngle="+delta1VerticalAngle);
-            Debug.Log("maxDeltaMagnitude="+maxDeltaMagnitude);
             if (CommonController.CameraMovement.AreBothGesturesVertical(delta0VerticalAngle, delta1VerticalAngle))
             {
+
                 if (delta0VerticalAngle > 90 || delta1VerticalAngle > 90)
-                    targetHorizontalAngle += Math.Abs(maxDeltaMagnitude) / 100 * CommonController.MainCameraTiltSpeed;
+                    TiltCamera(Math.Abs(maxDeltaMagnitude) / 100f);
                 else
-                    targetHorizontalAngle -= Math.Abs(maxDeltaMagnitude) / 100 * CommonController.MainCameraTiltSpeed;
+                    TiltCamera(Math.Abs(maxDeltaMagnitude) / -100f);
             }
 
-            if (targetHorizontalAngle > 90)
-                targetHorizontalAngle = 90;
-            else if (targetHorizontalAngle < 0)
-                targetHorizontalAngle = 0;
+        }
 
-            CommonController.MainCameraHolder.transform.eulerAngles =
-                new Vector3(targetHorizontalAngle,
-                    CommonController.MainCameraHolder.transform.eulerAngles.y,
-                    CommonController.MainCameraHolder.transform.eulerAngles.z
-                    );
+        public static void TiltCamera(float magnitude)
+        {
+            Transform rootTransform = CommonController.MainCameraRoot.transform;
+            float currentHorizontalAngle, targetHorizontalAngle;
+            currentHorizontalAngle = targetHorizontalAngle = rootTransform.eulerAngles.x;
 
+            targetHorizontalAngle += magnitude * CommonController.MainCameraTiltSpeed;
+            var targetEurlerAngle = Mathf.Lerp(currentHorizontalAngle, targetHorizontalAngle, Time.deltaTime * CommonController.MainCameraSmoothing);
+            rootTransform.rotation = Quaternion.AngleAxis(GetValidTiltAngle(targetEurlerAngle), rootTransform.right);
+        }
+
+        private static float GetValidTiltAngle(float targetEurlerAngle)
+        {
+            var tempAngle = targetEurlerAngle;
+            float holderLocalAngle = CommonController.MainCameraHolder.transform.localEulerAngles.x;
+            Debug.Log("targetEurlerAngle=" + targetEurlerAngle);
+            if (tempAngle > 180)
+                tempAngle -= 360;
+
+            if (tempAngle + holderLocalAngle > 90)
+                tempAngle = 90 - holderLocalAngle;
+            else if (tempAngle + holderLocalAngle < 5)
+                tempAngle = 5 - holderLocalAngle;
+
+            if (tempAngle < 0)
+                tempAngle += 360;
+            else if (tempAngle > 180)
+                tempAngle -= 360;
+
+            return tempAngle;
         }
 
         public static void RotateCamera(float magnitude)
         {
-            var currentVerticalAngle = CommonController.MainCameraRoot.transform.eulerAngles.y;
-            var targetVerticalAngle = currentVerticalAngle;
+            Transform rootTransform = CommonController.MainCameraRoot.transform;
+            float currentVerticalAngle, targetVerticalAngle;
+            currentVerticalAngle = targetVerticalAngle = rootTransform.eulerAngles.y;
             targetVerticalAngle += magnitude * CommonController.MainCameraRotationSpeed;
-            // currentVerticalAngle = Mathf.Lerp(currentVerticalAngle, targetVerticalAngle, Time.deltaTime * CommonController.MainCameraSmoothing);
-            // CommonController.MainCameraHolder.transform.rotation = Quaternion.AngleAxis(currentVerticalAngle, Vector3.up);
-            CommonController.MainCameraRoot.transform.eulerAngles =
-                new Vector3(CommonController.MainCameraRoot.transform.eulerAngles.x,
-                    targetVerticalAngle,
-                    CommonController.MainCameraRoot.transform.eulerAngles.z
-                    );
+            var targetEurlerAngle = Mathf.Lerp(currentVerticalAngle, targetVerticalAngle, Time.deltaTime * CommonController.MainCameraSmoothing);
+            rootTransform.rotation = Quaternion.AngleAxis(targetEurlerAngle, rootTransform.up);
+        }
+        public static void ZoomCamera(Vector2 currentTouch0, Vector2 currentTouch1)
+        {
+            var touch0Delta = currentTouch0 - CommonController.StartTouch0;
+            var touch1Delta = currentTouch1 - CommonController.StartTouch1;
+
+            var maxDeltaMagnitude = Math.Abs(Math.Max(touch0Delta.magnitude, touch1Delta.magnitude));
+            if (maxDeltaMagnitude < 0)
+                return;
+            var delta0VerticalAngle = Vector2.Angle(touch0Delta, Vector2.up);
+            var delta1VerticalAngle = Vector2.Angle(touch1Delta, Vector2.up);
+            if (!CommonController.CameraMovement.AreBothGesturesVertical(delta0VerticalAngle, delta1VerticalAngle))
+            {
+                if (IsTouchPinchingOut(currentTouch0, currentTouch1))
+                {
+                    ZoomCamera(maxDeltaMagnitude);
+                }
+                else
+                {
+                    ZoomCamera(-1f * maxDeltaMagnitude);
+                }
+            }
         }
 
         public static void ZoomCamera(float magnitude)
@@ -454,7 +468,6 @@ public class CommonController : MonoBehaviour
             Vector3 currentPosition = CommonController.MainCameraHolder.transform.localPosition;
             Vector3 targetPosition = currentPosition;
 
-            Debug.Log("Zoom magnitude="+magnitude);
 
             targetPosition += magnitude * cameraDirection;
 
@@ -555,17 +568,15 @@ public class CommonController : MonoBehaviour
         }
         public static bool AreBothGesturesVertical(float delta0VerticalAngle, float delta1VerticalAngle)
         {
-            return (delta0VerticalAngle < CommonController.MainCameraRotateAngleThreshold
-                    && delta1VerticalAngle < CommonController.MainCameraRotateAngleThreshold)
-                || (delta0VerticalAngle > (180 - CommonController.MainCameraRotateAngleThreshold)
-                    && delta1VerticalAngle > (180 - CommonController.MainCameraRotateAngleThreshold));
+            return (delta0VerticalAngle < CommonController.MainCameraTiltAngleThreshold
+                    && delta1VerticalAngle < CommonController.MainCameraTiltAngleThreshold)
+                || (delta0VerticalAngle > (180 - CommonController.MainCameraTiltAngleThreshold)
+                    && delta1VerticalAngle > (180 - CommonController.MainCameraTiltAngleThreshold));
         }
 
-        public static bool IsTouchPinchingOut(Touch touch0, Touch touch1)
+        public static bool IsTouchPinchingOut(Vector2 touch0, Vector2 touch1)
         {
-            Vector2 startTouch0 = (touch0.position - touch0.deltaPosition);
-            Vector2 startTouch1 = (touch1.position - touch1.deltaPosition);
-            return (startTouch0 - startTouch1).magnitude < (touch0.position - touch1.position).magnitude;
+            return (StartTouch0 - StartTouch1).magnitude < (touch0 - touch1).magnitude;
         }
         public static Vector3 GetTerrainHitPoint(Vector2 origin)
         {
