@@ -17,7 +17,7 @@ public class CommonController : MonoBehaviour
     // public static bool IsSingleTouchConsumed = false;
     // public static bool IsDoubleTouchLocked = false;
     public static bool IsRoadMenuActive = false;
-    public static float CameraInitialHeight = 0f;
+    public static float CameraInitialHeight = 1f;
     public static Vector2 StartTouch0 = Vector2.zero;
     public static Vector2 StartTouch1 = Vector2.zero;
     private static List<GameObject> _lineObjectPool = new();
@@ -33,6 +33,7 @@ public class CommonController : MonoBehaviour
     public static GameObject EndControlObject;
     public static GameObject EndObject;
     public static Camera MainCamera;
+    public static GameObject MainCameraAnchor;
     public static GameObject MainCameraHolder;
     public static GameObject MainCameraRoot;
 
@@ -346,9 +347,10 @@ public class CommonController : MonoBehaviour
 
         public static void MoveCamera(Vector2 direction)
         {
-            Transform cameraRootTransform = CommonController.MainCameraRoot.transform;
-            Vector3 right = cameraRootTransform.right * direction.x;
-            Vector3 forward = cameraRootTransform.forward * direction.y;
+            Transform rootTransform = CommonController.MainCameraRoot.transform;
+            Transform anchorTransform = CommonController.MainCameraAnchor.transform;
+            Vector3 right = anchorTransform.right * direction.x;
+            Vector3 forward = anchorTransform.forward * direction.y;
             var input = (forward + right).normalized;
 
 
@@ -358,14 +360,15 @@ public class CommonController : MonoBehaviour
                 / CameraInitialHeight;
 
             Vector3 targetCameraPosition =
-                cameraRootTransform.position + (moveSpeed * input);
+                rootTransform.position + (moveSpeed * input);
 
 
-            CommonController.MainCameraRoot.transform.position
+            rootTransform.position
                 = Vector3.Lerp(
-                    a: cameraRootTransform.position,
+                    a: rootTransform.position,
                     b: targetCameraPosition,
                     t: Time.deltaTime * 100 * CommonController.MainCameraSmoothing);
+            anchorTransform.position = rootTransform.position;
         }
 
         public static void TiltCamera(Vector2 currentTouch0, Vector2 currentTouch1)
@@ -404,7 +407,6 @@ public class CommonController : MonoBehaviour
         {
             var tempAngle = targetEurlerAngle;
             float holderLocalAngle = CommonController.MainCameraHolder.transform.localEulerAngles.x;
-            Debug.Log("targetEurlerAngle=" + targetEurlerAngle);
             if (tempAngle > 180)
                 tempAngle -= 360;
 
@@ -423,12 +425,23 @@ public class CommonController : MonoBehaviour
 
         public static void RotateCamera(float magnitude)
         {
-            Transform rootTransform = CommonController.MainCameraRoot.transform;
+            RoatateObject(CommonController.MainCameraRoot,magnitude,MainCameraRotationSpeed,MainCameraSmoothing);
+            RoatateObject(CommonController.MainCameraAnchor,magnitude,MainCameraRotationSpeed,MainCameraSmoothing);
+        }
+
+        private static void RoatateObject(GameObject gameObject, float magnitude, float rotationSpeed, float cameraSmoothing)
+        {
+            Transform objectTransform = gameObject.transform;
             float currentVerticalAngle, targetVerticalAngle;
-            currentVerticalAngle = targetVerticalAngle = rootTransform.eulerAngles.y;
-            targetVerticalAngle += magnitude * CommonController.MainCameraRotationSpeed;
-            var targetEurlerAngle = Mathf.Lerp(currentVerticalAngle, targetVerticalAngle, Time.deltaTime * CommonController.MainCameraSmoothing);
-            rootTransform.rotation = Quaternion.AngleAxis(targetEurlerAngle, rootTransform.up);
+            currentVerticalAngle = targetVerticalAngle = objectTransform.eulerAngles.y;
+            targetVerticalAngle += magnitude * rotationSpeed;
+            var targetEurlerAngle =
+                Mathf.Lerp(
+                    a: currentVerticalAngle,
+                    b: targetVerticalAngle,
+                    t: Time.deltaTime * cameraSmoothing);
+            objectTransform.rotation = Quaternion.AngleAxis(targetEurlerAngle, objectTransform.up);
+
         }
         public static void ZoomCamera(Vector2 currentTouch0, Vector2 currentTouch1)
         {

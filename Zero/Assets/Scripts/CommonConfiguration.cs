@@ -17,6 +17,7 @@ public class CommonConfiguration : MonoBehaviour
     [SerializeField] private Camera MainCamera;
     [SerializeField] private GameObject MainCameraHolder;
     [SerializeField] private GameObject MainCameraRoot;
+    [SerializeField] private GameObject MainCameraAnchor;
 
     // Start is called before the first frame update
     void Awake()
@@ -34,6 +35,7 @@ public class CommonConfiguration : MonoBehaviour
         CommonController.MainCamera = MainCamera;
         CommonController.MainCameraHolder = MainCameraHolder;
         CommonController.MainCameraRoot = MainCameraRoot;
+        CommonController.MainCameraAnchor = MainCameraAnchor;
     }
 
 }
