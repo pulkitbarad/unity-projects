@@ -349,8 +349,8 @@ public class CommonController : MonoBehaviour
         {
             Transform rootTransform = CommonController.MainCameraRoot.transform;
             Transform anchorTransform = CommonController.MainCameraAnchor.transform;
-            Vector3 right = anchorTransform.right * direction.x;
-            Vector3 forward = anchorTransform.forward * direction.y;
+            Vector3 right = rootTransform.right * direction.x;
+            Vector3 forward = rootTransform.forward * direction.y;
             var input = (forward + right).normalized;
 
 
@@ -368,7 +368,7 @@ public class CommonController : MonoBehaviour
                     a: rootTransform.position,
                     b: targetCameraPosition,
                     t: Time.deltaTime * 100 * CommonController.MainCameraSmoothing);
-            anchorTransform.position = rootTransform.position;
+            // anchorTransform.position = rootTransform.position;
         }
 
         public static void TiltCamera(Vector2 currentTouch0, Vector2 currentTouch1)
@@ -394,13 +394,19 @@ public class CommonController : MonoBehaviour
 
         public static void TiltCamera(float magnitude)
         {
-            Transform rootTransform = CommonController.MainCameraRoot.transform;
+            Transform rootTransform = CommonController.MainCameraAnchor.transform;
             float currentHorizontalAngle, targetHorizontalAngle;
             currentHorizontalAngle = targetHorizontalAngle = rootTransform.eulerAngles.x;
 
             targetHorizontalAngle += magnitude * CommonController.MainCameraTiltSpeed;
-            var targetEurlerAngle = Mathf.Lerp(currentHorizontalAngle, targetHorizontalAngle, Time.deltaTime * CommonController.MainCameraSmoothing);
-            rootTransform.rotation = Quaternion.AngleAxis(GetValidTiltAngle(targetEurlerAngle), rootTransform.right);
+            // var targetEurlerAngle = Mathf.Lerp(currentHorizontalAngle, targetHorizontalAngle, Time.deltaTime * CommonController.MainCameraSmoothing);
+            // rootTransform.rotation = Quaternion.AngleAxis(GetValidTiltAngle(targetEurlerAngle), rootTransform.right);
+            rootTransform.eulerAngles = 
+            new Vector3(
+                GetValidTiltAngle(targetHorizontalAngle),
+                rootTransform.eulerAngles.y,
+                rootTransform.eulerAngles.z
+            );
         }
 
         private static float GetValidTiltAngle(float targetEurlerAngle)
@@ -410,23 +416,26 @@ public class CommonController : MonoBehaviour
             if (tempAngle > 180)
                 tempAngle -= 360;
 
-            if (tempAngle + holderLocalAngle > 90)
-                tempAngle = 90 - holderLocalAngle;
-            else if (tempAngle + holderLocalAngle < 5)
-                tempAngle = 5 - holderLocalAngle;
+            if (tempAngle + holderLocalAngle > 80)
+                tempAngle = 80 - holderLocalAngle;
+            else if (tempAngle + holderLocalAngle < 25)
+                tempAngle = 25 - holderLocalAngle;
 
             if (tempAngle < 0)
                 tempAngle += 360;
             else if (tempAngle > 180)
                 tempAngle -= 360;
 
+            Debug.Log("targetEurlerAngle=" + targetEurlerAngle);
+            Debug.Log("tempAngle=" + tempAngle);
+
             return tempAngle;
         }
 
         public static void RotateCamera(float magnitude)
         {
-            RoatateObject(CommonController.MainCameraRoot,magnitude,MainCameraRotationSpeed,MainCameraSmoothing);
-            RoatateObject(CommonController.MainCameraAnchor,magnitude,MainCameraRotationSpeed,MainCameraSmoothing);
+            RoatateObject(CommonController.MainCameraRoot, magnitude, MainCameraRotationSpeed, MainCameraSmoothing);
+            // RoatateObject(CommonController.MainCameraAnchor, magnitude, MainCameraRotationSpeed, MainCameraSmoothing);
         }
 
         private static void RoatateObject(GameObject gameObject, float magnitude, float rotationSpeed, float cameraSmoothing)
@@ -470,7 +479,7 @@ public class CommonController : MonoBehaviour
         {
             Vector3 cameraDirection =
                 CommonController
-                .MainCameraRoot
+                .MainCameraAnchor
                 .transform
                 .InverseTransformDirection(
                     CommonController
@@ -480,11 +489,12 @@ public class CommonController : MonoBehaviour
 
             Vector3 currentPosition = CommonController.MainCameraHolder.transform.localPosition;
             Vector3 targetPosition = currentPosition;
+            Transform holder = CommonController.MainCamera.transform;
 
 
             targetPosition += magnitude * cameraDirection;
 
-            if (targetPosition.y > 3 && targetPosition.y < 3000)
+            if (targetPosition.y > 3 && targetPosition.y < 1000)
             {
                 CommonController.MainCameraHolder.transform.localPosition =
                     Vector3.Lerp(
