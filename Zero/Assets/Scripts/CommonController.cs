@@ -5,6 +5,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.UIElements;
 using System;
 using UnityEngine.SocialPlatforms;
+using UnityEngine.AI;
 
 public class CommonController : MonoBehaviour
 {
@@ -401,7 +402,7 @@ public class CommonController : MonoBehaviour
             targetHorizontalAngle += magnitude * CommonController.MainCameraTiltSpeed;
             // var targetEurlerAngle = Mathf.Lerp(currentHorizontalAngle, targetHorizontalAngle, Time.deltaTime * CommonController.MainCameraSmoothing);
             // rootTransform.rotation = Quaternion.AngleAxis(GetValidTiltAngle(targetEurlerAngle), rootTransform.right);
-            rootTransform.eulerAngles = 
+            rootTransform.eulerAngles =
             new Vector3(
                 GetValidTiltAngle(targetHorizontalAngle),
                 rootTransform.eulerAngles.y,
@@ -425,9 +426,6 @@ public class CommonController : MonoBehaviour
                 tempAngle += 360;
             else if (tempAngle > 180)
                 tempAngle -= 360;
-
-            Debug.Log("targetEurlerAngle=" + targetEurlerAngle);
-            Debug.Log("tempAngle=" + tempAngle);
 
             return tempAngle;
         }
@@ -465,13 +463,9 @@ public class CommonController : MonoBehaviour
             if (!CommonController.CameraMovement.AreBothGesturesVertical(delta0VerticalAngle, delta1VerticalAngle))
             {
                 if (IsTouchPinchingOut(currentTouch0, currentTouch1))
-                {
                     ZoomCamera(maxDeltaMagnitude);
-                }
                 else
-                {
                     ZoomCamera(-1f * maxDeltaMagnitude);
-                }
             }
         }
 
@@ -489,19 +483,22 @@ public class CommonController : MonoBehaviour
 
             Vector3 currentPosition = CommonController.MainCameraHolder.transform.localPosition;
             Vector3 targetPosition = currentPosition;
-            Transform holder = CommonController.MainCamera.transform;
 
+            targetPosition = currentPosition + magnitude * cameraDirection;
 
-            targetPosition += magnitude * cameraDirection;
+            float tiltAngle = Vector3.Angle(cameraDirection, Vector3.down);
+            if (targetPosition.y < 30)
+                magnitude = (currentPosition.y - 30) / MathF.Cos(tiltAngle * MathF.PI / 180F);
+            else if (targetPosition.y > 1000)
+                magnitude = (1000 - currentPosition.y) / MathF.Cos(tiltAngle * MathF.PI / 180F);
 
-            if (targetPosition.y > 3 && targetPosition.y < 1000)
-            {
-                CommonController.MainCameraHolder.transform.localPosition =
-                    Vector3.Lerp(
-                        a: currentPosition,
-                        b: targetPosition,
-                        t: Time.deltaTime * CommonController.MainCameraSmoothing);
-            }
+            targetPosition = currentPosition + magnitude * cameraDirection;
+
+            CommonController.MainCameraHolder.transform.localPosition =
+                Vector3.Lerp(
+                    a: currentPosition,
+                    b: targetPosition,
+                    t: Time.deltaTime * CommonController.MainCameraSmoothing);
         }
 
         // public static void HandleTouchZoomAndTilt()
