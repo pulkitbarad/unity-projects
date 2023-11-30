@@ -15,7 +15,8 @@ public class UIHandling : MonoBehaviour
     private InputAction _lookAction;
     private InputAction _touch0Action;
     private InputAction _touch1Action;
-    private InputAction _touch1ContactAction;
+    private InputAction _singleTouchAction;
+    private InputAction _doubleTouchAction;
 
     void Awake()
     {
@@ -31,9 +32,14 @@ public class UIHandling : MonoBehaviour
         _zoomInAction = _mainActions.Player.ZoomIn;
         _touch0Action = _mainActions.Player.Touch0Position;
         _touch1Action = _mainActions.Player.Touch1Position;
-        _touch1ContactAction = _mainActions.Player.Touch1Contact;
-        _mainActions.Player.Touch1Contact.started += OnMultiTouchStart;
-        _mainActions.Player.Touch1Contact.canceled += OnMultiTouchEnd;
+        _singleTouchAction = _mainActions.Player.SingleTouchContact;
+        _doubleTouchAction = _mainActions.Player.DoubleTouchContact;
+        _mainActions.Player.DoubleTouchContact.started += OnTouch0Start;
+        _mainActions.Player.DoubleTouchContact.started += OnTouch1Start;
+        _mainActions.Player.DoubleTouchContact.canceled += OnTouch0End;
+        _mainActions.Player.DoubleTouchContact.canceled += OnTouch1End;
+        _mainActions.Player.SingleTouchContact.started += OnTouch0Start;
+        _mainActions.Player.SingleTouchContact.canceled += OnTouch0End;
 
         _zoomOutAction.Enable();
         _zoomInAction.Enable();
@@ -41,19 +47,33 @@ public class UIHandling : MonoBehaviour
         _lookAction.Enable();
         _touch0Action.Enable();
         _touch1Action.Enable();
-        _touch1ContactAction.Enable();
+        _singleTouchAction.Enable();
+        _doubleTouchAction.Enable();
     }
 
     void Update()
     {
 
-        if (_touch1ContactAction.phase == InputActionPhase.Performed)
+        if (_doubleTouchAction.phase == InputActionPhase.Performed)
         {
             Vector2 currentTouch0 = _touch0Action.ReadValue<Vector2>();
             Vector2 currentTouch1 = _touch1Action.ReadValue<Vector2>();
-            // CommonController.CameraMovement.TiltCamera(currentTouch0, currentTouch1);
-            CommonController.CameraMovement.ZoomCamera(currentTouch0, currentTouch1);
+            Debug.Log("double1 touch performed="+currentTouch0);
+            Debug.Log("double2 touch performed="+currentTouch1);
         }
+        else if (_singleTouchAction.phase == InputActionPhase.Performed)
+        {
+            Vector2 currentTouch0 = _touch0Action.ReadValue<Vector2>();
+            Debug.Log("single touch performed="+currentTouch0);
+        }
+
+        // if (_doubleTouchAction.phase == InputActionPhase.Performed)
+        // {
+        //     Vector2 currentTouch0 = _touch0Action.ReadValue<Vector2>();
+        //     Vector2 currentTouch1 = _touch1Action.ReadValue<Vector2>();
+        //     // CommonController.CameraMovement.TiltCamera(currentTouch0, currentTouch1);
+        //     CommonController.CameraMovement.ZoomCamera(currentTouch0, currentTouch1);
+        // }
 
         if (_zoomOutAction.phase == InputActionPhase.Performed)
         {
@@ -95,14 +115,26 @@ public class UIHandling : MonoBehaviour
         // }
     }
 
-    private void OnMultiTouchStart(InputAction.CallbackContext context)
+
+    private void OnTouch0Start(InputAction.CallbackContext context)
     {
+        Debug.Log("Touch0 start");
         CommonController.StartTouch0 = _touch0Action.ReadValue<Vector2>();
+    }
+    private void OnTouch0End(InputAction.CallbackContext context)
+    {
+        Debug.Log("Touch0 end");
+        CommonController.StartTouch0 = Vector2.zero;
+    }
+
+    private void OnTouch1Start(InputAction.CallbackContext context)
+    {
+        Debug.Log("Touch1 start");
         CommonController.StartTouch1 = _touch1Action.ReadValue<Vector2>();
     }
-    private void OnMultiTouchEnd(InputAction.CallbackContext context)
+    private void OnTouch1End(InputAction.CallbackContext context)
     {
-        CommonController.StartTouch0 = Vector2.zero;
+        Debug.Log("Touch1 end");
         CommonController.StartTouch1 = Vector2.zero;
     }
 

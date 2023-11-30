@@ -482,7 +482,7 @@ public class CommonController : MonoBehaviour
                     .forward);
 
             Vector3 currentPosition = CommonController.MainCameraHolder.transform.localPosition;
-            Vector3 targetPosition = currentPosition;
+            Vector3 targetPosition;
 
             targetPosition = currentPosition + magnitude * cameraDirection;
 
