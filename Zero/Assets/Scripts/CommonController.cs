@@ -46,91 +46,59 @@ public class CommonController : MonoBehaviour
         DeactivateRoadControlPoints();
     }
 
-    public static bool IsTouchOverNonUI(bool suppressTouchEndEvent = true)
-    {
-        return
-        Input.touchCount > 0
-            && !EventSystem.current.IsPointerOverGameObject(Input.GetTouch(0).fingerId)
-            && (!suppressTouchEndEvent || Input.GetTouch(0).phase != TouchPhase.Ended);
-    }
+    // public static bool IsTouchOverNonUI(bool suppressTouchEndEvent = true)
+    // {
+    //     return !EventSystem.current.IsPointerOverGameObject( );
+    // }
 
-    public static bool HandleRoadObjectsDrag()
+    public static bool HandleRoadObjectsDrag(Vector2 touchPosition)
     {
         var areControlsActivated = false;
-        if (Input.touchCount > 0)
+
+        if (CommonController.IsRoadMenuActive)
         {
-
-            if (CommonController.IsRoadMenuActive)
+            if (CommonController.StartObject.transform.position.Equals(Vector3.zero)
+            && CommonController.EndObject.transform.position.Equals(Vector3.zero)
+            )
             {
-                var touch0 = Input.GetTouch(0);
-                if (CommonController.StartObject.transform.position.Equals(Vector3.zero)
-                && CommonController.EndObject.transform.position.Equals(Vector3.zero)
-                )
-                {
-                    Debug.Log("phase at initialization=" + touch0.phase);
-                    InitializeStartAndEndPositions();
-                    Debug.Log("Initialization complete");
-                    areControlsActivated = true;
-                }
-                else
-                {
-
-                    if (!CommonController.StartObject.transform.position.Equals(Vector3.zero))
-                    {
-                        areControlsActivated =
-                        CommonController.HandleGameObjectDrag(CommonController.StartObject)
-                        || CommonController.HandleGameObjectDrag(CommonController.StartControlObject);
-                    }
-                    if (!CommonController.EndObject.transform.position.Equals(Vector3.zero))
-                    {
-                        areControlsActivated =
-                        CommonController.HandleGameObjectDrag(CommonController.EndControlObject)
-                        || CommonController.HandleGameObjectDrag(CommonController.EndObject);
-                    }
-                }
-
+                InitializeStartAndEndPositions();
+                Debug.Log("Initialization complete");
+                areControlsActivated = true;
             }
+            else
+            {
+                if (!CommonController.StartObject.transform.position.Equals(Vector3.zero))
+                {
+                    areControlsActivated =
+                    CommonController.HandleGameObjectDrag(CommonController.StartObject, touchPosition)
+                    || CommonController.HandleGameObjectDrag(CommonController.StartControlObject, touchPosition);
+                }
+                if (!CommonController.EndObject.transform.position.Equals(Vector3.zero))
+                {
+                    areControlsActivated =
+                    CommonController.HandleGameObjectDrag(CommonController.EndControlObject, touchPosition)
+                    || CommonController.HandleGameObjectDrag(CommonController.EndObject, touchPosition);
+                }
+            }
+
         }
         return areControlsActivated;
     }
-    private static bool HandleGameObjectDrag(GameObject gameObject)
+    private static bool HandleGameObjectDrag(GameObject gameObject, Vector2 touchPosition)
     {
-
-        if (Input.touchCount > 0)
+        if (!EventSystem.current.IsPointerOverGameObject())
         {
-            var touch0 = Input.GetTouch(0);
-
-
-            if (touch0.phase == TouchPhase.Ended)
+            Ray touchPointRay = MainCamera.ScreenPointToRay(touchPosition);
+            gameObject.SetActive(true);
+            if (
+                Physics.Raycast(touchPointRay, out RaycastHit hit)
+                    && hit.transform.position == gameObject.transform.position)
             {
-                _IsDragInProgress = false;
-                _ObjectBeingDragged = "";
-
-            }
-            else if (touch0.phase == TouchPhase.Began)
-            {
-                _IsDragInProgress = true;
-                _ObjectBeingDragged = "";
-
-            }
-
-            if (!EventSystem.current.IsPointerOverGameObject(touch0.fingerId)
-                && touch0.phase == TouchPhase.Moved
-                && touch0.deltaPosition.magnitude > 0)
-            {
-                Ray touchPointRay = MainCamera.ScreenPointToRay(touch0.position);
-                gameObject.SetActive(true);
-                if (
-                    Physics.Raycast(touchPointRay, out RaycastHit hit)
-                        && hit.transform.position == gameObject.transform.position)
-                {
-                    Debug.Log("hit.transform=" + hit.transform);
-                    gameObject.transform.position = CameraMovement.GetTerrainHitPoint(touch0.position);
-                    return true;
-                }
+                Debug.Log("hit.transform=" + hit.transform);
+                gameObject.transform.position = CameraMovement.GetTerrainHitPoint(touchPosition);
+                return true;
             }
         }
-
         return false;
     }
     private static void InitializeStartAndEndPositions()

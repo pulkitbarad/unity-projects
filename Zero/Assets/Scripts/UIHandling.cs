@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
 
@@ -17,6 +18,9 @@ public class UIHandling : MonoBehaviour
     private InputAction _touch1Action;
     private InputAction _singleTouchAction;
     private InputAction _doubleTouchAction;
+    private InputAction _roadAction;
+    private InputAction _confirmAction;
+    private InputAction _cancelAction;
 
     void Awake()
     {
@@ -34,12 +38,19 @@ public class UIHandling : MonoBehaviour
         _touch1Action = _mainActions.Player.Touch1Position;
         _singleTouchAction = _mainActions.Player.SingleTouchContact;
         _doubleTouchAction = _mainActions.Player.DoubleTouchContact;
-        _mainActions.Player.DoubleTouchContact.started += OnTouch0Start;
-        _mainActions.Player.DoubleTouchContact.started += OnTouch1Start;
-        _mainActions.Player.DoubleTouchContact.canceled += OnTouch0End;
-        _mainActions.Player.DoubleTouchContact.canceled += OnTouch1End;
-        _mainActions.Player.SingleTouchContact.started += OnTouch0Start;
-        _mainActions.Player.SingleTouchContact.canceled += OnTouch0End;
+        _roadAction = _mainActions.Player.Road;
+        _confirmAction = _mainActions.Player.Confirm;
+        _cancelAction = _mainActions.Player.Cancel;
+        _doubleTouchAction.started += OnTouch0Start;
+        _doubleTouchAction.started += OnTouch1Start;
+        _doubleTouchAction.canceled += OnTouch0End;
+        _doubleTouchAction.canceled += OnTouch1End;
+        _singleTouchAction.started += OnTouch0Start;
+        _singleTouchAction.canceled += OnTouch0End;
+        _roadAction.performed += OnRoadPerformed;
+        _confirmAction.performed += OnConfirmPerformed;
+        _cancelAction.performed += OnCancelPerformed;
+
 
         _zoomOutAction.Enable();
         _zoomInAction.Enable();
@@ -49,6 +60,9 @@ public class UIHandling : MonoBehaviour
         _touch1Action.Enable();
         _singleTouchAction.Enable();
         _doubleTouchAction.Enable();
+        _roadAction.Enable();
+        _confirmAction.Enable();
+        _cancelAction.Enable();
     }
 
     void Update()
@@ -58,13 +72,21 @@ public class UIHandling : MonoBehaviour
         {
             Vector2 currentTouch0 = _touch0Action.ReadValue<Vector2>();
             Vector2 currentTouch1 = _touch1Action.ReadValue<Vector2>();
-            Debug.Log("double1 touch performed="+currentTouch0);
-            Debug.Log("double2 touch performed="+currentTouch1);
+            Debug.Log("double1 touch performed=" + currentTouch0);
+            Debug.Log("double2 touch performed=" + currentTouch1);
         }
         else if (_singleTouchAction.phase == InputActionPhase.Performed)
         {
             Vector2 currentTouch0 = _touch0Action.ReadValue<Vector2>();
-            Debug.Log("single touch performed="+currentTouch0);
+            Debug.Log("single touch performed=" + currentTouch0);
+        if (!EventSystem.current.IsPointerOverGameObject( ))
+        {
+            Debug.Log("new position="+currentTouch0);
+            if (CommonController.HandleRoadObjectsDrag(currentTouch0))
+            {
+                CommonController.RebuildRoad();
+            }
+        }
         }
 
         // if (_doubleTouchAction.phase == InputActionPhase.Performed)
@@ -113,6 +135,23 @@ public class UIHandling : MonoBehaviour
         //         // CommonController.CameraMovement.HandleTouchZoomAndTilt();
         //     }
         // }
+    }
+
+    private void OnRoadPerformed(InputAction.CallbackContext context)
+    {
+        CommonController.IsRoadMenuActive = true;
+
+    }
+
+    private void OnConfirmPerformed(InputAction.CallbackContext context)
+    {
+
+    }
+
+    private void OnCancelPerformed(InputAction.CallbackContext context)
+    {
+        CommonController.IsRoadMenuActive = false;
+
     }
 
 
