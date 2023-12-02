@@ -10,128 +10,199 @@ using UnityEngine.AI;
 public class CommonController : MonoBehaviour
 {
 
-    private static List<string> _existingPoints = new();
-    private static string _ObjectBeingDragged = "";
-    private static bool _IsDragInProgress = false;
-
-    public static bool IsDebugEnabled = false;
-    // public static bool IsSingleTouchConsumed = false;
-    // public static bool IsDoubleTouchLocked = false;
+    private static readonly List<string> _existingPoints = new();
+    public static string ObjectBeingDragged = "";
+    private static bool IsDebugEnabled = false;
     public static bool IsRoadMenuActive = false;
+    private static readonly Dictionary<string, Vector3> _InitialStaticLocalScale = new();
+
+    public static GameObject CurrentRoadCenterLine;
+
     public static float CameraInitialHeight = 1f;
     public static Vector2 StartTouch0 = Vector2.zero;
     public static Vector2 StartTouch1 = Vector2.zero;
-    private static List<GameObject> _lineObjectPool = new();
-    private static int _lineObjectPoolCount;
+    private static readonly List<GameObject> _lineObjectPool = new();
+    private static readonly int _lineObjectPoolCount;
     public static float MainCameraMoveSpeed;
     public static float MainCameraSmoothing;
     public static float MainCameraZoomSpeed;
     public static float MainCameraRotationSpeed;
     public static float MainCameraTiltSpeed;
     public static float MainCameraTiltAngleThreshold;
-    public static GameObject StartControlObject;
-    public static GameObject StartObject;
-    public static GameObject EndControlObject;
-    public static GameObject EndObject;
+    private static GameObject _StaticObjectParent;
+    private static GameObject _RoadControlObject;
+    private static GameObject _RoadStartObject;
+    private static GameObject _RoadEndObject;
     public static Camera MainCamera;
     public static GameObject MainCameraAnchor;
     public static GameObject MainCameraHolder;
     public static GameObject MainCameraRoot;
 
 
+
     // Start is called before the first frame update
     void Start()
     {
         TestRendrer.InstantiateLinePool();
+        InitializeCamera();
+        InitializeStaticObjects();
         DeactivateRoadControlPoints();
     }
 
-    // public static bool IsTouchOverNonUI(bool suppressTouchEndEvent = true)
-    // {
-    //     return !EventSystem.current.IsPointerOverGameObject( );
-    // }
+    private static void InitializeCamera()
+    {
+        Transform rootTransform = MainCameraRoot.transform;
+        rootTransform.position = new Vector3(-1033.7561f, 0, -77.6995697f);
 
-    public static bool HandleRoadObjectsDrag(Vector2 touchPosition)
+        Transform anchorTransform = MainCameraAnchor.transform;
+        anchorTransform.localPosition = Vector3.zero;
+        anchorTransform.SetParent(rootTransform);
+
+        Transform holderTransform = MainCameraHolder.transform;
+        holderTransform.localPosition = new Vector3(0, 100, -100);
+        holderTransform.eulerAngles = new Vector3(45, 0, 0);
+        holderTransform.SetParent(anchorTransform);
+
+        Transform cameraTransform = MainCamera.transform;
+        cameraTransform.localPosition = Vector3.zero;
+        cameraTransform.SetParent(holderTransform);
+
+        CameraInitialHeight = holderTransform.localPosition.y;
+    }
+
+
+    public static void InitializeStaticObjects()
+    {
+        _StaticObjectParent = new GameObject("StaticObjects");
+        _RoadStartObject = InitializeStaticObject(objectName: "RoadStart", size: 10, color: new Color(0.25f, 0.35f, 0.30f));
+        _RoadControlObject = InitializeStaticObject(objectName: "RoadStartControl", size: 10, color: new Color(0, 1, 0.20f));
+        _RoadEndObject = InitializeStaticObject(objectName: "RoadEnd", size: 10, color: new Color(0.70f, 0.45f, 0f));
+    }
+
+    public static GameObject InitializeStaticObject(string objectName, float size, Color? color)
+    {
+        GameObject gameObject = RenderCylinder(objectName: objectName, position: Vector3.zero, size: size, color: color);
+
+        gameObject.transform.SetParent(_StaticObjectParent.transform);
+        gameObject.SetActive(false);
+        _InitialStaticLocalScale.Add(gameObject.name, gameObject.transform.localScale);
+        return gameObject;
+    }
+
+    public static void DeactivateRoadControlPoints()
+    {
+        DeactivateRoadControlPoint(_RoadStartObject);
+        DeactivateRoadControlPoint(_RoadControlObject);
+        DeactivateRoadControlPoint(_RoadEndObject);
+    }
+
+    public static void DeactivateRoadControlPoint(GameObject gameObject)
+    {
+        gameObject.transform.position = Vector3.zero;
+        gameObject.SetActive(false);
+    }
+
+    private static void ScaleStaticObjects()
+    {
+        ScaleStaticObject(_RoadStartObject);
+        ScaleStaticObject(_RoadControlObject);
+        ScaleStaticObject(_RoadEndObject);
+    }
+
+    private static void ScaleStaticObject(GameObject gameObject)
+    {
+        float magnitude = MainCameraHolder.transform.localPosition.y
+                 / CameraInitialHeight;
+
+        if (_InitialStaticLocalScale.ContainsKey(gameObject.name))
+        {
+            Vector3 initialScale = _InitialStaticLocalScale[gameObject.name];
+            gameObject.transform.localScale =
+            new Vector3(
+               initialScale.x * magnitude,
+               initialScale.y,
+               initialScale.z * magnitude);
+        }
+    }
+
+    public static void HandleRoadObjectsDrag(Vector2 touchPosition)
     {
         var areControlsActivated = false;
 
-        if (CommonController.IsRoadMenuActive)
+        if (IsRoadMenuActive && !EventSystem.current.IsPointerOverGameObject())
         {
-            if (CommonController.StartObject.transform.position.Equals(Vector3.zero)
-            && CommonController.EndObject.transform.position.Equals(Vector3.zero)
-            )
+            if (!_RoadStartObject.transform.position.Equals(Vector3.zero))
             {
-                InitializeStartAndEndPositions();
-                Debug.Log("Initialization complete");
-                areControlsActivated = true;
+                areControlsActivated =
+                HandleGameObjectDrag(_RoadStartObject, touchPosition)
+                || HandleGameObjectDrag(_RoadControlObject, touchPosition);
+
             }
-            else
+            if (!_RoadEndObject.transform.position.Equals(Vector3.zero))
             {
-                if (!CommonController.StartObject.transform.position.Equals(Vector3.zero))
-                {
-                    areControlsActivated =
-                    CommonController.HandleGameObjectDrag(CommonController.StartObject, touchPosition)
-                    || CommonController.HandleGameObjectDrag(CommonController.StartControlObject, touchPosition);
-                }
-                if (!CommonController.EndObject.transform.position.Equals(Vector3.zero))
-                {
-                    areControlsActivated =
-                    CommonController.HandleGameObjectDrag(CommonController.EndControlObject, touchPosition)
-                    || CommonController.HandleGameObjectDrag(CommonController.EndObject, touchPosition);
-                }
+                areControlsActivated = areControlsActivated
+                || HandleGameObjectDrag(_RoadEndObject, touchPosition);
             }
 
+            if (areControlsActivated)
+            {
+                RebuildRoad();
+            }
         }
-        return areControlsActivated;
     }
     private static bool HandleGameObjectDrag(GameObject gameObject, Vector2 touchPosition)
     {
-        if (!EventSystem.current.IsPointerOverGameObject())
+        if (!EventSystem.current.IsPointerOverGameObject() || ObjectBeingDragged.Length > 0)
         {
             Ray touchPointRay = MainCamera.ScreenPointToRay(touchPosition);
             gameObject.SetActive(true);
             if (
-                Physics.Raycast(touchPointRay, out RaycastHit hit)
-                    && hit.transform.position == gameObject.transform.position)
+                (ObjectBeingDragged.Length > 0 && ObjectBeingDragged.Equals(gameObject.name))
+                || (Physics.Raycast(touchPointRay, out RaycastHit hit)
+                && hit.transform == gameObject.transform))
             {
-                Debug.Log("hit.transform=" + hit.transform);
                 gameObject.transform.position = CameraMovement.GetTerrainHitPoint(touchPosition);
+                ObjectBeingDragged = gameObject.name;
                 return true;
             }
+            Physics.Raycast(touchPointRay, out RaycastHit hit2);
         }
         return false;
     }
-    private static void InitializeStartAndEndPositions()
+    public static void InitializeStartAndEndPositions()
     {
         Vector3 startObjectPosition, endObjectPosition;
-        startObjectPosition = CommonController.CameraMovement.GetTerrainHitPoint(Input.GetTouch(0).position);
-        CommonController.StartObject.transform.position = endObjectPosition = startObjectPosition;
-        endObjectPosition.z += 200f;
-        CommonController.EndObject.transform.position = endObjectPosition;
-        CommonController.StartObject.SetActive(true);
-        CommonController.EndObject.SetActive(true);
+        startObjectPosition = CameraMovement.GetTerrainHitPoint(GetScreenCenterPoint());
+        _RoadStartObject.transform.position = endObjectPosition = startObjectPosition;
+        endObjectPosition += 200f * MainCameraRoot.transform.right;
+        _RoadEndObject.transform.position = endObjectPosition;
+        _RoadStartObject.SetActive(true);
+        _RoadEndObject.SetActive(true);
+        _RoadControlObject.SetActive(true);
+        IsRoadMenuActive = true;
+        RebuildRoad();
     }
 
     public static void RebuildRoad()
     {
 
-        // CommonController.CurvedLine.FindBazierLinePoints(
-        //     startObject: CommonController.StartObject,
-        //     endObject: CommonController.EndObject,
-        //     vertexCount: 10,
-        //     startControlObject: CommonController.StartControlObject,
-        //     endControlObject: CommonController.EndControlObject,
-        //     bazierLinePoints: out List<Vector3> bazierLinePoints);
+        CurvedLine.FindBazierLinePoints(
+             roadStartObject: _RoadStartObject,
+              roadEndObject: _RoadEndObject,
+            vertexCount: 50,
+              roadControlObject: _RoadControlObject,
+            bazierLinePoints: out List<Vector3> bazierLinePoints);
 
-        // CommonController.IsDebugEnabled = false;
-        // CommonController.TestRendrer.RenderLine(
-        //     name: "Road_center",
-        //     color: Color.blue,
-        //     width: 10,
-        //     pointSize: 20,
-        //     linePoints: bazierLinePoints.ToArray());
+        IsDebugEnabled = false;
+        CurrentRoadCenterLine = TestRendrer.RenderLine(
+            name: "Road_center",
+            color: Color.yellow,
+            // color: new Color(0f, 1f, 0.82f),
+            width: 10,
+            pointSize: 20,
+            linePoints: bazierLinePoints.ToArray());
 
-        // CommonController.IsDebugEnabled = false;
+        IsDebugEnabled = false;
     }
 
 
@@ -140,69 +211,8 @@ public class CommonController : MonoBehaviour
         return new Vector2(Screen.width / 2, Screen.height / 2);
     }
 
-    public static void InvokeOnTapHold(
-        GameObject button,
-        bool directionFlag,
-        float magnitude,
-        Action<bool, float> onButtonDown)
-    {
-        if (Input.touchCount > 0
-                && EventSystem.current.IsPointerOverGameObject(Input.GetTouch(0).fingerId)
-                //&& Input.GetTouch(0).phase == TouchPhase.Stationary
-                )
-        {
-            PointerEventData eventData = new(EventSystem.current)
-            {
-                position = Input.GetTouch(0).position
-            };
-            List<RaycastResult> results = new();
-            EventSystem.current.RaycastAll(eventData, results);
-            if (results.First().gameObject.name.Equals(button.name))
-            {
-                onButtonDown(directionFlag, magnitude);
-            }
-        }
-    }
-
-    public static void InvokeOnTap(
-        GameObject button,
-        Action onButtonDown)
-    {
-        if (Input.touchCount > 0
-                && EventSystem.current.IsPointerOverGameObject(Input.GetTouch(0).fingerId)
-                //&& Input.GetTouch(0).phase == TouchPhase.Stationary
-                )
-        {
-            PointerEventData eventData = new(EventSystem.current)
-            {
-                position = Input.GetTouch(0).position
-            };
-            List<RaycastResult> results = new();
-            EventSystem.current.RaycastAll(eventData, results);
-            if (results.First().gameObject.name.Equals(button.name))
-            {
-                onButtonDown();
-            }
-        }
-    }
-
-
-    public static void DeactivateRoadControlPoints()
-    {
-        StartObject.transform.position = Vector3.zero;
-        StartControlObject.transform.position = Vector3.zero;
-        EndControlObject.transform.position = Vector3.zero;
-        EndObject.transform.position = Vector3.zero;
-
-        StartObject.SetActive(false);
-        StartControlObject.SetActive(false);
-        EndControlObject.SetActive(false);
-        EndObject.SetActive(false);
-    }
-
     public static class TestRendrer
     {
-
         public static void InstantiateLinePool()
         {
 
@@ -216,7 +226,6 @@ public class CommonController : MonoBehaviour
 
         public static void ReleaseLineObjectToPool(string name)
         {
-
             for (int i = 0; i < _lineObjectPoolCount; i++)
             {
                 var lineObject = _lineObjectPool[i];
@@ -233,7 +242,6 @@ public class CommonController : MonoBehaviour
             Color color,
             float width = 10f)
         {
-
             GameObject lineObject = GameObject.Find(name);
 
             if (lineObject == null)
@@ -255,7 +263,7 @@ public class CommonController : MonoBehaviour
                 }
                 LineRenderer primaryLineRenderer =
                     lineObject.AddComponent(typeof(LineRenderer)) as LineRenderer;
-                Material materialNeonLight = Resources.Load("NearestSphere") as Material;
+                Material materialNeonLight = Resources.Load("LineMaterial") as Material;
                 primaryLineRenderer.SetMaterials(new List<Material>() { materialNeonLight });
                 primaryLineRenderer.material.SetColor("_Color", color);
                 primaryLineRenderer.startWidth = width;
@@ -265,14 +273,13 @@ public class CommonController : MonoBehaviour
 
             return lineObject;
         }
-        public static void RenderLine(
+        public static GameObject RenderLine(
             string name,
             Color color,
             float width = 10f,
             float pointSize = 20f,
             params Vector3[] linePoints)
         {
-
             GameObject lineObject =
                 GameObject.Find(name) ?? GetLineObject(name, color, width: width);
             LineRenderer lineRenderer = lineObject.GetComponent<LineRenderer>();
@@ -283,11 +290,13 @@ public class CommonController : MonoBehaviour
             {
                 for (int i = 0; i < linePoints.Length; i++)
                 {
-                    RenderPointSphere(point: linePoints[i], size: pointSize, color: Color.yellow);
+                    RenderPoint(point: linePoints[i], size: pointSize, color: Color.yellow);
                 }
             }
+            return lineObject;
         }
-        public static GameObject RenderPointSphere(
+
+        public static GameObject RenderPoint(
             Vector3 point,
             float size = 20f,
             Color? color = null)
@@ -295,12 +304,7 @@ public class CommonController : MonoBehaviour
             string sphereName = "Point_" + point[0] + "_" + point[1] + "_" + point[2];
             if (_existingPoints.FirstOrDefault(e => e.Contains(sphereName)) == null)
             {
-                GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                sphere.name = sphereName;
-                sphere.transform.localScale = new Vector3(size, size, size);
-                sphere.transform.position = point;
-                var sphereRenderer = sphere.GetComponent<Renderer>();
-                sphereRenderer.material.color = color ?? Color.yellow;
+                GameObject sphere = RenderSphere(sphereName, point, size, color);
                 _existingPoints.Add(sphereName);
                 return sphere;
             }
@@ -311,46 +315,73 @@ public class CommonController : MonoBehaviour
         }
     }
 
+    public static GameObject RenderSphere(
+        string sphereName,
+        Vector3 position,
+        float size = 20f,
+        Color? color = null)
+    {
+        GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        if (sphereName.Length > 0)
+            sphere.name = sphereName;
+        sphere.transform.localScale = new Vector3(size, size, size);
+        sphere.transform.position = position;
+        var sphereRenderer = sphere.GetComponent<Renderer>();
+        sphereRenderer.material.color = color ?? Color.yellow;
+        return sphere;
+    }
+
+    public static GameObject RenderCylinder(
+        string objectName,
+        Vector3 position,
+        float size = 20f,
+        Color? color = null)
+    {
+        GameObject cylinder = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+        if (objectName.Length > 0)
+            cylinder.name = objectName;
+        cylinder.transform.localScale = new Vector3(size, 1, size);
+        cylinder.transform.position = position;
+        var sphereRenderer = cylinder.GetComponent<Renderer>();
+        sphereRenderer.material.color = color ?? Color.yellow;
+        return cylinder;
+    }
+
     public static class CameraMovement
     {
-
         public static void MoveCamera(Vector2 direction)
         {
-            Transform rootTransform = CommonController.MainCameraRoot.transform;
-            Transform anchorTransform = CommonController.MainCameraAnchor.transform;
+            Transform rootTransform = MainCameraRoot.transform;
             Vector3 right = rootTransform.right * direction.x;
             Vector3 forward = rootTransform.forward * direction.y;
             var input = (forward + right).normalized;
 
-
             float moveSpeed =
-                CommonController.MainCameraMoveSpeed
-                * CommonController.MainCameraHolder.transform.localPosition.y
+                MainCameraMoveSpeed
+                * MainCameraHolder.transform.localPosition.y
                 / CameraInitialHeight;
 
             Vector3 targetCameraPosition =
                 rootTransform.position + (moveSpeed * input);
 
-
             rootTransform.position
                 = Vector3.Lerp(
                     a: rootTransform.position,
                     b: targetCameraPosition,
-                    t: Time.deltaTime * 100 * CommonController.MainCameraSmoothing);
-            // anchorTransform.position = rootTransform.position;
+                    t: Time.deltaTime * 100 * MainCameraSmoothing);
         }
 
         public static void TiltCamera(Vector2 currentTouch0, Vector2 currentTouch1)
         {
-            var touch0Delta = currentTouch0 - CommonController.StartTouch0;
-            var touch1Delta = currentTouch1 - CommonController.StartTouch1;
+            var touch0Delta = currentTouch0 - StartTouch0;
+            var touch1Delta = currentTouch1 - StartTouch1;
 
             var maxDeltaMagnitude = Math.Abs(Math.Max(touch0Delta.magnitude, touch1Delta.magnitude));
             if (maxDeltaMagnitude < 0)
                 return;
             var delta0VerticalAngle = Vector2.Angle(touch0Delta, Vector2.up);
             var delta1VerticalAngle = Vector2.Angle(touch1Delta, Vector2.up);
-            if (CommonController.CameraMovement.AreBothGesturesVertical(delta0VerticalAngle, delta1VerticalAngle))
+            if (AreBothGesturesVertical(delta0VerticalAngle, delta1VerticalAngle))
             {
 
                 if (delta0VerticalAngle > 90 || delta1VerticalAngle > 90)
@@ -358,16 +389,15 @@ public class CommonController : MonoBehaviour
                 else
                     TiltCamera(Math.Abs(maxDeltaMagnitude) / -100f);
             }
-
         }
 
         public static void TiltCamera(float magnitude)
         {
-            Transform rootTransform = CommonController.MainCameraAnchor.transform;
+            Transform rootTransform = MainCameraAnchor.transform;
             float currentHorizontalAngle, targetHorizontalAngle;
             currentHorizontalAngle = targetHorizontalAngle = rootTransform.eulerAngles.x;
 
-            targetHorizontalAngle += magnitude * CommonController.MainCameraTiltSpeed;
+            targetHorizontalAngle += magnitude * MainCameraTiltSpeed;
             // var targetEurlerAngle = Mathf.Lerp(currentHorizontalAngle, targetHorizontalAngle, Time.deltaTime * CommonController.MainCameraSmoothing);
             // rootTransform.rotation = Quaternion.AngleAxis(GetValidTiltAngle(targetEurlerAngle), rootTransform.right);
             rootTransform.eulerAngles =
@@ -381,7 +411,7 @@ public class CommonController : MonoBehaviour
         private static float GetValidTiltAngle(float targetEurlerAngle)
         {
             var tempAngle = targetEurlerAngle;
-            float holderLocalAngle = CommonController.MainCameraHolder.transform.localEulerAngles.x;
+            float holderLocalAngle = MainCameraHolder.transform.localEulerAngles.x;
             if (tempAngle > 180)
                 tempAngle -= 360;
 
@@ -400,7 +430,7 @@ public class CommonController : MonoBehaviour
 
         public static void RotateCamera(float magnitude)
         {
-            RoatateObject(CommonController.MainCameraRoot, magnitude, MainCameraRotationSpeed, MainCameraSmoothing);
+            RoatateObject(MainCameraRoot, magnitude, MainCameraRotationSpeed, MainCameraSmoothing);
             // RoatateObject(CommonController.MainCameraAnchor, magnitude, MainCameraRotationSpeed, MainCameraSmoothing);
         }
 
@@ -416,19 +446,19 @@ public class CommonController : MonoBehaviour
                     b: targetVerticalAngle,
                     t: Time.deltaTime * cameraSmoothing);
             objectTransform.rotation = Quaternion.AngleAxis(targetEurlerAngle, objectTransform.up);
-
         }
+
         public static void ZoomCamera(Vector2 currentTouch0, Vector2 currentTouch1)
         {
-            var touch0Delta = currentTouch0 - CommonController.StartTouch0;
-            var touch1Delta = currentTouch1 - CommonController.StartTouch1;
+            var touch0Delta = currentTouch0 - StartTouch0;
+            var touch1Delta = currentTouch1 - StartTouch1;
 
             var maxDeltaMagnitude = Math.Abs(Math.Max(touch0Delta.magnitude, touch1Delta.magnitude));
             if (maxDeltaMagnitude < 0)
                 return;
             var delta0VerticalAngle = Vector2.Angle(touch0Delta, Vector2.up);
             var delta1VerticalAngle = Vector2.Angle(touch1Delta, Vector2.up);
-            if (!CommonController.CameraMovement.AreBothGesturesVertical(delta0VerticalAngle, delta1VerticalAngle))
+            if (!AreBothGesturesVertical(delta0VerticalAngle, delta1VerticalAngle))
             {
                 if (IsTouchPinchingOut(currentTouch0, currentTouch1))
                     ZoomCamera(maxDeltaMagnitude);
@@ -440,16 +470,16 @@ public class CommonController : MonoBehaviour
         public static void ZoomCamera(float magnitude)
         {
             Vector3 cameraDirection =
-                CommonController
-                .MainCameraAnchor
+
+                MainCameraAnchor
                 .transform
                 .InverseTransformDirection(
-                    CommonController
-                    .MainCameraHolder
+
+                    MainCameraHolder
                     .transform
                     .forward);
 
-            Vector3 currentPosition = CommonController.MainCameraHolder.transform.localPosition;
+            Vector3 currentPosition = MainCameraHolder.transform.localPosition;
             Vector3 targetPosition;
 
             targetPosition = currentPosition + magnitude * cameraDirection;
@@ -462,11 +492,12 @@ public class CommonController : MonoBehaviour
 
             targetPosition = currentPosition + magnitude * cameraDirection;
 
-            CommonController.MainCameraHolder.transform.localPosition =
+            MainCameraHolder.transform.localPosition =
                 Vector3.Lerp(
                     a: currentPosition,
                     b: targetPosition,
-                    t: Time.deltaTime * CommonController.MainCameraSmoothing);
+                    t: Time.deltaTime * MainCameraSmoothing);
+            ScaleStaticObjects();
         }
 
         // public static void HandleTouchZoomAndTilt()
@@ -527,39 +558,37 @@ public class CommonController : MonoBehaviour
         //     }
         // }
 
-
-
         public static void HandleMouseZoom()
         {
             Vector3 cameraDirection =
-                CommonController
-                .MainCameraRoot
+
+                MainCameraRoot
                 .transform
                 .InverseTransformDirection(
-                    CommonController
-                    .MainCameraHolder
+
+                    MainCameraHolder
                     .transform
                     .forward);
 
             float _input = Input.GetAxisRaw("Mouse ScrollWheel");
-            var currentPosition = CommonController.MainCameraHolder.transform.localPosition;
+            var currentPosition = MainCameraHolder.transform.localPosition;
             Vector3 targetPosition =
                 currentPosition
                 + (cameraDirection
-                    * _input * CommonController.MainCameraZoomSpeed);
+                    * _input * MainCameraZoomSpeed);
             // if (IsInBounds(nextTargetPosition)) _targetPosition = nextTargetPosition;
-            CommonController.MainCameraHolder.transform.localPosition
+            MainCameraHolder.transform.localPosition
                 = Vector3.Lerp(
-                    CommonController.MainCameraHolder.transform.localPosition,
+                    MainCameraHolder.transform.localPosition,
                     targetPosition,
-                    Time.deltaTime * CommonController.MainCameraSmoothing);
+                    Time.deltaTime * MainCameraSmoothing);
         }
         public static bool AreBothGesturesVertical(float delta0VerticalAngle, float delta1VerticalAngle)
         {
-            return (delta0VerticalAngle < CommonController.MainCameraTiltAngleThreshold
-                    && delta1VerticalAngle < CommonController.MainCameraTiltAngleThreshold)
-                || (delta0VerticalAngle > (180 - CommonController.MainCameraTiltAngleThreshold)
-                    && delta1VerticalAngle > (180 - CommonController.MainCameraTiltAngleThreshold));
+            return (delta0VerticalAngle < MainCameraTiltAngleThreshold
+                    && delta1VerticalAngle < MainCameraTiltAngleThreshold)
+                || (delta0VerticalAngle > (180 - MainCameraTiltAngleThreshold)
+                    && delta1VerticalAngle > (180 - MainCameraTiltAngleThreshold));
         }
 
         public static bool IsTouchPinchingOut(Vector2 touch0, Vector2 touch1)
@@ -569,11 +598,10 @@ public class CommonController : MonoBehaviour
         public static Vector3 GetTerrainHitPoint(Vector2 origin)
         {
             Vector3 groundPosition = Vector3.zero;
-
             if (
-                Physics.Raycast(ray: CommonController.MainCamera.ScreenPointToRay(origin),
+                Physics.Raycast(ray: MainCamera.ScreenPointToRay(origin),
                     hitInfo: out RaycastHit _rayHit,
-                    maxDistance: CommonController.MainCamera.farClipPlane,
+                    maxDistance: MainCamera.farClipPlane,
                     layerMask: LayerMask.GetMask("Ground")))
             {
                 groundPosition = _rayHit.point;
@@ -581,60 +609,75 @@ public class CommonController : MonoBehaviour
             }
             return groundPosition;
         }
-
     }
+
     public static class CurvedLine
     {
-
         public static void FindBazierLinePoints(
-            GameObject startObject,
-            GameObject endObject,
+            GameObject roadStartObject,
+            GameObject roadEndObject,
             int vertexCount,
-            GameObject startControlObject,
-            GameObject endControlObject,
+            GameObject roadControlObject,
             out List<Vector3> bazierLinePoints)
         {
-            Vector3 startPointPosition = startObject.transform.position;
-            Vector3 endPointPosition = endObject.transform.position;
+            Vector3 startPointPosition = roadStartObject.transform.position;
+            Vector3 endPointPosition = roadEndObject.transform.position;
             var startToEndDirection = endPointPosition - startPointPosition;
             var startToEndDistance = startToEndDirection.magnitude;
-            if (startControlObject.activeInHierarchy
-                && startControlObject.transform.position == Vector3.zero)
-            {
-                startControlObject.transform.position =
-                    0.33f * startToEndDistance * startToEndDirection.normalized;
 
-            }
-            if (endControlObject.activeInHierarchy
-                && endControlObject.transform.position == Vector3.zero)
-            {
-                endControlObject.transform.position =
-                    0.67f * startToEndDistance * startToEndDirection.normalized;
 
+            if (roadControlObject.activeInHierarchy
+                && roadControlObject.transform.position == Vector3.zero)
+            {
+                Vector3 midPointVector = 0.5f * startToEndDistance * startToEndDirection.normalized;
+                roadControlObject.transform.position =
+                    startPointPosition + Quaternion.AngleAxis(45, Vector3.up) * midPointVector;
             }
             Vector3 p0 = startPointPosition;
-            Vector3 p1 = startControlObject.transform.position;
-            Vector3 p2 = endControlObject.transform.position;
-            Vector3 p3 = endPointPosition;
+            Vector3 p1 = roadControlObject.transform.position;
+            Vector3 p2 = endPointPosition;
 
             bazierLinePoints = new List<Vector3>();
 
-            for (int s = 0; s < 1; s += 3)
+            for (int p = 0; p < vertexCount; p++)
             {
-                if (s == 0)
-                {
-                    bazierLinePoints.Add(BezierPathCalculation(p0, p1, p2, p3, 0.0f));
-                }
-
-                for (int p = 0; p < (vertexCount); p++)
-                {
-                    float t = 1.0f / (vertexCount) * p;
-                    Vector3 point = BezierPathCalculation(p0, p1, p2, p3, t);
-                    bazierLinePoints.Add(point);
-                }
+                float t = 1.0f / vertexCount * p;
+                Vector3 point = BezierPathCalculation(t, p0, p1, p2);
+                bazierLinePoints.Add(point);
             }
         }
 
+        private static Vector3 BezierPathCalculation(
+            float t,
+            params Vector3[] controlPoints
+            )
+        {
+            float tt = t * t;
+            float ttt = t * tt;
+            float u = 1.0f - t;
+            float uu = u * u;
+            float uuu = u * uu;
+            Vector3 p0 = controlPoints[0];
+            Vector3 p1 = controlPoints[1];
+            Vector3 p2 = controlPoints[2];
+
+            Vector3 B = new();
+            if (controlPoints.Count() == 3)
+            {
+                B = uu * p0;
+                B += 2.0f * u * t * p1;
+                B += tt * p2;
+            }
+            else if (controlPoints.Count() == 4)
+            {
+                Vector3 p3 = controlPoints[3];
+                B = uuu * p0;
+                B += 3.0f * uu * t * p1;
+                B += 3.0f * u * tt * p2;
+                B += ttt * p3;
+            }
+            return B;
+        }
         public static List<List<Vector3>> FindParallelLines(
             List<Vector3> curvePoints,
             int pathWidth)
@@ -669,35 +712,13 @@ public class CommonController : MonoBehaviour
             return new List<List<Vector3>>() { };
         }
 
-
-        private static Vector3 BezierPathCalculation(
-            Vector3 p0,
-            Vector3 p1,
-            Vector3 p2,
-            Vector3 p3,
-            float t)
-        {
-            float tt = t * t;
-            float ttt = t * tt;
-            float u = 1.0f - t;
-            float uu = u * u;
-            float uuu = u * uu;
-
-            Vector3 B = new Vector3();
-            B = uuu * p0;
-            B += 3.0f * uu * t * p1;
-            B += 3.0f * u * tt * p2;
-            B += ttt * p3;
-
-            return B;
-        }
         private static List<Vector3> FindPerpendicularPoints(
             Vector3 originPoint,
             Vector3 targetPoint,
             float parallelWidth)
         {
             Vector3 forwardVector = targetPoint - originPoint;
-            Vector3 upPoint = (new Vector3(originPoint[0], originPoint[1] + 3, originPoint[2]));
+            Vector3 upPoint = new Vector3(originPoint[0], originPoint[1] + 3, originPoint[2]);
             Vector3 upVector = upPoint - originPoint;
             Vector3 rightVector = Vector3.Cross(forwardVector, upVector).normalized;
             var rightPoint = originPoint + (rightVector * parallelWidth);

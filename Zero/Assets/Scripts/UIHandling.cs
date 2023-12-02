@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Linq;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -22,10 +23,6 @@ public class UIHandling : MonoBehaviour
     private InputAction _confirmAction;
     private InputAction _cancelAction;
 
-    void Awake()
-    {
-        CommonController.CameraInitialHeight = CommonController.MainCameraHolder.transform.localPosition.y;
-    }
 
     void Start()
     {
@@ -72,21 +69,11 @@ public class UIHandling : MonoBehaviour
         {
             Vector2 currentTouch0 = _touch0Action.ReadValue<Vector2>();
             Vector2 currentTouch1 = _touch1Action.ReadValue<Vector2>();
-            Debug.Log("double1 touch performed=" + currentTouch0);
-            Debug.Log("double2 touch performed=" + currentTouch1);
         }
         else if (_singleTouchAction.phase == InputActionPhase.Performed)
         {
             Vector2 currentTouch0 = _touch0Action.ReadValue<Vector2>();
-            Debug.Log("single touch performed=" + currentTouch0);
-        if (!EventSystem.current.IsPointerOverGameObject( ))
-        {
-            Debug.Log("new position="+currentTouch0);
-            if (CommonController.HandleRoadObjectsDrag(currentTouch0))
-            {
-                CommonController.RebuildRoad();
-            }
-        }
+            CommonController.HandleRoadObjectsDrag(currentTouch0);
         }
 
         // if (_doubleTouchAction.phase == InputActionPhase.Performed)
@@ -139,7 +126,8 @@ public class UIHandling : MonoBehaviour
 
     private void OnRoadPerformed(InputAction.CallbackContext context)
     {
-        CommonController.IsRoadMenuActive = true;
+        CommonController.InitializeStartAndEndPositions();
+
 
     }
 
@@ -151,29 +139,28 @@ public class UIHandling : MonoBehaviour
     private void OnCancelPerformed(InputAction.CallbackContext context)
     {
         CommonController.IsRoadMenuActive = false;
-
+        CommonController.DeactivateRoadControlPoints();
+        Destroy(CommonController.CurrentRoadCenterLine);
     }
 
 
     private void OnTouch0Start(InputAction.CallbackContext context)
     {
-        Debug.Log("Touch0 start");
         CommonController.StartTouch0 = _touch0Action.ReadValue<Vector2>();
     }
     private void OnTouch0End(InputAction.CallbackContext context)
     {
-        Debug.Log("Touch0 end");
         CommonController.StartTouch0 = Vector2.zero;
+        CommonController.ObjectBeingDragged = "";
+
     }
 
     private void OnTouch1Start(InputAction.CallbackContext context)
     {
-        Debug.Log("Touch1 start");
         CommonController.StartTouch1 = _touch1Action.ReadValue<Vector2>();
     }
     private void OnTouch1End(InputAction.CallbackContext context)
     {
-        Debug.Log("Touch1 end");
         CommonController.StartTouch1 = Vector2.zero;
     }
 

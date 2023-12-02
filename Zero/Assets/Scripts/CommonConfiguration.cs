@@ -10,14 +10,14 @@ public class CommonConfiguration : MonoBehaviour
     [SerializeField] private float MainCameraRotationSpeed = 100f;
     [SerializeField] private float MainCameraTiltSpeed = 100f;
     [SerializeField] private float MainCameraTiltAngleThreshold = 10f;
-    [SerializeField] private GameObject StartControlObject;
-    [SerializeField] private GameObject StartObject;
-    [SerializeField] private GameObject EndControlObject;
-    [SerializeField] private GameObject EndObject;
-    [SerializeField] private Camera MainCamera;
-    [SerializeField] private GameObject MainCameraHolder;
+    // [SerializeField] private GameObject StartControlObject;
+    // [SerializeField] private GameObject StartObject;
+    // [SerializeField] private GameObject EndControlObject;
+    // [SerializeField] private GameObject EndObject;
     [SerializeField] private GameObject MainCameraRoot;
     [SerializeField] private GameObject MainCameraAnchor;
+    [SerializeField] private GameObject MainCameraHolder;
+    [SerializeField] private Camera MainCamera;
 
     // Start is called before the first frame update
     void Awake()
@@ -28,10 +28,10 @@ public class CommonConfiguration : MonoBehaviour
         CommonController.MainCameraRotationSpeed = MainCameraRotationSpeed;
         CommonController.MainCameraTiltSpeed = MainCameraTiltSpeed;
         CommonController.MainCameraTiltAngleThreshold = MainCameraTiltAngleThreshold;
-        CommonController.StartControlObject = StartControlObject;
-        CommonController.StartObject = StartObject;
-        CommonController.EndControlObject = EndControlObject;
-        CommonController.EndObject = EndObject;
+        // CommonController.StartControlObject = StartControlObject;
+        // CommonController.StartObject = StartObject;
+        // CommonController.EndControlObject = EndControlObject;
+        // CommonController.EndObject = EndObject;
         CommonController.MainCamera = MainCamera;
         CommonController.MainCameraHolder = MainCameraHolder;
         CommonController.MainCameraRoot = MainCameraRoot;
