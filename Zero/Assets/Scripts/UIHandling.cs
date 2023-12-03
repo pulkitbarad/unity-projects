@@ -22,6 +22,7 @@ public class UIHandling : MonoBehaviour
     private InputAction _roadAction;
     private InputAction _confirmAction;
     private InputAction _cancelAction;
+    private static bool _isRoadMenuActive = false;
 
 
     void Start()
@@ -73,7 +74,8 @@ public class UIHandling : MonoBehaviour
         else if (_singleTouchAction.phase == InputActionPhase.Performed)
         {
             Vector2 currentTouch0 = _touch0Action.ReadValue<Vector2>();
-            CommonController.HandleRoadObjectsDrag(currentTouch0);
+            if (_isRoadMenuActive)
+                CommonController.CurrentActiveRoad.RebuildRoad(false,true, currentTouch0);
         }
 
         // if (_doubleTouchAction.phase == InputActionPhase.Performed)
@@ -109,98 +111,45 @@ public class UIHandling : MonoBehaviour
                 CommonController.CameraMovement.RotateCamera(-1f * _lookAction.ReadValue<Vector2>().x);
             }
         }
-        // HandleButtonEvents();
-        // if (CommonController.IsTouchOverNonUI())
-        // {
-        //     if (CommonController.HandleRoadObjectsDrag())
-        //     {
-        //         CommonController.RebuildRoad();
-        //     }
-        //     else
-        //     {
-        //         // CommonController.CameraMovement.MoveCamera();
-        //         // CommonController.CameraMovement.HandleTouchZoomAndTilt();
-        //     }
-        // }
     }
 
     private void OnRoadPerformed(InputAction.CallbackContext context)
     {
-        CommonController.InitializeStartAndEndPositions();
-
-
+        _isRoadMenuActive = true;
+        CommonController.StartRoadConstruction(true);
     }
 
     private void OnConfirmPerformed(InputAction.CallbackContext context)
     {
-
+        _isRoadMenuActive = false;
+        CommonController.ConfirmRoadConstruction();
     }
 
     private void OnCancelPerformed(InputAction.CallbackContext context)
     {
-        CommonController.IsRoadMenuActive = false;
-        CommonController.DeactivateRoadControlPoints();
-        Destroy(CommonController.CurrentRoadCenterLine);
+        _isRoadMenuActive = false;
+        CommonController.CancelRoadConstruction();
     }
 
 
     private void OnTouch0Start(InputAction.CallbackContext context)
     {
-        CommonController.StartTouch0 = _touch0Action.ReadValue<Vector2>();
+        CommonController.StartOfSingleTouchDrag(_touch0Action.ReadValue<Vector2>());
     }
     private void OnTouch0End(InputAction.CallbackContext context)
     {
-        CommonController.StartTouch0 = Vector2.zero;
-        CommonController.ObjectBeingDragged = "";
-
+        CommonController.EndOfSingleTouchDrag();
     }
 
     private void OnTouch1Start(InputAction.CallbackContext context)
     {
-        CommonController.StartTouch1 = _touch1Action.ReadValue<Vector2>();
+        CommonController.StartOfMultiTouchDrag(_touch0Action.ReadValue<Vector2>(), _touch1Action.ReadValue<Vector2>());
     }
     private void OnTouch1End(InputAction.CallbackContext context)
     {
-        CommonController.StartTouch1 = Vector2.zero;
+        CommonController.EndOfMultiTouchDrag();
     }
 
-
-    void HandleButtonEvents()
-    {
-        // CommonController.InvokeOnTapHold(
-        //     button: CommonController.ZoomInButton,
-        //     directionFlag: true,
-        //     magnitude: CommonController.MainCameraZoomSpeed,
-        //     onButtonDown: CommonController.CameraMovement.ZoomCamera);
-        // CommonController.InvokeOnTapHold(
-        //     button: CommonController.ZoomOutButton,
-        //     directionFlag: false,
-        //     magnitude: CommonController.MainCameraZoomSpeed,
-        //     onButtonDown: CommonController.CameraMovement.ZoomCamera);
-
-        // CommonController.InvokeOnTapHold(
-        //     button: CommonController.RotateClockwiseButton,
-        //     directionFlag: true,
-        //     magnitude: CommonController.MainCameraRotationSpeed,
-        //     onButtonDown: CommonController.CameraMovement.RotateCamera);
-        // CommonController.InvokeOnTapHold(
-        //     button: CommonController.RotateAntiClockwiseButton,
-        //     directionFlag: false,
-        //     magnitude: CommonController.MainCameraRotationSpeed,
-        //     onButtonDown: CommonController.CameraMovement.RotateCamera);
-
-        // CommonController.InvokeOnTapHold(
-        //     button: CommonController.TiltUpButton,
-        //     directionFlag: true,
-        //     magnitude: CommonController.MainCameraTiltSpeed,
-        //     onButtonDown: CommonController.CameraMovement.TiltCamera);
-        // CommonController.InvokeOnTapHold(
-        //     button: CommonController.TiltDownButton,
-        //     directionFlag: false,
-        //     magnitude: CommonController.MainCameraTiltSpeed,
-        //     onButtonDown: CommonController.CameraMovement.TiltCamera);
-
-    }
 
     private void GetControlPoints(Vector3 startGroundPosition, Vector3 endGroundPosition, out Vector3 controlPoint0, out Vector3 controlPoint1)
     {

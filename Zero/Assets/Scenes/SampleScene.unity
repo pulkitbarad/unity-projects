@@ -5313,10 +5313,10 @@ MonoBehaviour:
   MainCameraRotationSpeed: 100
   MainCameraTiltSpeed: 1
   MainCameraTiltAngleThreshold: 10
-  MainCamera: {fileID: 330585545}
-  MainCameraHolder: {fileID: 2000256590}
   MainCameraRoot: {fileID: 1835351740}
   MainCameraAnchor: {fileID: 1089637246}
+  MainCameraHolder: {fileID: 2000256590}
+  MainCamera: {fileID: 330585545}
 --- !u!114 &1458476514
 MonoBehaviour:
   m_ObjectHideFlags: 0
