@@ -10,10 +10,7 @@ public class CommonConfiguration : MonoBehaviour
     [SerializeField] private float MainCameraRotationSpeed = 100f;
     [SerializeField] private float MainCameraTiltSpeed = 100f;
     [SerializeField] private float MainCameraTiltAngleThreshold = 10f;
-    // [SerializeField] private GameObject StartControlObject;
-    // [SerializeField] private GameObject StartObject;
-    // [SerializeField] private GameObject EndControlObject;
-    // [SerializeField] private GameObject EndObject;
+   
     [SerializeField] private GameObject MainCameraRoot;
     [SerializeField] private GameObject MainCameraAnchor;
     [SerializeField] private GameObject MainCameraHolder;
@@ -22,20 +19,17 @@ public class CommonConfiguration : MonoBehaviour
     // Start is called before the first frame update
     void Awake()
     {
-        CommonController.MainCameraMoveSpeed = MainCameraMoveSpeed;
-        CommonController.MainCameraSmoothing = MainCameraSmoothing;
-        CommonController.MainCameraZoomSpeed = MainCameraZoomSpeed;
-        CommonController.MainCameraRotationSpeed = MainCameraRotationSpeed;
-        CommonController.MainCameraTiltSpeed = MainCameraTiltSpeed;
-        CommonController.MainCameraTiltAngleThreshold = MainCameraTiltAngleThreshold;
-        // CommonController.StartControlObject = StartControlObject;
-        // CommonController.StartObject = StartObject;
-        // CommonController.EndControlObject = EndControlObject;
-        // CommonController.EndObject = EndObject;
-        CommonController.MainCamera = MainCamera;
-        CommonController.MainCameraHolder = MainCameraHolder;
-        CommonController.MainCameraRoot = MainCameraRoot;
-        CommonController.MainCameraAnchor = MainCameraAnchor;
+        CameraMovement.MainCameraMoveSpeed = MainCameraMoveSpeed;
+        CameraMovement.MainCameraSmoothing = MainCameraSmoothing;
+        CameraMovement.MainCameraZoomSpeed = MainCameraZoomSpeed;
+        CameraMovement.MainCameraRotationSpeed = MainCameraRotationSpeed;
+        CameraMovement.MainCameraTiltSpeed = MainCameraTiltSpeed;
+        CameraMovement.MainCameraTiltAngleThreshold = MainCameraTiltAngleThreshold;
+      
+        CameraMovement.MainCamera = MainCamera;
+        CameraMovement.MainCameraHolder = MainCameraHolder;
+        CameraMovement.MainCameraRoot = MainCameraRoot;
+        CameraMovement.MainCameraAnchor = MainCameraAnchor;
     }
 
 }

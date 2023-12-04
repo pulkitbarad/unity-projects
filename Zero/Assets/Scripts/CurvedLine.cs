@@ -7,34 +7,34 @@ public class CurvedLine : MonoBehaviour
 {
 
     public static void FindBazierLinePoints(
-      GameObject roadStartObject,
-      GameObject roadControlObject,
-      GameObject roadEndObject,
+      Vector3 startPosition,
+      Vector3 controlPosition,
+      Vector3 endPosition,
       int vertexCount,
       int roadWidth,
       out List<Vector3> centerLinePoints,
       out List<Vector3> leftLinePoints,
       out List<Vector3> rightLinePoints)
     {
-        Vector3 p0 = roadStartObject.transform.position;
-        Vector3 p1 = roadControlObject.transform.position;
-        Vector3 p2 = roadEndObject.transform.position;
-
         List<Vector3> bazierLinePoints = new();
 
         for (int p = 0; p < vertexCount; p++)
         {
             float t = 1.0f / vertexCount * p;
-            Vector3 point = BezierPathCalculation(t, p0, p1, p2);
+            Vector3 point = BezierPathCalculation(t, startPosition, controlPosition, endPosition);
             bazierLinePoints.Add(point);
         }
         centerLinePoints = bazierLinePoints;
 
-        var parallelPoints = FindParallelLines(
-                   curvePoints: bazierLinePoints,
-                   pathWidth: roadWidth);
-        leftLinePoints = parallelPoints[0];
-        rightLinePoints = parallelPoints[1];
+        FindParallelLines(
+            curvePoints: bazierLinePoints,
+            pathWidth: roadWidth,
+            leftLinePoints: out leftLinePoints,
+            rightLinePoints: out rightLinePoints);
+
+        Debug.Log("curvePoints=" + string.Join(",", centerLinePoints));
+        Debug.Log("leftLinePoints=" + string.Join(",", leftLinePoints));
+        Debug.Log("rightLinePoints=" + string.Join(",", rightLinePoints));
     }
 
     private static Vector3 BezierPathCalculation(
@@ -68,12 +68,14 @@ public class CurvedLine : MonoBehaviour
         }
         return B;
     }
-    public static List<List<Vector3>> FindParallelLines(
+    public static void FindParallelLines(
         List<Vector3> curvePoints,
-        int pathWidth)
+        int pathWidth,
+        out List<Vector3> leftLinePoints,
+        out List<Vector3> rightLinePoints)
     {
-        List<Vector3> leftLinePoints = new();
-        List<Vector3> rightLinePoints = new();
+        leftLinePoints = new();
+        rightLinePoints = new();
         if (curvePoints.Count >= 3)
         {
             for (int i = 0; i < curvePoints.Count - 1; i++)
@@ -97,9 +99,7 @@ public class CurvedLine : MonoBehaviour
                     leftLinePoints.Add(parallelPoints[1]);
                 }
             }
-            return new List<List<Vector3>>() { leftLinePoints, rightLinePoints };
         }
-        return new List<List<Vector3>>() { };
     }
 
     private static List<Vector3> FindPerpendicularPoints(
@@ -147,7 +147,7 @@ public class CurvedLine : MonoBehaviour
             curvePoints.Add(curve);
         }
         curvePoints.Add(endPosition);
-        CustomRendrer.RenderLine(line.name, Color.red, width: 10f, linePoints: curvePoints.ToArray());
+        CustomRenderer.RenderLine(line.name, Color.red, width: 10f, linePoints: curvePoints.ToArray());
         return curvePoints;
     }
 }

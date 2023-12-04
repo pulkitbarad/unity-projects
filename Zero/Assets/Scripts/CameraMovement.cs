@@ -6,7 +6,7 @@ using UnityEngine;
 public class CameraMovement : MonoBehaviour
 {
     private static float _cameraInitialHeight = 1f;
- 
+
     public static float MainCameraMoveSpeed;
     public static float MainCameraSmoothing;
     public static float MainCameraZoomSpeed;
@@ -190,7 +190,7 @@ public class CameraMovement : MonoBehaviour
                 a: currentPosition,
                 b: targetPosition,
                 t: Time.deltaTime * MainCameraSmoothing);
-        CustomRoadBuilder.ScaleStaticObjects(MainCamera,_cameraInitialHeight);
+        ScaleStaticRoadObjects();
     }
 
     // public static void HandleTouchZoomAndTilt()
@@ -303,5 +303,26 @@ public class CameraMovement : MonoBehaviour
 
         }
         return groundPosition;
+    }
+    public static void ScaleStaticRoadObjects()
+    {
+        ScaleStaticObject(CustomRoadBuilder.StartObject);
+        ScaleStaticObject(CustomRoadBuilder.ControlObject);
+        ScaleStaticObject(CustomRoadBuilder.EndObject);
+    }
+
+    public static void ScaleStaticObject(GameObject gameObject)
+    {
+        float magnitude = MainCameraHolder.transform.localPosition.y / _cameraInitialHeight;
+
+        if (CustomRoadBuilder.InitialStaticLocalScale.ContainsKey(gameObject.name))
+        {
+            Vector3 initialScale = CustomRoadBuilder.InitialStaticLocalScale[gameObject.name];
+            gameObject.transform.localScale =
+            new Vector3(
+               initialScale.x * magnitude,
+               initialScale.y,
+               initialScale.z * magnitude);
+        }
     }
 }

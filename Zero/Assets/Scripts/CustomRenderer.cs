@@ -14,7 +14,6 @@ public class CustomRenderer : MonoBehaviour
     void Start()
     {
         InstantiateLinePool();
-
     }
 
     public static void InstantiateLinePool()
@@ -81,12 +80,11 @@ public class CustomRenderer : MonoBehaviour
         Color color,
         float width = 10f,
         float pointSize = 20f,
+        Transform parentTransform = null,
         params Vector3[] linePoints)
     {
-        Debug.Log("Rendering line " + name);
-        Debug.Log("Found=" + GameObject.Find(name) == null);
         GameObject lineObject =
-            GameObject.Find(name) ?? GetLineObject(name, color, width: width);
+            CommonController.FindGameObject(name, true) ?? GetLineObject(name, color, width: width);
         LineRenderer lineRenderer = lineObject.GetComponent<LineRenderer>();
         lineRenderer.positionCount = linePoints.Length;
 
@@ -97,6 +95,10 @@ public class CustomRenderer : MonoBehaviour
             {
                 RenderPoint(point: linePoints[i], size: pointSize, color: Color.yellow);
             }
+        }
+        if (parentTransform != null)
+        {
+            lineObject.transform.SetParent(parentTransform);
         }
         return lineObject;
     }

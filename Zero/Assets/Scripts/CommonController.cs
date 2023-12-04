@@ -6,6 +6,7 @@ using UnityEngine.UIElements;
 using System;
 using UnityEngine.SocialPlatforms;
 using UnityEngine.AI;
+using UnityEditor;
 
 public class CommonController : MonoBehaviour
 {
@@ -14,21 +15,12 @@ public class CommonController : MonoBehaviour
     public static Vector2 _startTouch0 = Vector2.zero;
     public static Vector2 _startTouch1 = Vector2.zero;
 
-    public static readonly List<CustomRoad> ExistingRoads = new();
-    public static CustomRoad CurrentActiveRoad;
 
 
 
     // Start is called before the first frame update
     void Start()
     {
-        CurrentActiveRoad = new CustomRoad();
-    }
-
-    public static void ResetGameObject(GameObject gameObject)
-    {
-        gameObject.transform.position = Vector3.zero;
-        gameObject.SetActive(false);
     }
 
 
@@ -81,38 +73,22 @@ public class CommonController : MonoBehaviour
         return new Vector2(Screen.width / 2, Screen.height / 2);
     }
 
-    public static void StartRoadConstruction(bool isCurved)
+    public static GameObject FindGameObject(string objectName, bool findDisabled)
     {
-        CurrentActiveRoad.StartConstruction(isCurved);
+        if (findDisabled)
+        {
+            foreach (GameObject go in Resources.FindObjectsOfTypeAll(typeof(GameObject)) as GameObject[])
+            {
+                if (!EditorUtility.IsPersistent(go.transform.root.gameObject)
+                     && !(go.hideFlags == HideFlags.NotEditable || go.hideFlags == HideFlags.HideAndDontSave))
+                {
+                    if (go.name == objectName)
+                        return go;
+                }
+            }
+            return null;
+        }
+        else
+            return GameObject.Find(objectName);
     }
-
-    public static void ConfirmRoadConstruction()
-    {
-        CurrentActiveRoad.CancelConstruction();
-        ExistingRoads.Add(CurrentActiveRoad);
-    }
-
-    public static void CancelRoadConstruction()
-    {
-        CurrentActiveRoad.CancelConstruction();
-    }
-
-    public class CustomRoad
-    {
-    }
-
-
-    public static class CameraMovement
-    {
-    }
-
-    public static class CurvedLine
-    {
-
-    }
-
-    public static class CustomRendrer
-    {
-    }
-
 }

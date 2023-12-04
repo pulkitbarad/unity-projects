@@ -75,7 +75,7 @@ public class UIHandling : MonoBehaviour
         {
             Vector2 currentTouch0 = _touch0Action.ReadValue<Vector2>();
             if (_isRoadMenuActive)
-                CommonController.CurrentActiveRoad.RebuildRoad(false,true, currentTouch0);
+                CustomRoadBuilder.CurrentActiveRoad.Rebuild(false, currentTouch0);
         }
 
         // if (_doubleTouchAction.phase == InputActionPhase.Performed)
@@ -88,15 +88,15 @@ public class UIHandling : MonoBehaviour
 
         if (_zoomOutAction.phase == InputActionPhase.Performed)
         {
-            CommonController.CameraMovement.ZoomCamera(-1f * CommonController.MainCameraZoomSpeed);
+            CameraMovement.ZoomCamera(-1f * CameraMovement.MainCameraZoomSpeed);
         }
         if (_zoomInAction.phase == InputActionPhase.Performed)
         {
-            CommonController.CameraMovement.ZoomCamera(CommonController.MainCameraZoomSpeed);
+            CameraMovement.ZoomCamera(CameraMovement.MainCameraZoomSpeed);
         }
         if (_moveAction.phase == InputActionPhase.Started)
         {
-            CommonController.CameraMovement.MoveCamera(_moveAction.ReadValue<Vector2>());
+            CameraMovement.MoveCamera(_moveAction.ReadValue<Vector2>());
         }
         if (_lookAction.phase == InputActionPhase.Started)
         {
@@ -104,11 +104,11 @@ public class UIHandling : MonoBehaviour
             float horizontalValue = _lookAction.ReadValue<Vector2>().x;
             if (Math.Abs(verticalValue) > 0.5)
             {
-                CommonController.CameraMovement.TiltCamera(verticalValue);
+                CameraMovement.TiltCamera(verticalValue);
             }
             if (Math.Abs(horizontalValue) > 0.5)
             {
-                CommonController.CameraMovement.RotateCamera(-1f * _lookAction.ReadValue<Vector2>().x);
+                CameraMovement.RotateCamera(-1f * _lookAction.ReadValue<Vector2>().x);
             }
         }
     }
@@ -116,19 +116,19 @@ public class UIHandling : MonoBehaviour
     private void OnRoadPerformed(InputAction.CallbackContext context)
     {
         _isRoadMenuActive = true;
-        CommonController.StartRoadConstruction(true);
+        CustomRoadBuilder.CurrentActiveRoad.StartBuilding(true);
     }
 
     private void OnConfirmPerformed(InputAction.CallbackContext context)
     {
         _isRoadMenuActive = false;
-        CommonController.ConfirmRoadConstruction();
+        CustomRoadBuilder.CurrentActiveRoad.ConfirmBuilding();
     }
 
     private void OnCancelPerformed(InputAction.CallbackContext context)
     {
         _isRoadMenuActive = false;
-        CommonController.CancelRoadConstruction();
+        CustomRoadBuilder.CurrentActiveRoad.CancelBuilding();
     }
 
 
