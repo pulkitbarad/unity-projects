@@ -144,7 +144,7 @@ public class CustomRoadBuilder : MonoBehaviour
             bool forceRebuild,
             Vector2 touchPosition)
         {
-            if (forceRebuild || IsRebuildRoadRequired(touchPosition))
+            if (forceRebuild || IsRebuildRequired(touchPosition))
             {
                 CurvedLine.FindBazierLinePoints(
                     startPosition: CustomRoadBuilder.StartObject.transform.position,
@@ -160,7 +160,7 @@ public class CustomRoadBuilder : MonoBehaviour
             }
         }
 
-        private bool IsRebuildRoadRequired(Vector2 touchPosition)
+        private bool IsRebuildRequired(Vector2 touchPosition)
         {
 
             if (!EventSystem.current.IsPointerOverGameObject())
@@ -185,23 +185,24 @@ public class CustomRoadBuilder : MonoBehaviour
 
         public void RenderRoadLines()
         {
-            // CustomRoadBuilder.CenterLineObject = CustomRenderer.RenderLine(
-            //         name: "RoadCenterLine",
-            //         color: Color.green,
-            //         width: 10,
-            //         pointSize: 20,
-            //         parentTransform: CustomRoadBuilder.StaticParent.transform,
-            //         linePoints: this.CenterLine.Vertices.ToArray());
+            CustomRoadBuilder.CenterLineObject = CustomRenderer.RenderLine(
+                    name: "RoadCenterLine",
+                    color: Color.green,
+                    width: 10,
+                    pointSize: 20,
+                    parentTransform: CustomRoadBuilder.StaticParent.transform,
+                    linePoints: this.CenterLine.Vertices.ToArray());
 
-            // CustomRoadBuilder.LeftLineObject =
-            // CustomRenderer.RenderLine(
-            //     name: "RoadLeftEdge",
-            //     color: Color.yellow,
-            //     width: 10,
-            //     pointSize: 20,
-            //     parentTransform: CustomRoadBuilder.StaticParent.transform,
-            //     linePoints: this.LeftEdge.Vertices.ToArray());
+            CustomRoadBuilder.LeftLineObject =
+            CustomRenderer.RenderLine(
+                name: "RoadLeftEdge",
+                color: Color.yellow,
+                width: 10,
+                pointSize: 20,
+                parentTransform: CustomRoadBuilder.StaticParent.transform,
+                linePoints: this.LeftEdge.Vertices.ToArray());
 
+            // CustomRenderer.IsDebugEnabled = true;
             CustomRoadBuilder.RightLineObject =
             CustomRenderer.RenderLine(
                 name: "RoadRightEdge",

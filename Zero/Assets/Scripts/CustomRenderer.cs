@@ -8,8 +8,8 @@ public class CustomRenderer : MonoBehaviour
 
     private static readonly List<GameObject> _lineObjectPool = new();
     private static readonly int _lineObjectPoolCount;
-    private static bool _isDebugEnabled = false;
     private static readonly List<string> _existingPoints = new();
+    public static bool IsDebugEnabled = false;
 
     void Start()
     {
@@ -89,7 +89,7 @@ public class CustomRenderer : MonoBehaviour
         lineRenderer.positionCount = linePoints.Length;
 
         lineRenderer.SetPositions(linePoints);
-        if (_isDebugEnabled)
+        if (IsDebugEnabled)
         {
             for (int i = 0; i < linePoints.Length; i++)
             {

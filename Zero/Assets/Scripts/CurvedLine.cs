@@ -31,10 +31,6 @@ public class CurvedLine : MonoBehaviour
             pathWidth: roadWidth,
             leftLinePoints: out leftLinePoints,
             rightLinePoints: out rightLinePoints);
-
-        Debug.Log("curvePoints=" + string.Join(",", centerLinePoints));
-        Debug.Log("leftLinePoints=" + string.Join(",", leftLinePoints));
-        Debug.Log("rightLinePoints=" + string.Join(",", rightLinePoints));
     }
 
     private static Vector3 BezierPathCalculation(
@@ -78,7 +74,7 @@ public class CurvedLine : MonoBehaviour
         rightLinePoints = new();
         if (curvePoints.Count >= 3)
         {
-            for (int i = 0; i < curvePoints.Count - 1; i++)
+            for (int i = 0; i <= curvePoints.Count - 2; i++)
             {
                 List<Vector3> parallelPoints = new();
                 parallelPoints = FindPerpendicularPoints(
@@ -92,12 +88,17 @@ public class CurvedLine : MonoBehaviour
                 if (i == curvePoints.Count - 2)
                 {
                     parallelPoints = FindPerpendicularPoints(
-                        originPoint: curvePoints[i],
-                        targetPoint: curvePoints[i - 1],
+                        originPoint: curvePoints[i + 1],
+                        targetPoint: curvePoints[i],
                         parallelWidth: pathWidth);
-                    rightLinePoints.Add(parallelPoints[0]);
-                    leftLinePoints.Add(parallelPoints[1]);
+                    rightLinePoints.Add(parallelPoints[1]);
+                    leftLinePoints.Add(parallelPoints[0]);
+                    CustomRenderer.RenderPoint(parallelPoints[0], color: Color.green);
+                    CustomRenderer.RenderPoint(parallelPoints[1], color: Color.blue);
+                    Debug.Log("last point 0=" + parallelPoints[0]);
+                    Debug.Log("last point 1=" + parallelPoints[1]);
                 }
+                // Debug.Log("left point=" + parallelPoints[1]);
             }
         }
     }
@@ -108,7 +109,7 @@ public class CurvedLine : MonoBehaviour
         float parallelWidth)
     {
         Vector3 forwardVector = targetPoint - originPoint;
-        Vector3 upPoint = new Vector3(originPoint[0], originPoint[1] + 3, originPoint[2]);
+        Vector3 upPoint = new(originPoint[0], originPoint[1] + 3, originPoint[2]);
         Vector3 upVector = upPoint - originPoint;
         Vector3 rightVector = Vector3.Cross(forwardVector, upVector).normalized;
         var rightPoint = originPoint + (rightVector * parallelWidth);
