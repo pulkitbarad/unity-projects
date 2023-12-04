@@ -93,10 +93,6 @@ public class CurvedLine : MonoBehaviour
                         parallelWidth: pathWidth);
                     rightLinePoints.Add(parallelPoints[1]);
                     leftLinePoints.Add(parallelPoints[0]);
-                    CustomRenderer.RenderPoint(parallelPoints[0], color: Color.green);
-                    CustomRenderer.RenderPoint(parallelPoints[1], color: Color.blue);
-                    Debug.Log("last point 0=" + parallelPoints[0]);
-                    Debug.Log("last point 1=" + parallelPoints[1]);
                 }
                 // Debug.Log("left point=" + parallelPoints[1]);
             }

@@ -20,9 +20,9 @@ public class CustomRoadBuilder : MonoBehaviour
 
     void Start()
     {
-        CustomRoadBuilder.StaticParent = new GameObject("StaticObjects");
-        CustomRoadBuilder.CurrentActiveRoad = new CustomRoad();
-        CustomRoadBuilder.CurrentActiveRoad.HideControlObjects();
+        StaticParent = new GameObject("StaticObjects");
+        CurrentActiveRoad = new CustomRoad();
+        CurrentActiveRoad.HideControlObjects();
     }
 
     public class CustomRoad
@@ -33,7 +33,7 @@ public class CustomRoadBuilder : MonoBehaviour
         public CustomRoadLine CenterLine;
         public CustomRoadLine LeftEdge;
         public CustomRoadLine RightEdge;
-        public int RoadWidth = 100;
+        public int RoadWidth = 10;
         public int VertexCount = 20;
         public bool IsCurved = true;
 
@@ -49,26 +49,28 @@ public class CustomRoadBuilder : MonoBehaviour
 
         public void InitControlObjects()
         {
-            CustomRoadBuilder.StartObject = InitStaticObject(
+            StartObject = InitStaticObject(
                 objectName: "RoadStart",
                  size: 10,
                   color: new Color(0.25f, 0.35f, 0.30f));
-            CustomRoadBuilder.ControlObject = InitStaticObject(
+            ControlObject = InitStaticObject(
                 objectName: "RoadControl",
                 size: 10,
                 color: new Color(0, 1, 0.20f));
-            CustomRoadBuilder.EndObject = InitStaticObject(
+            EndObject = InitStaticObject(
                 objectName: "RoadEnd",
                 size: 10,
                 color: new Color(0.70f, 0.45f, 0f));
-            this.CenterLine = this.LeftEdge = this.RightEdge = new();
+            this.CenterLine = new();
+            this.LeftEdge = new();
+            this.RightEdge = new();
 
             this.StartPosition = this.EndPosition = CameraMovement.GetTerrainHitPoint(CommonController.GetScreenCenterPoint());
             this.EndPosition += 200f * CameraMovement.MainCameraRoot.transform.right;
             this.CurveControlPosition = InitCurveControlPosition();
-            CustomRoadBuilder.StartObject.transform.position = StartPosition;
-            CustomRoadBuilder.EndObject.transform.position = this.EndPosition;
-            CustomRoadBuilder.ControlObject.transform.position = InitCurveControlPosition();
+            StartObject.transform.position = StartPosition;
+            EndObject.transform.position = this.EndPosition;
+            ControlObject.transform.position = InitCurveControlPosition();
         }
 
         private Vector3 InitCurveControlPosition()
@@ -92,7 +94,7 @@ public class CustomRoadBuilder : MonoBehaviour
             if (gameObject == null)
             {
                 gameObject = CustomRenderer.RenderCylinder(objectName: objectName, position: Vector3.zero, size: size, color: color);
-                gameObject.transform.SetParent(CustomRoadBuilder.StaticParent.transform);
+                gameObject.transform.SetParent(StaticParent.transform);
                 InitialStaticLocalScale.Add(gameObject.name, gameObject.transform.localScale);
             }
             return gameObject;
@@ -101,43 +103,56 @@ public class CustomRoadBuilder : MonoBehaviour
         public void ShowControlObjects()
         {
             //Make control objects visible            
-            CustomRoadBuilder.StartObject.SetActive(true);
-            CustomRoadBuilder.EndObject.SetActive(true);
+            StartObject.SetActive(true);
+            EndObject.SetActive(true);
             Debug.Log("IsCurved=" + IsCurved);
             if (this.IsCurved)
-                CustomRoadBuilder.ControlObject.SetActive(true);
+                ControlObject.SetActive(true);
 
             //Make line objects visible            
-            CustomRoadBuilder.CenterLineObject.SetActive(true);
-            CustomRoadBuilder.LeftLineObject.SetActive(true);
-            CustomRoadBuilder.RightLineObject.SetActive(true);
+            CenterLineObject.SetActive(true);
+            LeftLineObject.SetActive(true);
+            RightLineObject.SetActive(true);
         }
 
         public void HideControlObjects()
         {
-            CustomRoadBuilder.StartObject.SetActive(false);
-            CustomRoadBuilder.ControlObject.SetActive(false);
-            CustomRoadBuilder.EndObject.SetActive(false);
-            CustomRoadBuilder.CenterLineObject.SetActive(false);
-            CustomRoadBuilder.LeftLineObject.SetActive(false);
-            CustomRoadBuilder.RightLineObject.SetActive(false);
+            StartObject.SetActive(false);
+            ControlObject.SetActive(false);
+            EndObject.SetActive(false);
+            CenterLineObject.SetActive(false);
+            LeftLineObject.SetActive(false);
+            RightLineObject.SetActive(false);
         }
 
         public void StartBuilding(bool isCurved)
         {
-            CustomRoadBuilder.CurrentActiveRoad = new CustomRoad();
-            CustomRoadBuilder.CurrentActiveRoad.ShowControlObjects();
+            CurrentActiveRoad = new CustomRoad();
+            CurrentActiveRoad.ShowControlObjects();
         }
 
         public void ConfirmBuilding()
         {
-            CustomRoadBuilder.CurrentActiveRoad.HideControlObjects();
-            ExistingRoads.Add(CustomRoadBuilder.CurrentActiveRoad);
+            string suffix = "_" + CurrentActiveRoad.StartPosition.x;
+            CustomRenderer.RenderLine(
+                name: "RoadCenterLine" + suffix, 
+                color: Color.yellow, 
+                linePoints: CurrentActiveRoad.CenterLine.Vertices.ToArray()).transform.SetParent(StaticParent.transform);
+            CustomRenderer.RenderLine(
+                name: "RoadLeftEdge" + suffix, 
+                color: Color.yellow, 
+                linePoints: CurrentActiveRoad.LeftEdge.Vertices.ToArray()).transform.SetParent(StaticParent.transform);
+            CustomRenderer.RenderLine(
+                name: "RoadRightEdge" + suffix, 
+                color: Color.yellow, 
+                linePoints: CurrentActiveRoad.RightEdge.Vertices.ToArray()).transform.SetParent(StaticParent.transform);
+            CurrentActiveRoad.HideControlObjects();
+            ExistingRoads.Add(CurrentActiveRoad);
         }
 
         public void CancelBuilding()
         {
-            CustomRoadBuilder.CurrentActiveRoad.HideControlObjects();
+            CurrentActiveRoad.HideControlObjects();
         }
 
         public void Rebuild(
@@ -147,9 +162,9 @@ public class CustomRoadBuilder : MonoBehaviour
             if (forceRebuild || IsRebuildRequired(touchPosition))
             {
                 CurvedLine.FindBazierLinePoints(
-                    startPosition: CustomRoadBuilder.StartObject.transform.position,
-                    controlPosition: CustomRoadBuilder.ControlObject.transform.position,
-                    endPosition: CustomRoadBuilder.EndObject.transform.position,
+                    startPosition: StartObject.transform.position,
+                    controlPosition: ControlObject.transform.position,
+                    endPosition: EndObject.transform.position,
                     vertexCount: this.VertexCount,
                     roadWidth: this.RoadWidth,
                     centerLinePoints: out this.CenterLine.Vertices,
@@ -167,16 +182,16 @@ public class CustomRoadBuilder : MonoBehaviour
             {
                 var roadStartChanged =
                     !this.StartPosition.Equals(Vector3.zero)
-                    && CommonController.HandleGameObjectDrag(CustomRoadBuilder.StartObject, touchPosition);
+                    && CommonController.HandleGameObjectDrag(StartObject, touchPosition);
 
                 var roadControlChanged =
                     this.IsCurved
                     && !this.CurveControlPosition.Equals(Vector3.zero)
-                    && CommonController.HandleGameObjectDrag(CustomRoadBuilder.ControlObject, touchPosition);
+                    && CommonController.HandleGameObjectDrag(ControlObject, touchPosition);
 
                 var roadEndChanged =
                     !this.EndPosition.Equals(Vector3.zero)
-                    && CommonController.HandleGameObjectDrag(CustomRoadBuilder.EndObject, touchPosition);
+                    && CommonController.HandleGameObjectDrag(EndObject, touchPosition);
 
                 return roadStartChanged || roadControlChanged || roadEndChanged;
             }
@@ -185,31 +200,30 @@ public class CustomRoadBuilder : MonoBehaviour
 
         public void RenderRoadLines()
         {
-            CustomRoadBuilder.CenterLineObject = CustomRenderer.RenderLine(
+            CenterLineObject = CustomRenderer.RenderLine(
                     name: "RoadCenterLine",
                     color: Color.green,
-                    width: 10,
-                    pointSize: 20,
-                    parentTransform: CustomRoadBuilder.StaticParent.transform,
+                    width: 2,
+                    pointSize: 5,
+                    parentTransform: StaticParent.transform,
                     linePoints: this.CenterLine.Vertices.ToArray());
 
-            CustomRoadBuilder.LeftLineObject =
+            LeftLineObject =
             CustomRenderer.RenderLine(
                 name: "RoadLeftEdge",
                 color: Color.yellow,
-                width: 10,
-                pointSize: 20,
-                parentTransform: CustomRoadBuilder.StaticParent.transform,
+                width: 2,
+                pointSize: 5,
+                parentTransform: StaticParent.transform,
                 linePoints: this.LeftEdge.Vertices.ToArray());
 
-            // CustomRenderer.IsDebugEnabled = true;
-            CustomRoadBuilder.RightLineObject =
+            RightLineObject =
             CustomRenderer.RenderLine(
                 name: "RoadRightEdge",
                 color: Color.red,
-                width: 10,
-                pointSize: 20,
-                parentTransform: CustomRoadBuilder.StaticParent.transform,
+                width: 2,
+                pointSize: 5,
+                parentTransform: StaticParent.transform,
                 linePoints: this.RightEdge.Vertices.ToArray());
         }
     }

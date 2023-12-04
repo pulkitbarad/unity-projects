@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class CustomRenderer : MonoBehaviour
@@ -9,10 +10,12 @@ public class CustomRenderer : MonoBehaviour
     private static readonly List<GameObject> _lineObjectPool = new();
     private static readonly int _lineObjectPoolCount;
     private static readonly List<string> _existingPoints = new();
+    private static Material _baseLineMaterial;
     public static bool IsDebugEnabled = false;
 
     void Start()
     {
+        _baseLineMaterial = Resources.Load("Material/LineMaterial", typeof(Material)) as Material;
         InstantiateLinePool();
     }
 
@@ -42,7 +45,7 @@ public class CustomRenderer : MonoBehaviour
     public static GameObject GetLineObject(
         string name,
         Color color,
-        float width = 10f)
+        float width = 2f)
     {
         GameObject lineObject = GameObject.Find(name);
 
@@ -65,9 +68,11 @@ public class CustomRenderer : MonoBehaviour
             }
             LineRenderer primaryLineRenderer =
                 lineObject.AddComponent(typeof(LineRenderer)) as LineRenderer;
-            Material materialNeonLight = Resources.Load("LineMaterial") as Material;
-            primaryLineRenderer.SetMaterials(new List<Material>() { materialNeonLight });
-            primaryLineRenderer.material.SetColor("_Color", color);
+            Material newLineMaterial = new(_baseLineMaterial);
+            primaryLineRenderer.sharedMaterial = new Material(newLineMaterial);
+            // primaryLineRenderer.sharedMaterial.SetColor("_Color",color);
+            primaryLineRenderer.startColor = color;
+            primaryLineRenderer.endColor = color;
             primaryLineRenderer.startWidth = width;
             primaryLineRenderer.endWidth = width;
             primaryLineRenderer.positionCount = 3;
@@ -78,8 +83,8 @@ public class CustomRenderer : MonoBehaviour
     public static GameObject RenderLine(
         string name,
         Color color,
-        float width = 10f,
-        float pointSize = 20f,
+        float width = 2f,
+        float pointSize = 5f,
         Transform parentTransform = null,
         params Vector3[] linePoints)
     {
@@ -93,7 +98,7 @@ public class CustomRenderer : MonoBehaviour
         {
             for (int i = 0; i < linePoints.Length; i++)
             {
-                RenderPoint(point: linePoints[i], size: pointSize, color: Color.yellow);
+                RenderPoint(point: linePoints[i], size: pointSize, color: color);
             }
         }
         if (parentTransform != null)
@@ -105,7 +110,7 @@ public class CustomRenderer : MonoBehaviour
 
     public static GameObject RenderPoint(
         Vector3 point,
-        float size = 20f,
+        float size = 5f,
         Color? color = null)
     {
         string sphereName = "Point_" + point[0] + "_" + point[1] + "_" + point[2];
@@ -123,7 +128,7 @@ public class CustomRenderer : MonoBehaviour
     public static GameObject RenderSphere(
         string sphereName,
         Vector3 position,
-        float size = 20f,
+        float size = 5f,
         Color? color = null)
     {
         GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
@@ -139,7 +144,7 @@ public class CustomRenderer : MonoBehaviour
     public static GameObject RenderCylinder(
         string objectName,
         Vector3 position,
-        float size = 20f,
+        float size = 5f,
         Color? color = null)
     {
         GameObject cylinder = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
