@@ -48,22 +48,32 @@ public class CommonController : MonoBehaviour
         _objectBeingDragged = "";
     }
 
-    public static bool HandleGameObjectDrag(GameObject gameObject, Vector2 touchPosition)
+    public static bool HandleGameObjectDrag(GameObject gameObject, Vector2 touchPosition, GameObject followerObject = null)
     {
         if (!EventSystem.current.IsPointerOverGameObject() || _objectBeingDragged.Length > 0)
         {
             Ray touchPointRay = CameraMovement.MainCamera.ScreenPointToRay(touchPosition);
             gameObject.SetActive(true);
-            if (
-                (_objectBeingDragged.Length > 0 && _objectBeingDragged.Equals(gameObject.name))
+            if ((_objectBeingDragged.Length > 0 && _objectBeingDragged.Equals(gameObject.name))
                 || (Physics.Raycast(touchPointRay, out RaycastHit hit)
                 && hit.transform == gameObject.transform))
             {
-                gameObject.transform.position = CameraMovement.GetTerrainHitPoint(touchPosition);
+                Vector3 oldPosition = gameObject.transform.position;
+                Vector3 newPosition = CameraMovement.GetTerrainHitPoint(touchPosition);
+                gameObject.transform.position = newPosition;
+                if (followerObject != null)
+                {
+                    Vector3 followerOldPosition = followerObject.transform.position;
+                    Vector3 followerNewPosition = oldPosition - newPosition + followerOldPosition;
+
+                    CustomRenderer.RenderPoint(followerOldPosition, "Old", 20, Color.black);
+                    CustomRenderer.RenderPoint(followerNewPosition, "New", 20, Color.grey);
+                    followerObject.transform.position = followerNewPosition;
+
+                }
                 _objectBeingDragged = gameObject.name;
                 return true;
             }
-            Physics.Raycast(touchPointRay, out RaycastHit hit2);
         }
         return false;
     }

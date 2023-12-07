@@ -86,6 +86,7 @@ public class CustomRenderer : MonoBehaviour
         float width = 2f,
         float pointSize = 5f,
         Transform parentTransform = null,
+        bool renderPoints = false,
         params Vector3[] linePoints)
     {
         GameObject lineObject =
@@ -94,11 +95,11 @@ public class CustomRenderer : MonoBehaviour
         lineRenderer.positionCount = linePoints.Length;
 
         lineRenderer.SetPositions(linePoints);
-        if (IsDebugEnabled)
+        if (renderPoints)
         {
             for (int i = 0; i < linePoints.Length; i++)
             {
-                RenderPoint(point: linePoints[i], size: pointSize, color: color);
+                RenderPoint(point: linePoints[i], name + "Point" + i, size: pointSize, color: color);
             }
         }
         if (parentTransform != null)
@@ -110,20 +111,22 @@ public class CustomRenderer : MonoBehaviour
 
     public static GameObject RenderPoint(
         Vector3 point,
+        string pointName,
         float size = 5f,
         Color? color = null)
     {
-        string sphereName = "Point_" + point[0] + "_" + point[1] + "_" + point[2];
-        if (_existingPoints.FirstOrDefault(e => e.Contains(sphereName)) == null)
+        GameObject sphere;
+        if (_existingPoints.FirstOrDefault(e => e.Contains(pointName)) == null)
         {
-            GameObject sphere = RenderSphere(sphereName, point, size, color);
-            _existingPoints.Add(sphereName);
-            return sphere;
+            sphere = RenderSphere(pointName, point, size, color);
+            _existingPoints.Add(pointName);
         }
         else
         {
-            return GameObject.Find(sphereName);
+            sphere = GameObject.Find(pointName);
         }
+        sphere.transform.position = point;
+        return sphere;
     }
     public static GameObject RenderSphere(
         string sphereName,

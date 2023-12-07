@@ -135,16 +135,16 @@ public class CustomRoadBuilder : MonoBehaviour
         {
             string suffix = "_" + CurrentActiveRoad.StartPosition.x;
             CustomRenderer.RenderLine(
-                name: "RoadCenterLine" + suffix, 
-                color: Color.yellow, 
+                name: "RoadCenterLine" + suffix,
+                color: Color.yellow,
                 linePoints: CurrentActiveRoad.CenterLine.Vertices.ToArray()).transform.SetParent(StaticParent.transform);
             CustomRenderer.RenderLine(
-                name: "RoadLeftEdge" + suffix, 
-                color: Color.yellow, 
+                name: "RoadLeftEdge" + suffix,
+                color: Color.yellow,
                 linePoints: CurrentActiveRoad.LeftEdge.Vertices.ToArray()).transform.SetParent(StaticParent.transform);
             CustomRenderer.RenderLine(
-                name: "RoadRightEdge" + suffix, 
-                color: Color.yellow, 
+                name: "RoadRightEdge" + suffix,
+                color: Color.yellow,
                 linePoints: CurrentActiveRoad.RightEdge.Vertices.ToArray()).transform.SetParent(StaticParent.transform);
             CurrentActiveRoad.HideControlObjects();
             ExistingRoads.Add(CurrentActiveRoad);
@@ -182,7 +182,7 @@ public class CustomRoadBuilder : MonoBehaviour
             {
                 var roadStartChanged =
                     !this.StartPosition.Equals(Vector3.zero)
-                    && CommonController.HandleGameObjectDrag(StartObject, touchPosition);
+                    && CommonController.HandleGameObjectDrag(StartObject, touchPosition, ControlObject);
 
                 var roadControlChanged =
                     this.IsCurved
@@ -191,7 +191,7 @@ public class CustomRoadBuilder : MonoBehaviour
 
                 var roadEndChanged =
                     !this.EndPosition.Equals(Vector3.zero)
-                    && CommonController.HandleGameObjectDrag(EndObject, touchPosition);
+                    && CommonController.HandleGameObjectDrag(EndObject, touchPosition, ControlObject);
 
                 return roadStartChanged || roadControlChanged || roadEndChanged;
             }
@@ -206,6 +206,7 @@ public class CustomRoadBuilder : MonoBehaviour
                     width: 2,
                     pointSize: 5,
                     parentTransform: StaticParent.transform,
+                    renderPoints: true,
                     linePoints: this.CenterLine.Vertices.ToArray());
 
             LeftLineObject =
@@ -215,6 +216,7 @@ public class CustomRoadBuilder : MonoBehaviour
                 width: 2,
                 pointSize: 5,
                 parentTransform: StaticParent.transform,
+                renderPoints: true,
                 linePoints: this.LeftEdge.Vertices.ToArray());
 
             RightLineObject =
@@ -224,6 +226,7 @@ public class CustomRoadBuilder : MonoBehaviour
                 width: 2,
                 pointSize: 5,
                 parentTransform: StaticParent.transform,
+                renderPoints: true,
                 linePoints: this.RightEdge.Vertices.ToArray());
         }
     }
