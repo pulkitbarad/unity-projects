@@ -93,13 +93,14 @@ public class CustomRenderer : MonoBehaviour
             CommonController.FindGameObject(name, true) ?? GetLineObject(name, color, width: width);
         LineRenderer lineRenderer = lineObject.GetComponent<LineRenderer>();
         lineRenderer.positionCount = linePoints.Length;
+        Transform lineTransform = lineObject.transform;
 
         lineRenderer.SetPositions(linePoints);
         if (renderPoints)
         {
             for (int i = 0; i < linePoints.Length; i++)
             {
-                RenderPoint(point: linePoints[i], name + "Point" + i, size: pointSize, color: color);
+                RenderPoint(point: linePoints[i], name + "Point" + i, size: pointSize, parentTransform: lineTransform, color: color);
             }
         }
         if (parentTransform != null)
@@ -113,6 +114,7 @@ public class CustomRenderer : MonoBehaviour
         Vector3 point,
         string pointName,
         float size = 5f,
+        Transform parentTransform = null,
         Color? color = null)
     {
         GameObject sphere;
@@ -125,7 +127,12 @@ public class CustomRenderer : MonoBehaviour
         {
             sphere = GameObject.Find(pointName);
         }
-        sphere.transform.position = point;
+        if (sphere != null)
+        {
+            sphere.transform.position = point;
+            sphere.transform.SetParent(parentTransform);
+
+        }
         return sphere;
     }
     public static GameObject RenderSphere(

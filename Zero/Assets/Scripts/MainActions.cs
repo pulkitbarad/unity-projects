@@ -100,9 +100,18 @@ public partial class @MainActions: IInputActionCollection2, IDisposable
                     ""initialStateCheck"": false
                 },
                 {
-                    ""name"": ""Road"",
+                    ""name"": ""CurvedRoad"",
                     ""type"": ""Button"",
                     ""id"": ""67879104-480b-48f9-9e43-51ea79ac0655"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""StraightRoad"",
+                    ""type"": ""Button"",
+                    ""id"": ""f3d2db3e-a4da-4514-b4f8-74c16995b10d"",
                     ""expectedControlType"": ""Button"",
                     ""processors"": """",
                     ""interactions"": """",
@@ -384,11 +393,11 @@ public partial class @MainActions: IInputActionCollection2, IDisposable
                 {
                     ""name"": """",
                     ""id"": ""ae7a4ccc-ef0e-4650-a52d-6313910d1742"",
-                    ""path"": ""<Keyboard>/#(R)"",
+                    ""path"": ""<Keyboard>/#(U)"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
-                    ""action"": ""Road"",
+                    ""action"": ""CurvedRoad"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
@@ -411,6 +420,17 @@ public partial class @MainActions: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""groups"": """",
                     ""action"": ""Confirm"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""ef99e25b-c2fb-4538-be82-7e6764796246"",
+                    ""path"": ""<Keyboard>/#(S)"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""StraightRoad"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -1006,7 +1026,8 @@ public partial class @MainActions: IInputActionCollection2, IDisposable
         m_Player_Touch1Position = m_Player.FindAction("Touch1Position", throwIfNotFound: true);
         m_Player_DoubleTouchContact = m_Player.FindAction("DoubleTouchContact", throwIfNotFound: true);
         m_Player_SingleTouchContact = m_Player.FindAction("SingleTouchContact", throwIfNotFound: true);
-        m_Player_Road = m_Player.FindAction("Road", throwIfNotFound: true);
+        m_Player_CurvedRoad = m_Player.FindAction("CurvedRoad", throwIfNotFound: true);
+        m_Player_StraightRoad = m_Player.FindAction("StraightRoad", throwIfNotFound: true);
         m_Player_Confirm = m_Player.FindAction("Confirm", throwIfNotFound: true);
         m_Player_Cancel = m_Player.FindAction("Cancel", throwIfNotFound: true);
         // UI
@@ -1090,7 +1111,8 @@ public partial class @MainActions: IInputActionCollection2, IDisposable
     private readonly InputAction m_Player_Touch1Position;
     private readonly InputAction m_Player_DoubleTouchContact;
     private readonly InputAction m_Player_SingleTouchContact;
-    private readonly InputAction m_Player_Road;
+    private readonly InputAction m_Player_CurvedRoad;
+    private readonly InputAction m_Player_StraightRoad;
     private readonly InputAction m_Player_Confirm;
     private readonly InputAction m_Player_Cancel;
     public struct PlayerActions
@@ -1105,7 +1127,8 @@ public partial class @MainActions: IInputActionCollection2, IDisposable
         public InputAction @Touch1Position => m_Wrapper.m_Player_Touch1Position;
         public InputAction @DoubleTouchContact => m_Wrapper.m_Player_DoubleTouchContact;
         public InputAction @SingleTouchContact => m_Wrapper.m_Player_SingleTouchContact;
-        public InputAction @Road => m_Wrapper.m_Player_Road;
+        public InputAction @CurvedRoad => m_Wrapper.m_Player_CurvedRoad;
+        public InputAction @StraightRoad => m_Wrapper.m_Player_StraightRoad;
         public InputAction @Confirm => m_Wrapper.m_Player_Confirm;
         public InputAction @Cancel => m_Wrapper.m_Player_Cancel;
         public InputActionMap Get() { return m_Wrapper.m_Player; }
@@ -1141,9 +1164,12 @@ public partial class @MainActions: IInputActionCollection2, IDisposable
             @SingleTouchContact.started += instance.OnSingleTouchContact;
             @SingleTouchContact.performed += instance.OnSingleTouchContact;
             @SingleTouchContact.canceled += instance.OnSingleTouchContact;
-            @Road.started += instance.OnRoad;
-            @Road.performed += instance.OnRoad;
-            @Road.canceled += instance.OnRoad;
+            @CurvedRoad.started += instance.OnCurvedRoad;
+            @CurvedRoad.performed += instance.OnCurvedRoad;
+            @CurvedRoad.canceled += instance.OnCurvedRoad;
+            @StraightRoad.started += instance.OnStraightRoad;
+            @StraightRoad.performed += instance.OnStraightRoad;
+            @StraightRoad.canceled += instance.OnStraightRoad;
             @Confirm.started += instance.OnConfirm;
             @Confirm.performed += instance.OnConfirm;
             @Confirm.canceled += instance.OnConfirm;
@@ -1178,9 +1204,12 @@ public partial class @MainActions: IInputActionCollection2, IDisposable
             @SingleTouchContact.started -= instance.OnSingleTouchContact;
             @SingleTouchContact.performed -= instance.OnSingleTouchContact;
             @SingleTouchContact.canceled -= instance.OnSingleTouchContact;
-            @Road.started -= instance.OnRoad;
-            @Road.performed -= instance.OnRoad;
-            @Road.canceled -= instance.OnRoad;
+            @CurvedRoad.started -= instance.OnCurvedRoad;
+            @CurvedRoad.performed -= instance.OnCurvedRoad;
+            @CurvedRoad.canceled -= instance.OnCurvedRoad;
+            @StraightRoad.started -= instance.OnStraightRoad;
+            @StraightRoad.performed -= instance.OnStraightRoad;
+            @StraightRoad.canceled -= instance.OnStraightRoad;
             @Confirm.started -= instance.OnConfirm;
             @Confirm.performed -= instance.OnConfirm;
             @Confirm.canceled -= instance.OnConfirm;
@@ -1377,7 +1406,8 @@ public partial class @MainActions: IInputActionCollection2, IDisposable
         void OnTouch1Position(InputAction.CallbackContext context);
         void OnDoubleTouchContact(InputAction.CallbackContext context);
         void OnSingleTouchContact(InputAction.CallbackContext context);
-        void OnRoad(InputAction.CallbackContext context);
+        void OnCurvedRoad(InputAction.CallbackContext context);
+        void OnStraightRoad(InputAction.CallbackContext context);
         void OnConfirm(InputAction.CallbackContext context);
         void OnCancel(InputAction.CallbackContext context);
     }

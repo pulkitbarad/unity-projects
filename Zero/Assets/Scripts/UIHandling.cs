@@ -19,7 +19,8 @@ public class UIHandling : MonoBehaviour
     private InputAction _touch1Action;
     private InputAction _singleTouchAction;
     private InputAction _doubleTouchAction;
-    private InputAction _roadAction;
+    private InputAction _curvedRoadAction;
+    private InputAction _straightRoadAction;
     private InputAction _confirmAction;
     private InputAction _cancelAction;
     private static bool _isRoadMenuActive = false;
@@ -36,7 +37,8 @@ public class UIHandling : MonoBehaviour
         _touch1Action = _mainActions.Player.Touch1Position;
         _singleTouchAction = _mainActions.Player.SingleTouchContact;
         _doubleTouchAction = _mainActions.Player.DoubleTouchContact;
-        _roadAction = _mainActions.Player.Road;
+        _curvedRoadAction = _mainActions.Player.CurvedRoad;
+        _straightRoadAction = _mainActions.Player.StraightRoad;
         _confirmAction = _mainActions.Player.Confirm;
         _cancelAction = _mainActions.Player.Cancel;
         _doubleTouchAction.started += OnTouch0Start;
@@ -45,7 +47,8 @@ public class UIHandling : MonoBehaviour
         _doubleTouchAction.canceled += OnTouch1End;
         _singleTouchAction.started += OnTouch0Start;
         _singleTouchAction.canceled += OnTouch0End;
-        _roadAction.performed += OnRoadPerformed;
+        _curvedRoadAction.performed += OnCurvedRoadPerformed;
+        _straightRoadAction.performed += OnStraightRoadPerformed;
         _confirmAction.performed += OnConfirmPerformed;
         _cancelAction.performed += OnCancelPerformed;
 
@@ -58,7 +61,8 @@ public class UIHandling : MonoBehaviour
         _touch1Action.Enable();
         _singleTouchAction.Enable();
         _doubleTouchAction.Enable();
-        _roadAction.Enable();
+        _curvedRoadAction.Enable();
+        _straightRoadAction.Enable();
         _confirmAction.Enable();
         _cancelAction.Enable();
     }
@@ -113,10 +117,16 @@ public class UIHandling : MonoBehaviour
         }
     }
 
-    private void OnRoadPerformed(InputAction.CallbackContext context)
+    private void OnCurvedRoadPerformed(InputAction.CallbackContext context)
     {
         _isRoadMenuActive = true;
         CustomRoadBuilder.CurrentActiveRoad.StartBuilding(true);
+    }
+
+    private void OnStraightRoadPerformed(InputAction.CallbackContext context)
+    {
+        _isRoadMenuActive = true;
+        CustomRoadBuilder.CurrentActiveRoad.StartBuilding(false);
     }
 
     private void OnConfirmPerformed(InputAction.CallbackContext context)

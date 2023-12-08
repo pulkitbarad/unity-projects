@@ -78,9 +78,18 @@
                     "initialStateCheck": false
                 },
                 {
-                    "name": "Road",
+                    "name": "CurvedRoad",
                     "type": "Button",
                     "id": "67879104-480b-48f9-9e43-51ea79ac0655",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "StraightRoad",
+                    "type": "Button",
+                    "id": "f3d2db3e-a4da-4514-b4f8-74c16995b10d",
                     "expectedControlType": "Button",
                     "processors": "",
                     "interactions": "",
@@ -362,11 +371,11 @@
                 {
                     "name": "",
                     "id": "ae7a4ccc-ef0e-4650-a52d-6313910d1742",
-                    "path": "<Keyboard>/#(R)",
+                    "path": "<Keyboard>/#(U)",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Road",
+                    "action": "CurvedRoad",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
@@ -389,6 +398,17 @@
                     "processors": "",
                     "groups": "",
                     "action": "Confirm",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "ef99e25b-c2fb-4538-be82-7e6764796246",
+                    "path": "<Keyboard>/#(S)",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "StraightRoad",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

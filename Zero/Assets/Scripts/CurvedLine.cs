@@ -1,29 +1,29 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class CurvedLine : MonoBehaviour
 {
 
     public static void FindBazierLinePoints(
-      Vector3 startPosition,
-      Vector3 controlPosition,
-      Vector3 endPosition,
       int vertexCount,
       int roadWidth,
       out List<Vector3> centerLinePoints,
       out List<Vector3> leftLinePoints,
-      out List<Vector3> rightLinePoints)
+      out List<Vector3> rightLinePoints,
+      params Vector3[] controlPoints)
     {
         List<Vector3> bazierLinePoints = new();
 
         for (int p = 0; p < vertexCount; p++)
         {
             float t = 1.0f / vertexCount * p;
-            Vector3 point = BezierPathCalculation(t, startPosition, controlPosition, endPosition);
+            Vector3 point = BezierPathCalculation(t, controlPoints);
             bazierLinePoints.Add(point);
         }
+        bazierLinePoints.Add(controlPoints[controlPoints.Length - 1]);
         centerLinePoints = bazierLinePoints;
 
         FindParallelLines(
@@ -45,22 +45,30 @@ public class CurvedLine : MonoBehaviour
         float uuu = u * uu;
         Vector3 p0 = controlPoints[0];
         Vector3 p1 = controlPoints[1];
-        Vector3 p2 = controlPoints[2];
 
         Vector3 B = new();
-        if (controlPoints.Count() == 3)
+        if (controlPoints.Count() == 2)
         {
-            B = uu * p0;
-            B += 2.0f * u * t * p1;
-            B += tt * p2;
+            B = u * p0;
+            B += t * p1;
         }
-        else if (controlPoints.Count() == 4)
+        else
         {
-            Vector3 p3 = controlPoints[3];
-            B = uuu * p0;
-            B += 3.0f * uu * t * p1;
-            B += 3.0f * u * tt * p2;
-            B += ttt * p3;
+            Vector3 p2 = controlPoints[2];
+            if (controlPoints.Count() == 3)
+            {
+                B = uu * p0;
+                B += 2.0f * u * t * p1;
+                B += tt * p2;
+            }
+            else if (controlPoints.Count() == 4)
+            {
+                Vector3 p3 = controlPoints[3];
+                B = uuu * p0;
+                B += 3.0f * uu * t * p1;
+                B += 3.0f * u * tt * p2;
+                B += ttt * p3;
+            }
         }
         return B;
     }
@@ -72,7 +80,7 @@ public class CurvedLine : MonoBehaviour
     {
         leftLinePoints = new();
         rightLinePoints = new();
-        if (curvePoints.Count >= 3)
+        if (curvePoints.Count >= 2)
         {
             for (int i = 0; i <= curvePoints.Count - 2; i++)
             {

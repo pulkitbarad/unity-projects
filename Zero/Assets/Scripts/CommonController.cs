@@ -7,6 +7,8 @@ using System;
 using UnityEngine.SocialPlatforms;
 using UnityEngine.AI;
 using UnityEditor;
+using UnityEditor.PackageManager;
+using System.Text;
 
 public class CommonController : MonoBehaviour
 {
@@ -64,10 +66,8 @@ public class CommonController : MonoBehaviour
                 if (followerObject != null)
                 {
                     Vector3 followerOldPosition = followerObject.transform.position;
-                    Vector3 followerNewPosition = oldPosition - newPosition + followerOldPosition;
+                    Vector3 followerNewPosition = newPosition - oldPosition + followerOldPosition;
 
-                    CustomRenderer.RenderPoint(followerOldPosition, "Old", 20, Color.black);
-                    CustomRenderer.RenderPoint(followerNewPosition, "New", 20, Color.grey);
                     followerObject.transform.position = followerNewPosition;
 
                 }
@@ -101,4 +101,17 @@ public class CommonController : MonoBehaviour
         else
             return GameObject.Find(objectName);
     }
+    public static string GetPositionHexCode(params Vector3[] positions)
+    {
+        Vector3 position = Vector3.zero;
+        for (int i = 0; i < positions.Length; i++)
+        {
+            position += positions[i];
+        }
+        float coordinates = position.x  + position.y  + position.z;
+        return BitConverter.ToString(Encoding.Default.GetBytes(coordinates.ToString())).Replace("-", "");
+    }
+    // private static string GetNumerics(string input){
+    //     return new string(input.Where(c => char.IsDigit(c)).ToArray());
+    // }
 }

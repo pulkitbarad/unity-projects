@@ -133,7 +133,7 @@ public class CameraMovement : MonoBehaviour
         Transform objectTransform = gameObject.transform;
         float currentVerticalAngle, targetVerticalAngle;
         currentVerticalAngle = targetVerticalAngle = objectTransform.eulerAngles.y;
-        targetVerticalAngle += magnitude * rotationSpeed;
+        targetVerticalAngle -= magnitude * rotationSpeed;
         var targetEurlerAngle =
             Mathf.Lerp(
                 a: currentVerticalAngle,
