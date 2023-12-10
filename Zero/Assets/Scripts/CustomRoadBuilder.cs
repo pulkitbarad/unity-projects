@@ -161,6 +161,34 @@ public class CustomRoadBuilder : MonoBehaviour
             BuiltRoads.Add(CurrentActiveRoad);
         }
 
+        private void RenderRoadMesh()
+        {
+
+            List<Vector3> leftVertices = CurrentActiveRoad.LeftEdge.Vertices;
+            List<Vector3> rightVertices = CurrentActiveRoad.RightEdge.Vertices;
+            string roadObjectName = "Road" + BuiltRoads.Count;
+            for (int i = 1; i < leftVertices.Count; i++)
+            {
+                Vector3[] points = new Vector3[]
+                    { rightVertices[i - 1], rightVertices[i],leftVertices[i - 1], leftVertices[i] };
+                GameObject segmentObject = new(roadObjectName + "Segment" + i);
+                Mesh mesh = new();
+                segmentObject.GetComponent<MeshFilter>().mesh = mesh;
+                mesh.vertices = points;
+                mesh.triangles = new int[] { 0, 2, 3, 3, 1, 0 };
+                Vector3 upVector = Vector3.Cross(points[0] - points[2], points[3] - points[2]);
+                Vector3[] normals = new Vector3[4] { upVector, upVector, upVector, upVector };
+                mesh.normals = new Vector3[4] { upVector, upVector, upVector, upVector };
+                mesh.uv = new Vector2[] { Vector2.right, Vector2.one, Vector2.zero, Vector2.up };
+
+            }
+        }
+
+        private Vector3 GetPointNormal(Vector3 originVertex, Vector3 destinationVertex, Vector3 adjacentVertex)
+        {
+            return Vector3.Cross(destinationVertex - originVertex, adjacentVertex - originVertex);
+        }
+
         public void CancelBuilding()
         {
             CurrentActiveRoad.HideControlObjects();
