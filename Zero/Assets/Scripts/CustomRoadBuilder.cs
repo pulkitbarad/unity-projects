@@ -38,6 +38,7 @@ public class CustomRoadBuilder : MonoBehaviour
         public CustomRoadLine LeftEdge;
         public CustomRoadLine RightEdge;
         public int RoadWidth = 10;
+        public int RoadHeight = 2;
         public int VertexCount = 20;
         public bool IsCurved = true;
 
@@ -158,28 +159,39 @@ public class CustomRoadBuilder : MonoBehaviour
                 color: Color.yellow,
                 linePoints: CurrentActiveRoad.RightEdge.Vertices.ToArray()).transform.SetParent(roadParentTransform);
             CurrentActiveRoad.HideControlObjects();
+            RenderRoadMesh();
             BuiltRoads.Add(CurrentActiveRoad);
         }
 
         private void RenderRoadMesh()
         {
-
-            List<Vector3> leftVertices = CurrentActiveRoad.LeftEdge.Vertices;
-            List<Vector3> rightVertices = CurrentActiveRoad.RightEdge.Vertices;
+            List<Vector3> centerVertices = CurrentActiveRoad.CenterLine.Vertices;
             string roadObjectName = "Road" + BuiltRoads.Count;
-            for (int i = 1; i < leftVertices.Count; i++)
+            for (int i = 1; i < centerVertices.Count; i++)
             {
-                Vector3[] points = new Vector3[]
-                    { rightVertices[i - 1], rightVertices[i],leftVertices[i - 1], leftVertices[i] };
-                GameObject segmentObject = new(roadObjectName + "Segment" + i);
-                Mesh mesh = new();
-                segmentObject.GetComponent<MeshFilter>().mesh = mesh;
-                mesh.vertices = points;
-                mesh.triangles = new int[] { 0, 2, 3, 3, 1, 0 };
-                Vector3 upVector = Vector3.Cross(points[0] - points[2], points[3] - points[2]);
-                Vector3[] normals = new Vector3[4] { upVector, upVector, upVector, upVector };
-                mesh.normals = new Vector3[4] { upVector, upVector, upVector, upVector };
-                mesh.uv = new Vector2[] { Vector2.right, Vector2.one, Vector2.zero, Vector2.up };
+
+                GameObject segmentObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                segmentObject.name = roadObjectName + "Segment" + i;
+                Vector3 forwardDirection = centerVertices[i] - centerVertices[i - 1];
+                segmentObject.transform.position =
+                    centerVertices[i - 1]
+                    + forwardDirection * 0.5f
+                    + Vector3.up * CurrentActiveRoad.RoadHeight;
+                segmentObject.transform.localScale = new Vector3(forwardDirection.magnitude, CurrentActiveRoad.RoadHeight, CurrentActiveRoad.RoadWidth);
+                float angleWithRight = Vector3.Angle(forwardDirection, segmentObject.transform.right);
+                segmentObject.transform.rotation = Quaternion.AngleAxis(angleWithRight, Vector3.up);
+                // segmentObject.AddComponent<BoxCollider>();
+
+                // Vector3[] points = new Vector3[]
+                //     { rightVertices[i - 1], rightVertices[i],leftVertices[i - 1], leftVertices[i] };
+                // Mesh mesh = new();
+                // segmentObject.GetComponent<MeshFilter>().mesh = mesh;
+                // mesh.vertices = points;
+                // mesh.triangles = new int[] { 0, 2, 3, 3, 1, 0 };
+                // Vector3 upVector = Vector3.Cross(points[0] - points[2], points[3] - points[2]);
+                // Vector3[] normals = new Vector3[] { upVector, upVector, upVector, upVector, upVector, upVector };
+                // mesh.normals = new Vector3[] { upVector, upVector, upVector, upVector , upVector, upVector };
+                // mesh.uv = new Vector2[] { Vector2.right, Vector2.one, Vector2.zero, Vector2.up };
 
             }
         }
