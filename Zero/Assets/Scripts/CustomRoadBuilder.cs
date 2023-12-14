@@ -177,11 +177,9 @@ public class CustomRoadBuilder : MonoBehaviour
                     centerVertices[i - 1]
                     + forwardDirection * 0.5f
                     + Vector3.up * CurrentActiveRoad.RoadHeight;
-                segmentObject.transform.localScale = new Vector3(forwardDirection.magnitude, CurrentActiveRoad.RoadHeight, CurrentActiveRoad.RoadWidth);
-                float angleWithRight = Vector3.Angle(forwardDirection, segmentObject.transform.right);
-                segmentObject.transform.rotation = Quaternion.AngleAxis(-angleWithRight, Vector3.up);
-                // var headingChange = Quaternion.FromToRotation(segmentObject.transform.forward, forwardDirection);
-                // segmentObject.transform.localRotation *= headingChange;
+                segmentObject.transform.localScale = new Vector3(CurrentActiveRoad.RoadWidth, CurrentActiveRoad.RoadHeight, forwardDirection.magnitude);
+                var headingChange = Quaternion.FromToRotation(segmentObject.transform.forward, forwardDirection);
+                segmentObject.transform.localRotation *= headingChange;
                 // segmentObject.AddComponent<BoxCollider>();
 
                 // Vector3[] points = new Vector3[]
