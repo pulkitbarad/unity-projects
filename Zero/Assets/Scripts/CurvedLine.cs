@@ -11,8 +11,6 @@ public class CurvedLine : MonoBehaviour
       int vertexCount,
       int roadWidth,
       out List<Vector3> centerLinePoints,
-      out List<Vector3> leftLinePoints,
-      out List<Vector3> rightLinePoints,
       params Vector3[] controlPoints)
     {
         List<Vector3> bazierLinePoints = new();
@@ -26,11 +24,6 @@ public class CurvedLine : MonoBehaviour
         bazierLinePoints.Add(controlPoints[controlPoints.Length - 1]);
         centerLinePoints = bazierLinePoints;
 
-        FindParallelLines(
-            curvePoints: bazierLinePoints,
-            pathWidth: roadWidth,
-            leftLinePoints: out leftLinePoints,
-            rightLinePoints: out rightLinePoints);
     }
 
     private static Vector3 BezierPathCalculation(
@@ -115,9 +108,9 @@ public class CurvedLine : MonoBehaviour
         Vector3 forwardVector = targetPoint - originPoint;
         Vector3 upPoint = new(originPoint[0], originPoint[1] + 3, originPoint[2]);
         Vector3 upVector = upPoint - originPoint;
-        Vector3 rightVector = Vector3.Cross(forwardVector, upVector).normalized;
-        var rightPoint = originPoint + (rightVector * parallelWidth);
-        var leftPoint = originPoint - (rightVector * parallelWidth);
+        Vector3 leftVector = Vector3.Cross(forwardVector, upVector).normalized;
+        var leftPoint = originPoint + (leftVector * parallelWidth/2);
+        var rightPoint = originPoint - (leftVector * parallelWidth/2);
 
         return new List<Vector3>() { rightPoint, leftPoint };
     }

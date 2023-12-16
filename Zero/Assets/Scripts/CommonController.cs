@@ -101,6 +101,21 @@ public class CommonController : MonoBehaviour
         else
             return GameObject.Find(objectName);
     }
+
+    // public static bool AreSegmentsIntersecting(){
+
+    // }
+
+    public static bool AreSegmentsIntersecting(Vector3 start1, Vector3 end1, Vector3 start2, Vector3 end2){
+
+        Vector3 backward2  = start2-end2;
+        Vector3 bound1 = start2 - start1;
+        Vector3 bound2 = start2 - end1;
+
+        float boundAngle = Vector3.Angle(bound1,bound2);
+        return Vector3.Angle(backward2,bound1) + Vector3.Angle(backward2,bound2) == boundAngle;
+
+    }
     public static string GetPositionHexCode(params Vector3[] positions)
     {
         Vector3 position = Vector3.zero;
