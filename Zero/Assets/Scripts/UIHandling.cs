@@ -120,25 +120,25 @@ public class UIHandling : MonoBehaviour
     private void OnCurvedRoadPerformed(InputAction.CallbackContext context)
     {
         _isRoadMenuActive = true;
-        CustomRoadBuilder.CurrentActiveRoad.StartBuilding(true);
+        CustomRoadBuilder.StartBuilding(true);
     }
 
     private void OnStraightRoadPerformed(InputAction.CallbackContext context)
     {
         _isRoadMenuActive = true;
-        CustomRoadBuilder.CurrentActiveRoad.StartBuilding(false);
+        CustomRoadBuilder.StartBuilding(false);
     }
 
     private void OnConfirmPerformed(InputAction.CallbackContext context)
     {
         _isRoadMenuActive = false;
-        CustomRoadBuilder.CurrentActiveRoad.ConfirmBuilding();
+        CustomRoadBuilder.ConfirmBuilding();
     }
 
     private void OnCancelPerformed(InputAction.CallbackContext context)
     {
         _isRoadMenuActive = false;
-        CustomRoadBuilder.CurrentActiveRoad.CancelBuilding();
+        CustomRoadBuilder.CancelBuilding();
     }
 
 

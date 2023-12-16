@@ -9,7 +9,7 @@ public class CustomRenderer : MonoBehaviour
 
     private static readonly List<GameObject> _lineObjectPool = new();
     private static readonly int _lineObjectPoolCount;
-    private static readonly List<string> _existingPoints = new();
+    private static readonly List<string> _existingSpheres = new();
     private static Material _baseLineMaterial;
     public static bool IsDebugEnabled = false;
 
@@ -44,10 +44,11 @@ public class CustomRenderer : MonoBehaviour
 
     public static GameObject GetLineObject(
         string name,
-        Color color,
-        float width = 2f)
+        Color? color = null,
+        float width = 2f,
+        Transform parentTransform = null)
     {
-        GameObject lineObject = GameObject.Find(name);
+        GameObject lineObject = CommonController.FindGameObject(name, true);
 
         if (lineObject == null)
         {
@@ -70,19 +71,23 @@ public class CustomRenderer : MonoBehaviour
                 lineObject.AddComponent(typeof(LineRenderer)) as LineRenderer;
             Material newLineMaterial = new(_baseLineMaterial);
             primaryLineRenderer.sharedMaterial = new Material(newLineMaterial);
-            // primaryLineRenderer.sharedMaterial.SetColor("_Color",color);
-            primaryLineRenderer.startColor = color;
-            primaryLineRenderer.endColor = color;
+            primaryLineRenderer.startColor = color ?? Color.yellow; ;
+            primaryLineRenderer.endColor = color ?? Color.yellow; ;
             primaryLineRenderer.startWidth = width;
             primaryLineRenderer.endWidth = width;
             primaryLineRenderer.positionCount = 3;
         }
+        if (parentTransform != null)
+        {
+            lineObject.transform.SetParent(parentTransform);
+        }
+
         return lineObject;
     }
 
     public static GameObject RenderLine(
         string name,
-        Color color,
+        Color? color = null,
         float width = 2f,
         float pointSize = 5f,
         Transform parentTransform = null,
@@ -90,7 +95,7 @@ public class CustomRenderer : MonoBehaviour
         params Vector3[] linePoints)
     {
         GameObject lineObject =
-            CommonController.FindGameObject(name, true) ?? GetLineObject(name, color, width: width);
+            CommonController.FindGameObject(name, true) ?? GetLineObject(name, color, width: width, parentTransform);
         LineRenderer lineRenderer = lineObject.GetComponent<LineRenderer>();
         lineRenderer.positionCount = linePoints.Length;
         Transform lineTransform = lineObject.transform;
@@ -100,54 +105,37 @@ public class CustomRenderer : MonoBehaviour
         {
             for (int i = 0; i < linePoints.Length; i++)
             {
-                RenderPoint(point: linePoints[i], name + "Point" + i, size: pointSize, parentTransform: lineTransform, color: color);
+                RenderSphere(position: linePoints[i], name + "Point" + i, size: pointSize, parentTransform: lineTransform, color: color);
             }
-        }
-        if (parentTransform != null)
-        {
-            lineObject.transform.SetParent(parentTransform);
         }
         return lineObject;
     }
 
-    public static GameObject RenderPoint(
-        Vector3 point,
-        string pointName,
+    public static GameObject RenderSphere(
+        Vector3 position,
+        string sphereName = "",
         float size = 5f,
         Transform parentTransform = null,
         Color? color = null)
     {
-        GameObject sphere;
-        if (_existingPoints.FirstOrDefault(e => e.Contains(pointName)) == null)
-        {
-            sphere = RenderSphere(pointName, point, size, color);
-            _existingPoints.Add(pointName);
-        }
-        else
-        {
-            sphere = GameObject.Find(pointName);
-        }
-        if (sphere != null)
-        {
-            sphere.transform.position = point;
-            sphere.transform.SetParent(parentTransform);
+        string newSphereName = sphereName.Length > 0 ? sphereName : "Sphere" + _existingSpheres.Count;
 
+        GameObject sphere = CommonController.FindGameObject(newSphereName, true);
+        if (sphere == null)
+        {
+            sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            _existingSpheres.Add(newSphereName);
         }
-        return sphere;
-    }
-    public static GameObject RenderSphere(
-        string sphereName,
-        Vector3 position,
-        float size = 5f,
-        Color? color = null)
-    {
-        GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-        if (sphereName.Length > 0)
-            sphere.name = sphereName;
+        sphere.name = newSphereName;
         sphere.transform.localScale = new Vector3(size, size, size);
         sphere.transform.position = position;
         var sphereRenderer = sphere.GetComponent<Renderer>();
         sphereRenderer.material.color = color ?? Color.yellow;
+
+        if (parentTransform != null)
+            sphere.transform.SetParent(parentTransform);
+        sphere.SetActive(true);
+
         return sphere;
     }
 

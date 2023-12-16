@@ -5,162 +5,173 @@ using System.Linq;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UIElements;
 
 public class CustomRoadBuilder : MonoBehaviour
 {
     public static GameObject RoadControlsParent;
     public static GameObject BuiltRoadsParent;
+    public static GameObject BuiltRoadSegmentsParent;
+    public static GameObject BuiltIntersectionsParent;
     public static GameObject StartObject;
     public static GameObject ControlObject;
     public static GameObject EndObject;
-    public static GameObject CenterLineObject;
     public static GameObject LeftLineObject;
     public static GameObject RightLineObject;
-    public static readonly Dictionary<string, Vector3> InitialStaticLocalScale = new();
-    public static readonly Dictionary<string, CustomRoadSegment> LookupSegmentNameToSegment = new();
-    public static readonly Dictionary<string, CustomRoad> LookupSegmentNameToRoad = new();
-    public static readonly Dictionary<string, CustomRoad> LookupRoadNameToRoad = new();
     public static CustomRoad CurrentActiveRoad;
+    public static readonly Dictionary<string, Vector3> InitialStaticLocalScale = new();
+    public static readonly Dictionary<string, CustomRoadSegment> BuiltRoadSegments = new();
+    public static readonly Dictionary<string, CustomRoad> BuiltRoads = new();
+    public static readonly Dictionary<string, CustomRoadIntersection> BuiltIntersections = new();
 
     void Start()
     {
         RoadControlsParent = new GameObject("RoadControls");
         BuiltRoadsParent = new GameObject("BuiltRoads");
-        // CurrentActiveRoad.HideControlObjects();
+        BuiltRoadSegmentsParent = new GameObject("BuiltRoadSegments");
+        BuiltIntersectionsParent = new GameObject("BuiltIntersections");
+        InitControlObjects(true);
+        HideControlObjects();
+    }
+    public static void InitControlObjects(bool isCurved)
+    {
+        StartObject = InitStaticObject(
+            objectName: "RoadStart",
+             size: 10,
+              color: new Color(0.25f, 0.35f, 0.30f));
+        if (isCurved)
+            ControlObject = InitStaticObject(
+                objectName: "RoadControl",
+                size: 10,
+                color: new Color(0, 1, 0.20f));
+        EndObject = InitStaticObject(
+            objectName: "RoadEnd",
+            size: 10,
+            color: new Color(0.70f, 0.45f, 0f));
+
+        LeftLineObject =
+        CustomRenderer.GetLineObject(
+            name: "RoadLeftEdge",
+            parentTransform: RoadControlsParent.transform);
+
+        RightLineObject =
+        CustomRenderer.GetLineObject(
+            name: "RoadRightEdge",
+            parentTransform: RoadControlsParent.transform);
+    }
+
+    public static GameObject InitStaticObject(string objectName, float size, Color? color)
+    {
+
+        GameObject gameObject = CommonController.FindGameObject(objectName, true);
+
+        if (gameObject == null)
+        {
+            gameObject = CustomRenderer.RenderCylinder(objectName: objectName, position: Vector3.zero, size: size, color: color);
+            gameObject.transform.SetParent(RoadControlsParent.transform);
+            InitialStaticLocalScale.Add(gameObject.name, gameObject.transform.localScale);
+        }
+        return gameObject;
+    }
+
+    private static Vector3 InitCurveControlPosition(bool isCurved)
+    {
+        Vector3 startPosition = StartObject.transform.position;
+        var startToEndDirection = EndObject.transform.position - startPosition;
+        var startToEndDistance = startToEndDirection.magnitude;
+        Vector3 midPointVector = 0.5f * startToEndDistance * startToEndDirection.normalized;
+        if (isCurved)
+            return startPosition + Quaternion.AngleAxis(45, Vector3.up) * midPointVector;
+        else
+            return startPosition + midPointVector;
+    }
+
+    public static void ShowControlObjects(bool isCurved)
+    {
+        //Make control objects visible            
+        StartObject.SetActive(true);
+        EndObject.SetActive(true);
+        if (isCurved)
+            ControlObject.SetActive(true);
+        LeftLineObject.SetActive(true);
+        RightLineObject.SetActive(true);
+    }
+
+    public static void HideControlObjects()
+    {
+        StartObject.SetActive(false);
+        ControlObject.SetActive(false);
+        EndObject.SetActive(false);
+        LeftLineObject.SetActive(false);
+        RightLineObject.SetActive(false);
+    }
+
+    public static void StartBuilding(bool isCurved)
+    {
+        CurrentActiveRoad = new CustomRoad("Road" + BuiltRoads.Count, isCurved);
+        ShowControlObjects(isCurved);
+    }
+
+    public static void ConfirmBuilding()
+    {
+        HideControlObjects();
+        CurrentActiveRoad.RenderRoad();
+    }
+    public static void CancelBuilding()
+    {
+        HideControlObjects();
+    }
+
+    public static void RepositionControlObjects(bool isCurved)
+    {
+        Vector3 startPosition = CameraMovement.GetTerrainHitPoint(CommonController.GetScreenCenterPoint());
+
+        StartObject.transform.position = startPosition;
+        EndObject.transform.position = startPosition + 200f * CameraMovement.MainCameraRoot.transform.right;
+        if (isCurved)
+        {
+            ControlObject.transform.position = InitCurveControlPosition(isCurved);
+        }
+        LeftLineObject =
+        CustomRenderer.GetLineObject(
+            name: "RoadLeftEdge",
+            parentTransform: RoadControlsParent.transform);
+
+        RightLineObject =
+        CustomRenderer.GetLineObject(
+            name: "RoadRightEdge",
+            parentTransform: RoadControlsParent.transform);
     }
 
     public class CustomRoad
     {
-
         public string Name;
-        public Vector3 StartPosition;
-        public Vector3 CurveControlPosition;
-        public Vector3 EndPosition;
         public int RoadWidth = 10;
         public int RoadHeight = 2;
         public int VertexCount = 20;
         public bool IsCurved = true;
-
         public List<CustomRoadSegment> Segments = new();
-
         public GameObject RoadObject;
 
-        public CustomRoad(bool isCurved, GameObject roadObject)
+        public CustomRoad(string name, bool isCurved)
         {
+            this.Name = name;
             this.IsCurved = isCurved;
-            this.RoadObject = roadObject;
+            this.RoadObject = CommonController.FindGameObject(name, true) ?? new GameObject("Road" + BuiltRoads.Count);
+            this.RoadObject.transform.SetParent(BuiltRoadsParent.transform);
 
             if (!this.IsCurved)
                 VertexCount = 4;
 
-            InitControlObjects();
-            Rebuild(forceRebuild: true, touchPosition: Vector2.zero);
-        }
-
-        public void InitControlObjects()
-        {
-            StartObject = InitStaticObject(
-                objectName: "RoadStart",
-                 size: 10,
-                  color: new Color(0.25f, 0.35f, 0.30f));
-            if (this.IsCurved)
-                ControlObject = InitStaticObject(
-                    objectName: "RoadControl",
-                    size: 10,
-                    color: new Color(0, 1, 0.20f));
-            EndObject = InitStaticObject(
-                objectName: "RoadEnd",
-                size: 10,
-                color: new Color(0.70f, 0.45f, 0f));
-
-            this.StartPosition = this.EndPosition = CameraMovement.GetTerrainHitPoint(CommonController.GetScreenCenterPoint());
-            this.EndPosition += 200f * CameraMovement.MainCameraRoot.transform.right;
-            StartObject.transform.position = this.StartPosition;
-            EndObject.transform.position = this.EndPosition;
-            if (this.IsCurved)
-            {
-                this.CurveControlPosition = InitCurveControlPosition();
-                ControlObject.transform.position = InitCurveControlPosition();
-            }
-        }
-
-        private Vector3 InitCurveControlPosition()
-        {
-            var startToEndDirection = this.EndPosition - this.StartPosition;
-            var startToEndDistance = startToEndDirection.magnitude;
-            Vector3 midPointVector = 0.5f * startToEndDistance * startToEndDirection.normalized;
-            if (IsCurved)
-                return this.StartPosition + Quaternion.AngleAxis(45, Vector3.up) * midPointVector;
-            else
-                return this.StartPosition + midPointVector;
-        }
-
-        public GameObject InitStaticObject(string objectName, float size, Color? color)
-        {
-
-            GameObject gameObject = CommonController.FindGameObject(objectName, true);
-
-            if (gameObject == null)
-            {
-                gameObject = CustomRenderer.RenderCylinder(objectName: objectName, position: Vector3.zero, size: size, color: color);
-                gameObject.transform.SetParent(RoadControlsParent.transform);
-                InitialStaticLocalScale.Add(gameObject.name, gameObject.transform.localScale);
-            }
-            return gameObject;
-        }
-
-        public void ShowControlObjects()
-        {
-            //Make control objects visible            
-            StartObject.SetActive(true);
-            EndObject.SetActive(true);
-            if (this.IsCurved)
-                ControlObject.SetActive(true);
-
-            //Make line objects visible            
-            CenterLineObject.SetActive(true);
-            LeftLineObject.SetActive(true);
-            RightLineObject.SetActive(true);
-        }
-
-        public void HideControlObjects()
-        {
-            StartObject.SetActive(false);
-            ControlObject.SetActive(false);
-            EndObject.SetActive(false);
-            CenterLineObject.SetActive(false);
-            LeftLineObject.SetActive(false);
-            RightLineObject.SetActive(false);
-        }
-
-        public void StartBuilding(bool isCurved)
-        {
-            CurrentActiveRoad = new CustomRoad(isCurved, new GameObject("Road" + LookupRoadNameToRoad.Count));
-            CurrentActiveRoad.ShowControlObjects();
-        }
-
-        public void ConfirmBuilding()
-        {
-            var suffix = LookupRoadNameToRoad.Count;
-            Transform roadParentTransform = new GameObject("Road" + suffix).transform;
-
-            roadParentTransform.SetParent(BuiltRoadsParent.transform);
-            CurrentActiveRoad.HideControlObjects();
-            CurrentActiveRoad.Segments.ForEach(
-                (segment) =>
-                {
-                    LookupSegmentNameToRoad[segment.Name] = CurrentActiveRoad;
-                    LookupSegmentNameToSegment[segment.Name] = segment;
-                }
-            );
-            LookupRoadNameToRoad[CurrentActiveRoad.Name] = CurrentActiveRoad;
+            CustomRoadBuilder.RepositionControlObjects(isCurved);
+            this.Rebuild(forceRebuild: true, touchPosition: Vector2.zero);
         }
 
         public void Rebuild(
             bool forceRebuild,
             Vector2 touchPosition)
         {
-            if (forceRebuild || IsRebuildRequired(touchPosition))
+            if (forceRebuild || this.IsRebuildRequired(touchPosition))
             {
                 Vector3[] controlPoints;
                 if (this.IsCurved)
@@ -177,30 +188,28 @@ public class CustomRoadBuilder : MonoBehaviour
                     controlPoints[1] = EndObject.transform.position;
                 }
 
-                List<Vector3> centerVertices = new();
                 CurvedLine.FindBazierLinePoints(
                     vertexCount: this.VertexCount,
                     roadWidth: this.RoadWidth,
-                    centerLinePoints: out centerVertices,
+                    centerLinePoints: out List<Vector3> centerVertices,
                     controlPoints);
 
                 this.Segments = new();
                 for (int i = 0; i < centerVertices.Count - 1; i++)
                 {
-                    string roadSegmentName = this.RoadObject.name + "Segment" + i;
+                    string roadSegmentName = String.Concat("RoadSegment", (CustomRoadBuilder.BuiltRoadSegments.Count + i).ToString());
                     this.Segments.Add(
                         new CustomRoadSegment(
-                            name: roadSegmentName,
-                            cuboid: new CustomCuboid(
                                 name: roadSegmentName,
                                 centerStart: centerVertices[i],
                                 centerEnd: centerVertices[i + 1],
                                 width: this.RoadWidth,
-                                height: this.RoadHeight)
-                        )
+                                height: this.RoadHeight,
+                                parentRoad: this,
+                                renderSegment: false)
                     );
                 }
-                RenderRoadMesh();
+                this.RenderRoadLines();
             }
         }
 
@@ -209,16 +218,16 @@ public class CustomRoadBuilder : MonoBehaviour
             if (!EventSystem.current.IsPointerOverGameObject())
             {
                 var roadStartChanged =
-                    !this.StartPosition.Equals(Vector3.zero)
+                    !StartObject.transform.position.Equals(Vector3.zero)
                     && CommonController.HandleGameObjectDrag(StartObject, touchPosition);
 
                 var roadControlChanged =
                     this.IsCurved
-                    && !this.CurveControlPosition.Equals(Vector3.zero)
+                    && !ControlObject.transform.position.Equals(Vector3.zero)
                     && CommonController.HandleGameObjectDrag(ControlObject, touchPosition);
 
                 var roadEndChanged =
-                    !this.EndPosition.Equals(Vector3.zero)
+                    !EndObject.transform.position.Equals(Vector3.zero)
                     && CommonController.HandleGameObjectDrag(EndObject, touchPosition);
 
                 return roadStartChanged || roadControlChanged || roadEndChanged;
@@ -226,39 +235,85 @@ public class CustomRoadBuilder : MonoBehaviour
             else return false;
         }
 
-        private void RenderRoadMesh()
+        public void RenderRoad()
         {
-            FindIntersections()
-                // segmentObject.AddComponent<BoxCollider>();
-
-            // Vector3[] points = new Vector3[]
-            //     { rightVertices[i - 1], rightVertices[i],leftVertices[i - 1], leftVertices[i] };
-            // Mesh mesh = new();
-            // segmentObject.GetComponent<MeshFilter>().mesh = mesh;
-            // mesh.vertices = points;
-            // mesh.triangles = new int[] { 0, 2, 3, 3, 1, 0 };
-            // Vector3 upVector = Vector3.Cross(points[0] - points[2], points[3] - points[2]);
-            // Vector3[] normals = new Vector3[] { upVector, upVector, upVector, upVector, upVector, upVector };
-            // mesh.normals = new Vector3[] { upVector, upVector, upVector, upVector , upVector, upVector };
-            // mesh.uv = new Vector2[] { Vector2.right, Vector2.one, Vector2.zero, Vector2.up };
+            this.Segments.ForEach(
+                (segment) =>
+                {
+                    BuiltRoadSegments[segment.Name] = segment;
+                    segment.InitSegmentObject();
+                }
+            );
+            this.RenderIntersections();
+            BuiltRoads[this.Name] = this;
         }
 
-        private bool FindIntersections()
+        public void RenderRoadLines()
         {
+            List<Vector3> leftVertices = new();
+            List<Vector3> rightVertices = new();
+            for (int i = 0; i < this.Segments.Count; i++)
+            {
+                CustomRoadSegment segment = this.Segments[i];
+                Vector3[] bounds = segment.TopPlane;
+                leftVertices.Add(bounds[0]);
+                leftVertices.Add(bounds[2]);
+                rightVertices.Add(bounds[1]);
+                rightVertices.Add(bounds[3]);
+            }
 
+            LeftLineObject =
+            CustomRenderer.RenderLine(
+                name: "RoadLeftEdge",
+                color: Color.yellow,
+                width: 2,
+                pointSize: 5,
+                parentTransform: RoadControlsParent.transform,
+                renderPoints: true,
+                linePoints: leftVertices.ToArray());
+
+            RightLineObject =
+            CustomRenderer.RenderLine(
+                name: "RoadRightEdge",
+                color: Color.red,
+                width: 2,
+                pointSize: 5,
+                parentTransform: RoadControlsParent.transform,
+                renderPoints: true,
+                linePoints: rightVertices.ToArray());
+        }
+
+        // private void RenderRoadMesh()
+        // {
+
+        // segmentObject.AddComponent<BoxCollider>();
+
+        // Vector3[] points = new Vector3[]
+        //     { rightVertices[i - 1], rightVertices[i],leftVertices[i - 1], leftVertices[i] };
+        // Mesh mesh = new();
+        // segmentObject.GetComponent<MeshFilter>().mesh = mesh;
+        // mesh.vertices = points;
+        // mesh.triangles = new int[] { 0, 2, 3, 3, 1, 0 };
+        // Vector3 upVector = Vector3.Cross(points[0] - points[2], points[3] - points[2]);
+        // Vector3[] normals = new Vector3[] { upVector, upVector, upVector, upVector, upVector, upVector };
+        // mesh.normals = new Vector3[] { upVector, upVector, upVector, upVector , upVector, upVector };
+        // mesh.uv = new Vector2[] { Vector2.right, Vector2.one, Vector2.zero, Vector2.up };
+        // }
+
+        public void RenderIntersections()
+        {
             List<Vector3> leftCollisionPoints = new();
             List<Vector3> rightCollisionPoints = new();
 
-            int activeRoadSegmentCount = CurrentActiveRoad.Segments.Count;
-            for (int segmentIndex = 0; segmentIndex < activeRoadSegmentCount - 1; segmentIndex++)
+            int activeRoadSegmentCount = this.Segments.Count;
+            for (int segmentIndex = 0; segmentIndex < activeRoadSegmentCount; segmentIndex++)
             {
-                CustomCuboid segment = CurrentActiveRoad.Segments[segmentIndex];
-
+                CustomRoadSegment segment = this.Segments[segmentIndex];
                 Vector3[] segmentBounds = segment.TopPlane;
                 Collider[] overalppingColliders =
                     Physics.OverlapBox(
-                        segment.CuboidObject.transform.position,
-                        segment.CuboidObject.transform.localScale / 2);
+                        segment.SegmentObject.transform.position,
+                        segment.SegmentObject.transform.localScale / 2);
 
                 if (overalppingColliders.Length > 0)
                 {
@@ -267,8 +322,8 @@ public class CustomRoadBuilder : MonoBehaviour
                         string colliderSegmentName = collider.gameObject.name;
                         if (BuiltRoadSegments.ContainsKey(colliderSegmentName))
                         {
-                            Vector3[] colliderBounds = segment.TopPlane;
-                            List<List<Vector3>> segmentCollisionPoints = FindCollisionPoints(
+                            Vector3[] colliderBounds = BuiltRoadSegments[collider.gameObject.name].TopPlane;
+                            List<List<Vector3>> segmentCollisionPoints = this.FindCollisionPoints(
                                 maxDistance: segment.Length,
                                 colliderBounds: colliderBounds,
                                 segmentBounds: segmentBounds);
@@ -278,27 +333,24 @@ public class CustomRoadBuilder : MonoBehaviour
                     }
                 }
             }
-            if (leftCollisionPoints.Count != rightCollisionPoints.Count || leftCollisionPoints.Count % 2 != 0)
-                return false;
-            else
+
+            for (int collisionPointIndex = 0;
+                collisionPointIndex < leftCollisionPoints.Count - 2;
+                collisionPointIndex += 2)
             {
-                for (int collisionPointIndex = 0;
-                    collisionPointIndex < leftCollisionPoints.Count;
-                    collisionPointIndex += 2)
-                {
-                    Vector3[] intersectionBounds =
-                     new Vector3[]{
-                        leftCollisionPoints[collisionPointIndex],
-                        rightCollisionPoints[collisionPointIndex],
-                        leftCollisionPoints[collisionPointIndex+1],
-                        rightCollisionPoints[collisionPointIndex+1]
-                        };
-                        // new CustomRoadIntersection(
-                        //     new CustomCuboid(),
-                        //     CurrentActiveRoad,
-                        //     LookupSegmentNameToRoad[co]
-                        // );
-                }
+                // CustomRenderer.RenderSphere(
+                //     position: leftCollisionPoints[collisionPointIndex],
+                //     sphereName: this.Name + "LeftPoint" + collisionPointIndex,
+                //     color: Color.green);
+            }
+            for (int collisionPointIndex = 0;
+                collisionPointIndex < rightCollisionPoints.Count - 2;
+                collisionPointIndex += 2)
+            {
+                // CustomRenderer.RenderSphere(
+                //     position: rightCollisionPoints[collisionPointIndex],
+                //     sphereName: this.Name + "RightPoint" + collisionPointIndex,
+                //     color: Color.red);
             }
         }
 
@@ -309,7 +361,7 @@ public class CustomRoadBuilder : MonoBehaviour
         {
             List<Vector3> leftCollisionPoints = new();
             List<Vector3> rightCollisionPoints = new();
-            if (!IsPartialOverlap(colliderBounds, segmentBounds))
+            if (!this.IsPartialOverlap(colliderBounds, segmentBounds))
             {
                 for (int i = 0; i < 4; i++)
                 {
@@ -317,20 +369,36 @@ public class CustomRoadBuilder : MonoBehaviour
                     Vector3 direction;
                     origin = segmentBounds[i];
                     if (i < 2)
+                    {
                         direction = segmentBounds[i + 2] - segmentBounds[i];
+                    }
                     else
+                    {
                         direction = segmentBounds[i - 2] - segmentBounds[i];
+                    }
+                    // if (!Physics.Raycast(
+                    //         origin: origin,
+                    //         direction: direction,
+                    //         hitInfo: out RaycastHit _rayHit2,
+                    //         maxDistance: maxDistance))
+                    // {
+                    //     CustomRenderer.RenderSphere(origin, color: Color.blue);
+                    //     CustomRenderer.RenderSphere(direction + origin, color: Color.yellow);
+                    // }
 
-                    if (!IsPointInsideBounds(segmentBounds[0], colliderBounds)
+                    if (!this.IsPointInsideBounds(origin, colliderBounds)
                         && Physics.Raycast(
                             origin: origin,
                             direction: direction,
                             hitInfo: out RaycastHit _rayHit,
                             maxDistance: maxDistance))
+                    {
                         if (i % 2 == 1)
                             leftCollisionPoints.Add(_rayHit.point);
                         else
                             rightCollisionPoints.Add(_rayHit.point);
+                        CustomRenderer.RenderSphere(_rayHit.point, color: Color.green);
+                    }
                 }
             }
             return new List<List<Vector3>>() { leftCollisionPoints, rightCollisionPoints };
@@ -344,7 +412,7 @@ public class CustomRoadBuilder : MonoBehaviour
             return true;
         }
 
-        private bool IsPointInsideBounds(Vector3 point, Vector3[] bounds)
+        private bool IsPointInsideBounds(Vector3 point, Vector3[] bounds,float margin=5)
         {
             float maxX = bounds[0].x;
             float maxY = bounds[0].y;
@@ -361,75 +429,70 @@ public class CustomRoadBuilder : MonoBehaviour
             }
             return point.x > minX && point.x < maxX && point.y > minY && point.y < maxY;
         }
-
-        public void CancelBuilding()
-        {
-            CurrentActiveRoad.HideControlObjects();
-        }
     }
-
-
 
     public class CustomRoadIntersection
     {
-        public CustomCuboid Cuboid;
-        public CustomRoad Road1;
-        public CustomRoad Road2;
-        public CustomRoadIntersection(CustomCuboid cuboid, CustomRoad road1, CustomRoad road2)
+        public string Name;
+        public Vector3[] Vertices;
+        public CustomRoadIntersection(string name, Vector3[] vertices)
         {
-            this.Cuboid = cuboid;
-            this.Road1 = road1;
-            this.Road2 = road2;
+            this.Name = name;
+            this.Vertices = vertices;
         }
     }
 
     public class CustomRoadSegment
     {
         public string Name;
-        public CustomCuboid Cuboid;
-        public CustomRoadSegment(string name, CustomCuboid cuboid)
-        {
-            this.Name = name;
-            this.Cuboid = cuboid;
-        }
-    }
-
-    public class CustomCuboid
-    {
-        public string Name;
         public Vector3[] TopPlane;
         public Vector3[] BottomPlane;
         public Vector3 Center;
+        public Vector3 Forward;
         public float Width;
         public float Height;
         public float Length;
-        public GameObject CuboidObject;
+        public GameObject SegmentObject;
+        public CustomRoad ParentRoad;
 
-        public CustomCuboid(
+        public CustomRoadSegment(
              string name,
+             float width,
+             float height,
              Vector3 centerStart,
              Vector3 centerEnd,
-             float width,
-             float height)
+             CustomRoad parentRoad,
+             bool renderSegment)
+        {
+            this.Name = name;
+            this.Width = width;
+            this.Height = height;
+            this.ParentRoad = parentRoad;
+            this.Forward = centerEnd - centerStart;
+            this.Length = this.Forward.magnitude;
+            this.InitCenter(centerStart);
+            this.InitPlanes(centerStart, centerEnd);
+            if (renderSegment)
+                this.InitSegmentObject();
+        }
+
+        private void InitPlanes(Vector3 centerStart, Vector3 centerEnd)
         {
             Vector3 forward = centerEnd - centerStart;
             Vector3 left = Vector3.Cross(forward, Vector3.up).normalized;
-            Vector3 halfLeft = left * width / 2;
+            Vector3 halfLeft = left * this.Width / 2;
             Vector3 leftStart = centerStart + halfLeft;
             Vector3 leftEnd = centerEnd + halfLeft;
             Vector3 rightStart = centerStart - halfLeft;
             Vector3 rightEnd = centerEnd - halfLeft;
-            this.Center = centerStart + forward / 2 + 0.5f * height * Vector3.up;
-            this.Length = forward.magnitude;
-            this.Width = width;
-            this.Height = height;
-            this.Name = name;
+
             this.TopPlane = new Vector3[]{
                 leftStart,
                 rightStart,
                 leftEnd,
                 rightEnd
             };
+
             this.BottomPlane = new Vector3[]{
                 leftStart,
                 rightStart,
@@ -439,18 +502,26 @@ public class CustomRoadBuilder : MonoBehaviour
 
             for (int i = 0; i < this.TopPlane.Length; i++)
             {
-                this.TopPlane[i] += 0.5f * height * Vector3.up;
-                this.BottomPlane[i] -= 0.5f * height * Vector3.up;
+                this.TopPlane[i] += 0.5f * this.Height * Vector3.up;
+                this.BottomPlane[i] -= 0.5f * this.Height * Vector3.up;
             }
+        }
 
-            GameObject cuboidObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            cuboidObject.name = name;
-            cuboidObject.layer = LayerMask.GetMask("RoadSegment");
-            cuboidObject.transform.position = this.Center;
-            cuboidObject.transform.localScale = new Vector3(width, height, forward.magnitude);
-            var headingChange = Quaternion.FromToRotation(cuboidObject.transform.forward, forward);
-            cuboidObject.transform.localRotation *= headingChange;
-            this.CuboidObject = cuboidObject;
+        private void InitCenter(Vector3 centerStart)
+        {
+            this.Center = centerStart + this.Forward / 2 + 0.5f * this.Height * Vector3.up;
+        }
+
+        public void InitSegmentObject()
+        {
+            GameObject segmentObject = CommonController.FindGameObject(this.Name, true) ?? GameObject.CreatePrimitive(PrimitiveType.Cube);
+            segmentObject.name = this.Name;
+            segmentObject.transform.position = this.Center;
+            segmentObject.transform.localScale = new Vector3(this.Width, this.Height, this.Length);
+            var headingChange = Quaternion.FromToRotation(segmentObject.transform.forward, this.Forward);
+            segmentObject.transform.localRotation *= headingChange;
+            segmentObject.transform.SetParent(BuiltRoadSegmentsParent.transform);
+            this.SegmentObject = segmentObject;
         }
     }
 }
