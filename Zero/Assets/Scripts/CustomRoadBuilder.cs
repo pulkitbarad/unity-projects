@@ -32,7 +32,9 @@ public class CustomRoadBuilder : MonoBehaviour
         BuiltIntersectionsParent = new GameObject("BuiltIntersections");
         InitControlObjects(true);
         HideControlObjects();
+
     }
+
     public static void InitControlObjects(bool isCurved)
     {
         StartObject = InitStaticObject(
@@ -302,122 +304,108 @@ public class CustomRoadBuilder : MonoBehaviour
 
         public void RenderIntersections()
         {
-            List<Vector3> leftCollisionPoints = new();
-            List<Vector3> rightCollisionPoints = new();
+            List<Vector3> leftStartPoints = new();
+            List<Vector3> rightStartPoints = new();
+            List<Vector3> leftEndPoints = new();
+            List<Vector3> rightEndPoints = new();
 
             int activeRoadSegmentCount = this.Segments.Count;
             for (int segmentIndex = 0; segmentIndex < activeRoadSegmentCount; segmentIndex++)
             {
                 CustomRoadSegment segment = this.Segments[segmentIndex];
                 Vector3[] segmentBounds = segment.TopPlane;
-                Collider[] overalppingColliders =
-                    Physics.OverlapBox(
-                        segment.SegmentObject.transform.position,
-                        segment.SegmentObject.transform.localScale / 2);
+                Collider[] overlaps = Physics.OverlapBox(
+                    center: segment.SegmentObject.transform.position,
+                    halfExtents: segment.SegmentObject.transform.localScale / 2);
+                List<Collider> partialOverlaps = new();
 
-                if (overalppingColliders.Length > 0)
+                foreach (Collider collider in overlaps)
+                    if (!IsColliderWithinbounds(collider, segmentBounds))
+                        partialOverlaps.Add(collider);
+
+                if (partialOverlaps.Count > 0)
                 {
-                    foreach (Collider collider in overalppingColliders)
-                    {
-                        collider.enabled = false;
-                    }
-                    foreach (Collider collider in overalppingColliders)
-                    {
-                        collider.enabled = true;
-                        string colliderSegmentName = collider.gameObject.name;
-                        if (BuiltRoadSegments.ContainsKey(colliderSegmentName))
-                        {
-                            Vector3[] colliderBounds = BuiltRoadSegments[colliderSegmentName].TopPlane;
-                            if (colliderBounds.Length > 0)
-                            {
-                                List<List<Vector3>> segmentCollisionPoints = this.FindCollisionPoints(
-                                    maxDistance: segment.Length,
-                                    colliderBounds: colliderBounds,
-                                    segmentBounds: segmentBounds);
-                                leftCollisionPoints.AddRange(segmentCollisionPoints[0]);
-                                rightCollisionPoints.AddRange(segmentCollisionPoints[1]);
-                            }
-                        }
-                        collider.enabled = false;
-                    }
-                    foreach (Collider collider in overalppingColliders)
-                    {
-                        collider.enabled = true;
-                    }
+                    Debug.Log("checking for segment:" + segment.Name);
+                    leftStartPoints.AddRange(
+                        FindCollisionPoints(
+                            start: segmentBounds[0],
+                            end: segmentBounds[2],
+                            overalppingColliders: partialOverlaps));
+                    leftEndPoints.AddRange(
+                        FindCollisionPoints(
+                            start: segmentBounds[2],
+                            end: segmentBounds[0],
+                            overalppingColliders: partialOverlaps));
+                    rightStartPoints.AddRange(
+                        FindCollisionPoints(
+                            start: segmentBounds[1],
+                            end: segmentBounds[3],
+                            overalppingColliders: partialOverlaps));
+                    rightEndPoints.AddRange(
+                        FindCollisionPoints(
+                            start: segmentBounds[3],
+                            end: segmentBounds[1],
+                            overalppingColliders: partialOverlaps));
                 }
-            }
-
-            for (int collisionPointIndex = 0;
-                collisionPointIndex < leftCollisionPoints.Count - 2;
-                collisionPointIndex += 2)
-            {
-                // CustomRenderer.RenderSphere(
-                //     position: leftCollisionPoints[collisionPointIndex],
-                //     sphereName: this.Name + "LeftPoint" + collisionPointIndex,
-                //     color: Color.green);
-            }
-            for (int collisionPointIndex = 0;
-                collisionPointIndex < rightCollisionPoints.Count - 2;
-                collisionPointIndex += 2)
-            {
-                // CustomRenderer.RenderSphere(
-                //     position: rightCollisionPoints[collisionPointIndex],
-                //     sphereName: this.Name + "RightPoint" + collisionPointIndex,
-                //     color: Color.red);
             }
         }
 
-        private List<List<Vector3>> FindCollisionPoints(
-            float maxDistance,
-            Vector3[] colliderBounds,
-            Vector3[] segmentBounds)
+        private List<Vector3> FindCollisionPoints(
+            Vector3 start,
+            Vector3 end,
+            List<Collider> overalppingColliders)
         {
-            List<Vector3> leftCollisionPoints = new();
-            List<Vector3> rightCollisionPoints = new();
-            if (!this.IsPartialOverlap(colliderBounds, segmentBounds))
-            {
-                for (int i = 0; i < 4; i++)
-                {
-                    Vector3 origin;
-                    Vector3 direction;
-                    origin = segmentBounds[i];
-                    if (i < 2)
-                        direction = segmentBounds[i + 2] - segmentBounds[i];
-                    else
-                        direction = segmentBounds[i - 2] - segmentBounds[i];
-                    if (!Physics.Raycast(
-                                origin: origin,
-                                direction: direction,
-                                hitInfo: out RaycastHit _rayHit2,
-                                maxDistance: maxDistance))
-                    {
-                        CustomRenderer.RenderSphere(origin, color: Color.blue);
-                        CustomRenderer.RenderSphere(direction + origin, color: Color.yellow);
-                    }
 
-                    if (Physics.Raycast(
+            List<Vector3> collisionPoints = new();
+            Vector3 origin = start;
+            foreach (Collider collider in overalppingColliders)
+            {
+                Vector3 direction = end - origin;
+                Debug.Log("collider=" + collider.gameObject.name);
+                Debug.Log("origin=" + origin);
+                Debug.Log("end=" + end);
+                Debug.Log("Distance=" + direction.magnitude);
+                Debug.Log("raycast=" + Physics.Raycast(
                             origin: origin,
                             direction: direction,
-                            hitInfo: out RaycastHit _rayHit,
-                            maxDistance: maxDistance))
-                    {
-                        if (i % 2 == 1)
-                            leftCollisionPoints.Add(_rayHit.point);
-                        else
-                            rightCollisionPoints.Add(_rayHit.point);
-                        CustomRenderer.RenderSphere(_rayHit.point, color: Color.green);
-                        maxDistance -= (_rayHit.point - origin).magnitude;
-                        origin = _rayHit.point;
-                    }
+                            hitInfo: out RaycastHit rayHitInfo2,
+                            maxDistance: direction.magnitude));
+
+                if (Physics.Raycast(
+                            origin: origin,
+                            direction: direction,
+                            hitInfo: out RaycastHit rayHitInfo,
+                            maxDistance: direction.magnitude))
+                {
+                    collisionPoints.Add(rayHitInfo.point);
+                    origin = rayHitInfo.point;
+                    Debug.Log("rayHitInfo.point=" + rayHitInfo.point);
+                    CustomRenderer.RenderSphere(rayHitInfo.point, color: Color.green);
+                }
+                else
+                {
+                    // CustomRenderer.RenderSphere(origin, color: Color.blue);
+                    // CustomRenderer.RenderSphere(target, color: Color.yellow);
                 }
             }
-            return new List<List<Vector3>>() { leftCollisionPoints, rightCollisionPoints };
+            return collisionPoints;
         }
 
-        private bool IsPartialOverlap(Vector3[] boundsMain, Vector3[] boundsRef)
+        private bool IsColliderWithinbounds(Collider collider, Vector3[] bounds)
+        {
+            string colliderSegmentName = collider.gameObject.name;
+            if (BuiltRoadSegments.ContainsKey(colliderSegmentName))
+            {
+                Vector3[] colliderBounds = BuiltRoadSegments[colliderSegmentName].TopPlane;
+                return colliderBounds.Length > 0 && !IsRectWithinBounds(colliderBounds, bounds);
+            }
+            return false;
+        }
+
+        private bool IsRectWithinBounds(Vector3[] rectangle, Vector3[] bounds)
         {
             for (int i = 0; i < 4; i++)
-                if (!IsPointInsideBounds(boundsMain[i], boundsRef))
+                if (!IsPointInsideBounds(rectangle[i], bounds))
                     return false;
             return true;
         }
