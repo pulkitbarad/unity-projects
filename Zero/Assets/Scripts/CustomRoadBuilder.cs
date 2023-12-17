@@ -316,12 +316,24 @@ public class CustomRoadBuilder : MonoBehaviour
                 Vector3[] segmentBounds = segment.TopPlane;
                 Collider[] overlaps = Physics.OverlapBox(
                     center: segment.SegmentObject.transform.position,
-                    halfExtents: segment.SegmentObject.transform.localScale / 2);
+                    halfExtents: segment.SegmentObject.transform.localScale / 2,
+                    orientation: Quaternion.identity,
+                    layerMask: LayerMask.GetMask("RoadSegment"));
                 List<Collider> partialOverlaps = new();
 
                 foreach (Collider collider in overlaps)
+                {
+                    Debug.Log("Checking collider " + collider.gameObject.name);
                     if (!IsColliderWithinbounds(collider, segmentBounds))
+                    {
                         partialOverlaps.Add(collider);
+                        Debug.Log("Collider partial");
+                    }
+                    else
+                    {
+                        Debug.Log("Collider full");
+                    }
+                }
 
                 if (partialOverlaps.Count > 0)
                 {
@@ -397,7 +409,7 @@ public class CustomRoadBuilder : MonoBehaviour
             if (BuiltRoadSegments.ContainsKey(colliderSegmentName))
             {
                 Vector3[] colliderBounds = BuiltRoadSegments[colliderSegmentName].TopPlane;
-                return colliderBounds.Length > 0 && !IsRectWithinBounds(colliderBounds, bounds);
+                return colliderBounds.Length > 0 && IsRectWithinBounds(colliderBounds, bounds);
             }
             return false;
         }
@@ -518,6 +530,7 @@ public class CustomRoadBuilder : MonoBehaviour
             segmentObject.transform.localScale = new Vector3(this.Width, this.Height, this.Length);
             var headingChange = Quaternion.FromToRotation(segmentObject.transform.forward, this.Forward);
             segmentObject.transform.localRotation *= headingChange;
+            segmentObject.layer = LayerMask.NameToLayer("RoadSegment");
             segmentObject.transform.SetParent(BuiltRoadSegmentsParent.transform);
             this.SegmentObject = segmentObject;
         }
