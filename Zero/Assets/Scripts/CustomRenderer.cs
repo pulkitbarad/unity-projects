@@ -10,6 +10,7 @@ public class CustomRenderer : MonoBehaviour
     private static readonly List<GameObject> _lineObjectPool = new();
     private static readonly int _lineObjectPoolCount;
     private static readonly List<string> _existingSpheres = new();
+    public static GameObject DebuggingParent;
     private static Material _baseLineMaterial;
     public static bool IsDebugEnabled = false;
 
@@ -17,6 +18,7 @@ public class CustomRenderer : MonoBehaviour
     {
         _baseLineMaterial = Resources.Load("Material/LineMaterial", typeof(Material)) as Material;
         InstantiateLinePool();
+        DebuggingParent = new GameObject("DebuggingParent");
     }
 
     public static void InstantiateLinePool()
@@ -81,6 +83,10 @@ public class CustomRenderer : MonoBehaviour
         {
             lineObject.transform.SetParent(parentTransform);
         }
+        else
+        {
+            lineObject.transform.SetParent(DebuggingParent.transform);
+        }
 
         return lineObject;
     }
@@ -134,6 +140,8 @@ public class CustomRenderer : MonoBehaviour
 
         if (parentTransform != null)
             sphere.transform.SetParent(parentTransform);
+        else
+            sphere.transform.SetParent(DebuggingParent.transform);
         sphere.SetActive(true);
 
         return sphere;

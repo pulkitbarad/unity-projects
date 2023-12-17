@@ -319,17 +319,30 @@ public class CustomRoadBuilder : MonoBehaviour
                 {
                     foreach (Collider collider in overalppingColliders)
                     {
+                        collider.enabled = false;
+                    }
+                    foreach (Collider collider in overalppingColliders)
+                    {
+                        collider.enabled = true;
                         string colliderSegmentName = collider.gameObject.name;
                         if (BuiltRoadSegments.ContainsKey(colliderSegmentName))
                         {
-                            Vector3[] colliderBounds = BuiltRoadSegments[collider.gameObject.name].TopPlane;
-                            List<List<Vector3>> segmentCollisionPoints = this.FindCollisionPoints(
-                                maxDistance: segment.Length,
-                                colliderBounds: colliderBounds,
-                                segmentBounds: segmentBounds);
-                            leftCollisionPoints.AddRange(segmentCollisionPoints[0]);
-                            rightCollisionPoints.AddRange(segmentCollisionPoints[1]);
+                            Vector3[] colliderBounds = BuiltRoadSegments[colliderSegmentName].TopPlane;
+                            if (colliderBounds.Length > 0)
+                            {
+                                List<List<Vector3>> segmentCollisionPoints = this.FindCollisionPoints(
+                                    maxDistance: segment.Length,
+                                    colliderBounds: colliderBounds,
+                                    segmentBounds: segmentBounds);
+                                leftCollisionPoints.AddRange(segmentCollisionPoints[0]);
+                                rightCollisionPoints.AddRange(segmentCollisionPoints[1]);
+                            }
                         }
+                        collider.enabled = false;
+                    }
+                    foreach (Collider collider in overalppingColliders)
+                    {
+                        collider.enabled = true;
                     }
                 }
             }
@@ -369,25 +382,20 @@ public class CustomRoadBuilder : MonoBehaviour
                     Vector3 direction;
                     origin = segmentBounds[i];
                     if (i < 2)
-                    {
                         direction = segmentBounds[i + 2] - segmentBounds[i];
-                    }
                     else
-                    {
                         direction = segmentBounds[i - 2] - segmentBounds[i];
+                    if (!Physics.Raycast(
+                                origin: origin,
+                                direction: direction,
+                                hitInfo: out RaycastHit _rayHit2,
+                                maxDistance: maxDistance))
+                    {
+                        CustomRenderer.RenderSphere(origin, color: Color.blue);
+                        CustomRenderer.RenderSphere(direction + origin, color: Color.yellow);
                     }
-                    // if (!Physics.Raycast(
-                    //         origin: origin,
-                    //         direction: direction,
-                    //         hitInfo: out RaycastHit _rayHit2,
-                    //         maxDistance: maxDistance))
-                    // {
-                    //     CustomRenderer.RenderSphere(origin, color: Color.blue);
-                    //     CustomRenderer.RenderSphere(direction + origin, color: Color.yellow);
-                    // }
 
-                    if (!this.IsPointInsideBounds(origin, colliderBounds)
-                        && Physics.Raycast(
+                    if (Physics.Raycast(
                             origin: origin,
                             direction: direction,
                             hitInfo: out RaycastHit _rayHit,
@@ -398,6 +406,8 @@ public class CustomRoadBuilder : MonoBehaviour
                         else
                             rightCollisionPoints.Add(_rayHit.point);
                         CustomRenderer.RenderSphere(_rayHit.point, color: Color.green);
+                        maxDistance -= (_rayHit.point - origin).magnitude;
+                        origin = _rayHit.point;
                     }
                 }
             }
@@ -412,7 +422,7 @@ public class CustomRoadBuilder : MonoBehaviour
             return true;
         }
 
-        private bool IsPointInsideBounds(Vector3 point, Vector3[] bounds,float margin=5)
+        private bool IsPointInsideBounds(Vector3 point, Vector3[] bounds, float margin = 5)
         {
             float maxX = bounds[0].x;
             float maxY = bounds[0].y;
