@@ -310,6 +310,7 @@ public class CustomRoadBuilder : MonoBehaviour
             List<Vector3> rightEndPoints = new();
 
             int activeRoadSegmentCount = this.Segments.Count;
+            // Physics.SyncTransforms();
             for (int segmentIndex = 0; segmentIndex < activeRoadSegmentCount; segmentIndex++)
             {
                 CustomRoadSegment segment = this.Segments[segmentIndex];
@@ -317,45 +318,47 @@ public class CustomRoadBuilder : MonoBehaviour
                 Collider[] overlaps = Physics.OverlapBox(
                     center: segment.SegmentObject.transform.position,
                     halfExtents: segment.SegmentObject.transform.localScale / 2,
-                    orientation: Quaternion.identity,
+                    orientation: segment.SegmentObject.transform.rotation,
                     layerMask: LayerMask.GetMask("RoadSegment"));
                 List<Collider> partialOverlaps = new();
 
+                Debug.Log("checking overlap segment=" + segment.Name);
                 foreach (Collider collider in overlaps)
                 {
-                    Debug.Log("Checking collider " + collider.gameObject.name);
-                    if (!IsColliderWithinbounds(collider, segmentBounds))
+                    string colliderGameObjectName = collider.gameObject.name;
+
+                    if (BuiltRoadSegments.ContainsKey(colliderGameObjectName)
+                    && !BuiltRoadSegments[colliderGameObjectName].ParentRoad.Name.Equals(this.Name)
+                    && !IsColliderWithinbounds(collider, segmentBounds))
                     {
                         partialOverlaps.Add(collider);
-                        Debug.Log("Collider partial");
-                    }
-                    else
-                    {
-                        Debug.Log("Collider full");
                     }
                 }
 
                 if (partialOverlaps.Count > 0)
                 {
-                    Debug.Log("checking for segment:" + segment.Name);
+                    Debug.Log("checking for leftstart segment");
                     leftStartPoints.AddRange(
                         FindCollisionPoints(
-                            start: segmentBounds[0],
+                            origin: segmentBounds[0],
                             end: segmentBounds[2],
                             overalppingColliders: partialOverlaps));
+                    Debug.Log("checking for leftend segment");
                     leftEndPoints.AddRange(
                         FindCollisionPoints(
-                            start: segmentBounds[2],
+                            origin: segmentBounds[2],
                             end: segmentBounds[0],
                             overalppingColliders: partialOverlaps));
+                    Debug.Log("checking for rightstart segment");
                     rightStartPoints.AddRange(
                         FindCollisionPoints(
-                            start: segmentBounds[1],
+                            origin: segmentBounds[1],
                             end: segmentBounds[3],
                             overalppingColliders: partialOverlaps));
+                    Debug.Log("checking for rightend segment");
                     rightEndPoints.AddRange(
                         FindCollisionPoints(
-                            start: segmentBounds[3],
+                            origin: segmentBounds[3],
                             end: segmentBounds[1],
                             overalppingColliders: partialOverlaps));
                 }
@@ -363,36 +366,26 @@ public class CustomRoadBuilder : MonoBehaviour
         }
 
         private List<Vector3> FindCollisionPoints(
-            Vector3 start,
+            Vector3 origin,
             Vector3 end,
             List<Collider> overalppingColliders)
         {
 
             List<Vector3> collisionPoints = new();
-            Vector3 origin = start;
             foreach (Collider collider in overalppingColliders)
             {
                 Vector3 direction = end - origin;
-                Debug.Log("collider=" + collider.gameObject.name);
-                Debug.Log("origin=" + origin);
-                Debug.Log("end=" + end);
-                Debug.Log("Distance=" + direction.magnitude);
-                Debug.Log("raycast=" + Physics.Raycast(
-                            origin: origin,
-                            direction: direction,
-                            hitInfo: out RaycastHit rayHitInfo2,
-                            maxDistance: direction.magnitude));
-
-                if (Physics.Raycast(
-                            origin: origin,
-                            direction: direction,
+                if (collider.Raycast(
+                            ray: new Ray(origin, direction),
                             hitInfo: out RaycastHit rayHitInfo,
                             maxDistance: direction.magnitude))
                 {
                     collisionPoints.Add(rayHitInfo.point);
-                    origin = rayHitInfo.point;
-                    Debug.Log("rayHitInfo.point=" + rayHitInfo.point);
                     CustomRenderer.RenderSphere(rayHitInfo.point, color: Color.green);
+                    Debug.Log("collider=" + collider.gameObject.name);
+                    Debug.Log("origin=" + origin);
+                    Debug.Log("end=" + end);
+                    Debug.Log("Hit=" + rayHitInfo.point);
                 }
                 else
                 {
@@ -405,13 +398,8 @@ public class CustomRoadBuilder : MonoBehaviour
 
         private bool IsColliderWithinbounds(Collider collider, Vector3[] bounds)
         {
-            string colliderSegmentName = collider.gameObject.name;
-            if (BuiltRoadSegments.ContainsKey(colliderSegmentName))
-            {
-                Vector3[] colliderBounds = BuiltRoadSegments[colliderSegmentName].TopPlane;
-                return colliderBounds.Length > 0 && IsRectWithinBounds(colliderBounds, bounds);
-            }
-            return false;
+            Vector3[] colliderBounds = BuiltRoadSegments[collider.gameObject.name].TopPlane;
+            return colliderBounds.Length > 0 && IsRectWithinBounds(colliderBounds, bounds);
         }
 
         private bool IsRectWithinBounds(Vector3[] rectangle, Vector3[] bounds)
