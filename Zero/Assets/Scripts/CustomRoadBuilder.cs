@@ -203,6 +203,7 @@ public class CustomRoadBuilder : MonoBehaviour
                     this.Segments.Add(
                         new CustomRoadSegment(
                                 name: roadSegmentName,
+                                prevCenterStart: centerVertices[i == 0 ? 0 : i - 1],
                                 centerStart: centerVertices[i],
                                 centerEnd: centerVertices[i + 1],
                                 width: this.RoadWidth,
@@ -322,7 +323,6 @@ public class CustomRoadBuilder : MonoBehaviour
                     layerMask: LayerMask.GetMask("RoadSegment"));
                 List<Collider> partialOverlaps = new();
 
-                Debug.Log("checking overlap segment=" + segment.Name);
                 foreach (Collider collider in overlaps)
                 {
                     string colliderGameObjectName = collider.gameObject.name;
@@ -337,25 +337,21 @@ public class CustomRoadBuilder : MonoBehaviour
 
                 if (partialOverlaps.Count > 0)
                 {
-                    Debug.Log("checking for leftstart segment");
                     leftStartPoints.AddRange(
                         FindCollisionPoints(
                             origin: segmentBounds[0],
                             end: segmentBounds[2],
                             overalppingColliders: partialOverlaps));
-                    Debug.Log("checking for leftend segment");
                     leftEndPoints.AddRange(
                         FindCollisionPoints(
                             origin: segmentBounds[2],
                             end: segmentBounds[0],
                             overalppingColliders: partialOverlaps));
-                    Debug.Log("checking for rightstart segment");
                     rightStartPoints.AddRange(
                         FindCollisionPoints(
                             origin: segmentBounds[1],
                             end: segmentBounds[3],
                             overalppingColliders: partialOverlaps));
-                    Debug.Log("checking for rightend segment");
                     rightEndPoints.AddRange(
                         FindCollisionPoints(
                             origin: segmentBounds[3],
@@ -382,6 +378,8 @@ public class CustomRoadBuilder : MonoBehaviour
                 {
                     collisionPoints.Add(rayHitInfo.point);
                     CustomRenderer.RenderSphere(rayHitInfo.point, color: Color.green);
+                    CustomRenderer.RenderSphere(origin, color: Color.blue);
+                    CustomRenderer.RenderSphere(end, color: Color.yellow);
                     Debug.Log("collider=" + collider.gameObject.name);
                     Debug.Log("origin=" + origin);
                     Debug.Log("end=" + end);
@@ -457,28 +455,31 @@ public class CustomRoadBuilder : MonoBehaviour
              string name,
              float width,
              float height,
+             Vector3 prevCenterStart,
              Vector3 centerStart,
              Vector3 centerEnd,
              CustomRoad parentRoad,
              bool renderSegment)
         {
+            Vector3 updCenterStart = centerStart;
+            // if (!centerStart.Equals(prevCenterStart))
+            //     updCenterStart = ExtendSegmentStart(prevCenterStart, centerStart, centerEnd, width);
             this.Name = name;
             this.Width = width;
             this.Height = height;
             this.ParentRoad = parentRoad;
-            this.Forward = centerEnd - centerStart;
+
+            this.Forward = centerEnd - updCenterStart;
             this.Length = this.Forward.magnitude;
-            this.InitCenter(centerStart);
-            this.InitPlanes(centerStart, centerEnd);
+            this.InitCenter(updCenterStart);
+            this.InitPlanes(updCenterStart, centerEnd);
             if (renderSegment)
                 this.InitSegmentObject();
         }
 
         private void InitPlanes(Vector3 centerStart, Vector3 centerEnd)
         {
-            Vector3 forward = centerEnd - centerStart;
-            Vector3 left = Vector3.Cross(forward, Vector3.up).normalized;
-            Vector3 halfLeft = left * this.Width / 2;
+            Vector3 halfLeft = Vector3.Cross(this.Forward, Vector3.up).normalized * this.Width / 2;
             Vector3 leftStart = centerStart + halfLeft;
             Vector3 leftEnd = centerEnd + halfLeft;
             Vector3 rightStart = centerStart - halfLeft;
@@ -508,6 +509,23 @@ public class CustomRoadBuilder : MonoBehaviour
         private void InitCenter(Vector3 centerStart)
         {
             this.Center = centerStart + this.Forward / 2 + 0.5f * this.Height * Vector3.up;
+        }
+
+        private Vector3 ExtendSegmentStart(Vector3 prevCenterStart, Vector3 centerStart, Vector3 centerEnd, float width)
+        {
+
+            Vector3 prevCenterEnd = centerStart;
+            float angleBetweenSegments = Math.Abs(Vector3.Angle(prevCenterEnd - prevCenterStart, centerEnd - centerStart));
+            if (angleBetweenSegments > 180) angleBetweenSegments -= 180;
+
+            Vector3 previousForward = prevCenterEnd - prevCenterStart;
+            Vector3 previousLeft = Vector3.Cross(previousForward, Vector3.up).normalized;
+            Vector3 prevLeftEnd = prevCenterEnd + previousLeft * width / 2;
+            Vector3 forward = centerEnd - centerStart;
+
+            float extension = (prevLeftEnd - centerStart).magnitude * Math.Abs(MathF.Sin(angleBetweenSegments * MathF.PI / 180f));
+            Vector3 updCenterStart = centerEnd - (forward.normalized * (forward.magnitude + extension));
+            return updCenterStart;
         }
 
         public void InitSegmentObject()
