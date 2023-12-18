@@ -152,6 +152,7 @@ public class CustomRoadBuilder : MonoBehaviour
         public int RoadHeight = 2;
         public int VertexCount = 20;
         public bool IsCurved = true;
+        public float MaxChangeAngle = 0;
         public List<CustomRoadSegment> Segments = new();
         public GameObject RoadObject;
 
@@ -197,11 +198,11 @@ public class CustomRoadBuilder : MonoBehaviour
                     controlPoints);
 
                 this.Segments = new();
+                this.MaxChangeAngle = 0;
                 for (int i = 0; i < centerVertices.Count - 1; i++)
                 {
                     string roadSegmentName = String.Concat("RoadSegment", (CustomRoadBuilder.BuiltRoadSegments.Count + i).ToString());
-                    this.Segments.Add(
-                        new CustomRoadSegment(
+                    CustomRoadSegment newSegment = new CustomRoadSegment(
                                 name: roadSegmentName,
                                 prevCenterStart: centerVertices[i == 0 ? 0 : i - 1],
                                 centerStart: centerVertices[i],
@@ -209,8 +210,12 @@ public class CustomRoadBuilder : MonoBehaviour
                                 width: this.RoadWidth,
                                 height: this.RoadHeight,
                                 parentRoad: this,
-                                renderSegment: false)
-                    );
+                                renderSegment: false);
+                    if (newSegment.ChangeAngle > this.MaxChangeAngle)
+                        this.MaxChangeAngle = newSegment.ChangeAngle;
+
+                    Debug.Log("MaxAngle = " + this.MaxChangeAngle);
+                    this.Segments.Add(newSegment);
                 }
                 this.RenderRoadLines();
             }
@@ -448,6 +453,7 @@ public class CustomRoadBuilder : MonoBehaviour
         public float Width;
         public float Height;
         public float Length;
+        public float ChangeAngle;
         public GameObject SegmentObject;
         public CustomRoad ParentRoad;
 
@@ -471,6 +477,7 @@ public class CustomRoadBuilder : MonoBehaviour
 
             this.Forward = centerEnd - updCenterStart;
             this.Length = this.Forward.magnitude;
+            this.ChangeAngle = Vector3.Angle(this.Forward, centerStart - prevCenterStart);
             this.InitCenter(updCenterStart);
             this.InitPlanes(updCenterStart, centerEnd);
             if (renderSegment)
