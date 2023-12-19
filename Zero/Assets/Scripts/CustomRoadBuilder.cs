@@ -202,7 +202,7 @@ public class CustomRoadBuilder : MonoBehaviour
                 for (int i = 0; i < centerVertices.Count - 1; i++)
                 {
                     string roadSegmentName = String.Concat("RoadSegment", (CustomRoadBuilder.BuiltRoadSegments.Count + i).ToString());
-                    CustomRoadSegment newSegment = new CustomRoadSegment(
+                    CustomRoadSegment newSegment = new(
                                 name: roadSegmentName,
                                 prevCenterStart: centerVertices[i == 0 ? 0 : i - 1],
                                 centerStart: centerVertices[i],
@@ -291,22 +291,6 @@ public class CustomRoadBuilder : MonoBehaviour
                 linePoints: rightVertices.ToArray());
         }
 
-        // private void RenderRoadMesh()
-        // {
-
-        // segmentObject.AddComponent<BoxCollider>();
-
-        // Vector3[] points = new Vector3[]
-        //     { rightVertices[i - 1], rightVertices[i],leftVertices[i - 1], leftVertices[i] };
-        // Mesh mesh = new();
-        // segmentObject.GetComponent<MeshFilter>().mesh = mesh;
-        // mesh.vertices = points;
-        // mesh.triangles = new int[] { 0, 2, 3, 3, 1, 0 };
-        // Vector3 upVector = Vector3.Cross(points[0] - points[2], points[3] - points[2]);
-        // Vector3[] normals = new Vector3[] { upVector, upVector, upVector, upVector, upVector, upVector };
-        // mesh.normals = new Vector3[] { upVector, upVector, upVector, upVector , upVector, upVector };
-        // mesh.uv = new Vector2[] { Vector2.right, Vector2.one, Vector2.zero, Vector2.up };
-        // }
 
         public void RenderIntersections()
         {
@@ -537,7 +521,7 @@ public class CustomRoadBuilder : MonoBehaviour
 
         public void InitSegmentObject()
         {
-            GameObject segmentObject = CommonController.FindGameObject(this.Name, true) ?? GameObject.CreatePrimitive(PrimitiveType.Cube);
+            GameObject segmentObject = CommonController.FindGameObject(this.Name, true) ?? new GameObject();
             segmentObject.name = this.Name;
             segmentObject.transform.position = this.Center;
             segmentObject.transform.localScale = new Vector3(this.Width, this.Height, this.Length);
@@ -546,6 +530,48 @@ public class CustomRoadBuilder : MonoBehaviour
             segmentObject.layer = LayerMask.NameToLayer("RoadSegment");
             segmentObject.transform.SetParent(BuiltRoadSegmentsParent.transform);
             this.SegmentObject = segmentObject;
+            RenderMesh();
         }
+        private void RenderMesh()
+        {
+            Vector3[] topPlane = this.TopPlane;
+            Vector3[] bottomPlane = this.BottomPlane;
+
+            Mesh mesh = new()
+            {
+                name = "Generated"
+            };
+            MeshRenderer renderer = this.SegmentObject.AddComponent<MeshRenderer>();
+            this.SegmentObject.AddComponent<MeshFilter>().mesh = mesh;
+            mesh.vertices =
+                new Vector3[]{
+                    //Top
+                    new (-1,this.Height/2,1),
+                    new (1,this.Height/2,1),
+                    new (1,this.Height/2,-1),
+                    new (-1,this.Height/2,-1),
+                    new (-1,this.Height/2,-1),
+                    new (-1,-this.Height/2,1),
+                    //Bottom
+                    new (1,-this.Height/2,1),
+                    new (1,-this.Height/2,-1),
+                    new (-1,-this.Height/2,-1),
+                    new (-1,-this.Height/2,-1),
+                    };
+            mesh.triangles = new int[] { 
+                //Top
+                0,1, 2,
+                0, 2, 3, 
+                //Bottom
+                4,5,6,
+                4,6,7
+                };
+            mesh.RecalculateBounds();
+            // Vector3 upVector = topPlane[0] - bottomPlane[0];
+            // mesh.normals = new Vector3[] { upVector, upVector, upVector, upVector };
+            // Vector2[] uv = new Vector2[] { new(0f, 1f), new(1f, 1f), new(1f, 0f), new(0f, 0f) };
+            // mesh.uv = uv;
+        }
+
     }
 }
