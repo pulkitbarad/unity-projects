@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public class CustomRenderer : MonoBehaviour
@@ -46,7 +45,7 @@ public class CustomRenderer : MonoBehaviour
 
     public static GameObject GetLineObject(
         string name,
-        Color? color = null,
+        UnityEngine.Color? color = null,
         float width = 2f,
         Transform parentTransform = null)
     {
@@ -73,8 +72,8 @@ public class CustomRenderer : MonoBehaviour
                 lineObject.AddComponent(typeof(LineRenderer)) as LineRenderer;
             Material newLineMaterial = new(_baseLineMaterial);
             primaryLineRenderer.sharedMaterial = new Material(newLineMaterial);
-            primaryLineRenderer.startColor = color ?? Color.yellow; ;
-            primaryLineRenderer.endColor = color ?? Color.yellow; ;
+            primaryLineRenderer.startColor = color ?? UnityEngine.Color.yellow; ;
+            primaryLineRenderer.endColor = color ?? UnityEngine.Color.yellow; ;
             primaryLineRenderer.startWidth = width;
             primaryLineRenderer.endWidth = width;
             primaryLineRenderer.positionCount = 3;
@@ -93,7 +92,7 @@ public class CustomRenderer : MonoBehaviour
 
     public static GameObject RenderLine(
         string name,
-        Color? color = null,
+        UnityEngine.Color? color = null,
         float width = 2f,
         float pointSize = 5f,
         Transform parentTransform = null,
@@ -122,7 +121,7 @@ public class CustomRenderer : MonoBehaviour
         string sphereName = "",
         float size = 5f,
         Transform parentTransform = null,
-        Color? color = null)
+        UnityEngine.Color? color = null)
     {
         string newSphereName = sphereName.Length > 0 ? sphereName : "Sphere" + _existingSpheres.Count;
 
@@ -136,7 +135,7 @@ public class CustomRenderer : MonoBehaviour
         sphere.transform.localScale = new Vector3(size, size, size);
         sphere.transform.position = position;
         var sphereRenderer = sphere.GetComponent<Renderer>();
-        sphereRenderer.material.color = color ?? Color.yellow;
+        sphereRenderer.material.color = color ?? UnityEngine.Color.yellow;
 
         if (parentTransform != null)
             sphere.transform.SetParent(parentTransform);
@@ -151,7 +150,7 @@ public class CustomRenderer : MonoBehaviour
         string objectName,
         Vector3 position,
         float size = 5f,
-        Color? color = null)
+        UnityEngine.Color? color = null)
     {
         GameObject cylinder = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
         if (objectName.Length > 0)
@@ -159,7 +158,7 @@ public class CustomRenderer : MonoBehaviour
         cylinder.transform.localScale = new Vector3(size, 1, size);
         cylinder.transform.position = position;
         var sphereRenderer = cylinder.GetComponent<Renderer>();
-        sphereRenderer.material.color = color ?? Color.yellow;
+        sphereRenderer.material.color = color ?? UnityEngine.Color.yellow;
         return cylinder;
     }
 

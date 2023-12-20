@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -40,16 +41,16 @@ public class CustomRoadBuilder : MonoBehaviour
         StartObject = InitStaticObject(
             objectName: "RoadStart",
              size: 10,
-              color: new Color(0.25f, 0.35f, 0.30f));
+              color: new UnityEngine.Color(0.25f, 0.35f, 0.30f));
         if (isCurved)
             ControlObject = InitStaticObject(
                 objectName: "RoadControl",
                 size: 10,
-                color: new Color(0, 1, 0.20f));
+                color: new UnityEngine.Color(0, 1, 0.20f));
         EndObject = InitStaticObject(
             objectName: "RoadEnd",
             size: 10,
-            color: new Color(0.70f, 0.45f, 0f));
+            color: new UnityEngine.Color(0.70f, 0.45f, 0f));
 
         LeftLineObject =
         CustomRenderer.GetLineObject(
@@ -62,7 +63,7 @@ public class CustomRoadBuilder : MonoBehaviour
             parentTransform: RoadControlsParent.transform);
     }
 
-    public static GameObject InitStaticObject(string objectName, float size, Color? color)
+    public static GameObject InitStaticObject(string objectName, float size, UnityEngine.Color? color)
     {
 
         GameObject gameObject = CommonController.FindGameObject(objectName, true);
@@ -152,7 +153,6 @@ public class CustomRoadBuilder : MonoBehaviour
         public int RoadHeight = 2;
         public int VertexCount = 20;
         public bool IsCurved = true;
-        public float MaxChangeAngle = 0;
         public List<CustomRoadSegment> Segments = new();
         public GameObject RoadObject;
 
@@ -191,30 +191,21 @@ public class CustomRoadBuilder : MonoBehaviour
                     controlPoints[1] = EndObject.transform.position;
                 }
 
-                CurvedLine.FindBazierLinePoints(
-                    vertexCount: this.VertexCount,
-                    roadWidth: this.RoadWidth,
-                    centerLinePoints: out List<Vector3> centerVertices,
-                    controlPoints);
+                List<Vector3> centerVertices = CurvedLine.FindBazierLinePoints(controlPoints);
 
                 this.Segments = new();
-                this.MaxChangeAngle = 0;
                 for (int i = 0; i < centerVertices.Count - 1; i++)
                 {
                     string roadSegmentName = String.Concat("RoadSegment", (CustomRoadBuilder.BuiltRoadSegments.Count + i).ToString());
                     CustomRoadSegment newSegment = new(
                                 name: roadSegmentName,
-                                prevCenterStart: centerVertices[i == 0 ? 0 : i - 1],
                                 centerStart: centerVertices[i],
                                 centerEnd: centerVertices[i + 1],
                                 width: this.RoadWidth,
                                 height: this.RoadHeight,
                                 parentRoad: this,
                                 renderSegment: false);
-                    if (newSegment.ChangeAngle > this.MaxChangeAngle)
-                        this.MaxChangeAngle = newSegment.ChangeAngle;
 
-                    Debug.Log("MaxAngle = " + this.MaxChangeAngle);
                     this.Segments.Add(newSegment);
                 }
                 this.RenderRoadLines();
@@ -273,7 +264,7 @@ public class CustomRoadBuilder : MonoBehaviour
             LeftLineObject =
             CustomRenderer.RenderLine(
                 name: "RoadLeftEdge",
-                color: Color.yellow,
+                color: UnityEngine.Color.yellow,
                 width: 2,
                 pointSize: 5,
                 parentTransform: RoadControlsParent.transform,
@@ -283,7 +274,7 @@ public class CustomRoadBuilder : MonoBehaviour
             RightLineObject =
             CustomRenderer.RenderLine(
                 name: "RoadRightEdge",
-                color: Color.red,
+                color: UnityEngine.Color.red,
                 width: 2,
                 pointSize: 5,
                 parentTransform: RoadControlsParent.transform,
@@ -366,9 +357,9 @@ public class CustomRoadBuilder : MonoBehaviour
                             maxDistance: direction.magnitude))
                 {
                     collisionPoints.Add(rayHitInfo.point);
-                    CustomRenderer.RenderSphere(rayHitInfo.point, color: Color.green);
-                    CustomRenderer.RenderSphere(origin, color: Color.blue);
-                    CustomRenderer.RenderSphere(end, color: Color.yellow);
+                    CustomRenderer.RenderSphere(rayHitInfo.point, color: UnityEngine.Color.green);
+                    CustomRenderer.RenderSphere(origin, color: UnityEngine.Color.blue);
+                    CustomRenderer.RenderSphere(end, color: UnityEngine.Color.yellow);
                     Debug.Log("collider=" + collider.gameObject.name);
                     Debug.Log("origin=" + origin);
                     Debug.Log("end=" + end);
@@ -437,7 +428,6 @@ public class CustomRoadBuilder : MonoBehaviour
         public float Width;
         public float Height;
         public float Length;
-        public float ChangeAngle;
         public GameObject SegmentObject;
         public CustomRoad ParentRoad;
 
@@ -445,7 +435,6 @@ public class CustomRoadBuilder : MonoBehaviour
              string name,
              float width,
              float height,
-             Vector3 prevCenterStart,
              Vector3 centerStart,
              Vector3 centerEnd,
              CustomRoad parentRoad,
@@ -461,7 +450,6 @@ public class CustomRoadBuilder : MonoBehaviour
 
             this.Forward = centerEnd - updCenterStart;
             this.Length = this.Forward.magnitude;
-            this.ChangeAngle = Vector3.Angle(this.Forward, centerStart - prevCenterStart);
             this.InitCenter(updCenterStart);
             this.InitPlanes(updCenterStart, centerEnd);
             if (renderSegment)
@@ -502,22 +490,22 @@ public class CustomRoadBuilder : MonoBehaviour
             this.Center = centerStart + this.Forward / 2 + 0.5f * this.Height * Vector3.up;
         }
 
-        private Vector3 ExtendSegmentStart(Vector3 prevCenterStart, Vector3 centerStart, Vector3 centerEnd, float width)
-        {
+        // private Vector3 ExtendSegmentStart(Vector3 prevCenterStart, Vector3 centerStart, Vector3 centerEnd, float width)
+        // {
 
-            Vector3 prevCenterEnd = centerStart;
-            float angleBetweenSegments = Math.Abs(Vector3.Angle(prevCenterEnd - prevCenterStart, centerEnd - centerStart));
-            if (angleBetweenSegments > 180) angleBetweenSegments -= 180;
+        //     Vector3 prevCenterEnd = centerStart;
+        //     float angleBetweenSegments = Math.Abs(Vector3.Angle(prevCenterEnd - prevCenterStart, centerEnd - centerStart));
+        //     if (angleBetweenSegments > 180) angleBetweenSegments -= 180;
 
-            Vector3 previousForward = prevCenterEnd - prevCenterStart;
-            Vector3 previousLeft = Vector3.Cross(previousForward, Vector3.up).normalized;
-            Vector3 prevLeftEnd = prevCenterEnd + previousLeft * width / 2;
-            Vector3 forward = centerEnd - centerStart;
+        //     Vector3 previousForward = prevCenterEnd - prevCenterStart;
+        //     Vector3 previousLeft = Vector3.Cross(previousForward, Vector3.up).normalized;
+        //     Vector3 prevLeftEnd = prevCenterEnd + previousLeft * width / 2;
+        //     Vector3 forward = centerEnd - centerStart;
 
-            float extension = (prevLeftEnd - centerStart).magnitude * Math.Abs(MathF.Sin(angleBetweenSegments * MathF.PI / 180f));
-            Vector3 updCenterStart = centerEnd - (forward.normalized * (forward.magnitude + extension));
-            return updCenterStart;
-        }
+        //     float extension = (prevLeftEnd - centerStart).magnitude * Math.Abs(MathF.Sin(angleBetweenSegments * MathF.PI / 180f));
+        //     Vector3 updCenterStart = centerEnd - (forward.normalized * (forward.magnitude + extension));
+        //     return updCenterStart;
+        // }
 
         public void InitSegmentObject()
         {
@@ -534,38 +522,30 @@ public class CustomRoadBuilder : MonoBehaviour
         }
         private void RenderMesh()
         {
-            Vector3[] topPlane = this.TopPlane;
-            Vector3[] bottomPlane = this.BottomPlane;
+            Vector3[] topVertices = new Vector3[this.TopPlane.Length];
+            Vector3[] bottomVertices = new Vector3[this.BottomPlane.Length];
+            Vector3[] allVertices = new Vector3[2 * this.BottomPlane.Length];
 
-            Mesh mesh = new()
+            for (int i = 0; i < this.TopPlane.Length; i++)
             {
-                name = "Generated"
-            };
+                allVertices[i] = this.SegmentObject.transform.InverseTransformPoint(this.TopPlane[i]);
+                allVertices[i + this.TopPlane.Length] = this.SegmentObject.transform.InverseTransformPoint(this.BottomPlane[i]);
+            }
+
+            Mesh mesh = new() { name = "Generated" };
             MeshRenderer renderer = this.SegmentObject.AddComponent<MeshRenderer>();
             this.SegmentObject.AddComponent<MeshFilter>().mesh = mesh;
-            mesh.vertices =
-                new Vector3[]{
-                    //Top
-                    new (-1,this.Height/2,1),
-                    new (1,this.Height/2,1),
-                    new (1,this.Height/2,-1),
-                    new (-1,this.Height/2,-1),
-                    new (-1,this.Height/2,-1),
-                    new (-1,-this.Height/2,1),
-                    //Bottom
-                    new (1,-this.Height/2,1),
-                    new (1,-this.Height/2,-1),
-                    new (-1,-this.Height/2,-1),
-                    new (-1,-this.Height/2,-1),
-                    };
+            mesh.vertices = allVertices;
+
             mesh.triangles = new int[] { 
                 //Top
-                0,1, 2,
-                0, 2, 3, 
+                0,2, 1,
+                1, 2, 3, 
                 //Bottom
-                4,5,6,
-                4,6,7
+                4,6,5,
+                5,6,7
                 };
+
             mesh.RecalculateBounds();
             // Vector3 upVector = topPlane[0] - bottomPlane[0];
             // mesh.normals = new Vector3[] { upVector, upVector, upVector, upVector };

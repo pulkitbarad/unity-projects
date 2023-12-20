@@ -7,10 +7,22 @@ using UnityEngine;
 public class CurvedLine : MonoBehaviour
 {
 
-    public static void FindBazierLinePoints(
+    public static float RoadMaxChangeInAngle;
+    public static int RoadMaxVertexCount;
+    public static int RoadMinVertexCount;
+    public static int RoadSegmentMinLength;
+
+    public static List<Vector3> FindBazierLinePoints(params Vector3[] controlPoints)
+    {
+        int vertexCount = 2;
+        if (controlPoints.Length > 2)
+            vertexCount = RoadMinVertexCount;
+
+        return FindBazierLinePoints(vertexCount, controlPoints);
+    }
+
+    private static List<Vector3> FindBazierLinePoints(
       int vertexCount,
-      int roadWidth,
-      out List<Vector3> centerLinePoints,
       params Vector3[] controlPoints)
     {
         List<Vector3> bazierLinePoints = new();
@@ -20,10 +32,22 @@ public class CurvedLine : MonoBehaviour
             float t = 1.0f / vertexCount * p;
             Vector3 point = BezierPathCalculation(t, controlPoints);
             bazierLinePoints.Add(point);
-        }
-        bazierLinePoints.Add(controlPoints[controlPoints.Length - 1]);
-        centerLinePoints = bazierLinePoints;
+            if (p > 1)
+            {
+                Vector3 currSegment = bazierLinePoints[p] - bazierLinePoints[p - 1];
+                Vector3 prevSegment = bazierLinePoints[p - 1] - bazierLinePoints[p - 2];
+                float currAngle = Vector3.Angle(currSegment, prevSegment);
 
+                if (vertexCount < RoadMaxVertexCount
+                    && currSegment.magnitude >= RoadSegmentMinLength
+                    && currAngle > RoadMaxChangeInAngle)
+                {
+                    return FindBazierLinePoints(vertexCount + 1, controlPoints);
+                }
+            }
+        }
+        bazierLinePoints.Add(controlPoints[^1]);
+        return bazierLinePoints;
     }
 
     private static Vector3 BezierPathCalculation(
@@ -109,8 +133,8 @@ public class CurvedLine : MonoBehaviour
         Vector3 upPoint = new(originPoint[0], originPoint[1] + 3, originPoint[2]);
         Vector3 upVector = upPoint - originPoint;
         Vector3 leftVector = Vector3.Cross(forwardVector, upVector).normalized;
-        var leftPoint = originPoint + (leftVector * parallelWidth/2);
-        var rightPoint = originPoint - (leftVector * parallelWidth/2);
+        var leftPoint = originPoint + (leftVector * parallelWidth / 2);
+        var rightPoint = originPoint - (leftVector * parallelWidth / 2);
 
         return new List<Vector3>() { rightPoint, leftPoint };
     }

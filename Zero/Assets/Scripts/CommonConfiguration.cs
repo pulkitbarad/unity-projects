@@ -4,13 +4,17 @@ using UnityEngine;
 
 public class CommonConfiguration : MonoBehaviour
 {
-    [SerializeField] private float MainCameraMoveSpeed = 1f;
-    [SerializeField] private float MainCameraSmoothing = 2f;
-    [SerializeField] private float MainCameraZoomSpeed = 100f;
-    [SerializeField] private float MainCameraRotationSpeed = 100f;
-    [SerializeField] private float MainCameraTiltSpeed = 100f;
-    [SerializeField] private float MainCameraTiltAngleThreshold = 10f;
-   
+    [SerializeField] private float MainCameraMoveSpeed;// = 1f;
+    [SerializeField] private float MainCameraSmoothing;// = 2f;
+    [SerializeField] private float MainCameraZoomSpeed;// = 100f;
+    [SerializeField] private float MainCameraRotationSpeed;// = 100f;
+    [SerializeField] private float MainCameraTiltSpeed;// = 100f;
+    [SerializeField] private float MainCameraTiltAngleThreshold;// = 10f;
+    [SerializeField] private float RoadMaxChangeInAngle;// = 15f;
+    [SerializeField] private int RoadMaxVertexCount;// = 30;
+    [SerializeField] private int RoadMinVertexCount;// = 6;
+    [SerializeField] private int RoadSegmentMinLength;// = 3;
+
     [SerializeField] private GameObject MainCameraRoot;
     [SerializeField] private GameObject MainCameraAnchor;
     [SerializeField] private GameObject MainCameraHolder;
@@ -25,7 +29,11 @@ public class CommonConfiguration : MonoBehaviour
         CameraMovement.MainCameraRotationSpeed = MainCameraRotationSpeed;
         CameraMovement.MainCameraTiltSpeed = MainCameraTiltSpeed;
         CameraMovement.MainCameraTiltAngleThreshold = MainCameraTiltAngleThreshold;
-      
+        CurvedLine.RoadMaxChangeInAngle = RoadMaxChangeInAngle;
+        CurvedLine.RoadMaxVertexCount = RoadMaxVertexCount;
+        CurvedLine.RoadMinVertexCount = RoadMinVertexCount;
+        CurvedLine.RoadSegmentMinLength = RoadSegmentMinLength;
+
         CameraMovement.MainCamera = MainCamera;
         CameraMovement.MainCameraHolder = MainCameraHolder;
         CameraMovement.MainCameraRoot = MainCameraRoot;
