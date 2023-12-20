@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -201,6 +200,7 @@ public class CustomRoadBuilder : MonoBehaviour
                                 name: roadSegmentName,
                                 centerStart: centerVertices[i],
                                 centerEnd: centerVertices[i + 1],
+                                nextCenterStart: centerVertices[i == centerVertices.Count - 1 ? i : i + 1],
                                 width: this.RoadWidth,
                                 height: this.RoadHeight,
                                 parentRoad: this,
@@ -437,6 +437,7 @@ public class CustomRoadBuilder : MonoBehaviour
              float height,
              Vector3 centerStart,
              Vector3 centerEnd,
+             Vector3 nextCenterEnd,
              CustomRoad parentRoad,
              bool renderSegment)
         {
@@ -450,108 +451,178 @@ public class CustomRoadBuilder : MonoBehaviour
 
             this.Forward = centerEnd - updCenterStart;
             this.Length = this.Forward.magnitude;
-            this.InitCenter(updCenterStart);
-            this.InitPlanes(updCenterStart, centerEnd);
+            this.Center =
+                this.GetSegmentCenter(
+                    height: this.Height,
+                    centerStart: updCenterStart,
+                    forward: this.Forward);
+            Vector3[][] planes =
+                this.GetPlanes(
+                    width: this.Width,
+                    height: this.Height,
+                    centerStart: updCenterStart,
+                    centerEnd: centerEnd,
+                    forward: this.Forward);
+            this.TopPlane = planes[0];
+            this.BottomPlane = planes[1];
             if (renderSegment)
-                this.InitSegmentObject();
+                this.SegmentObject =
+                this.GetSegmentObject(
+                    name: this.Name,
+                    height: this.Height,
+                    width: this.Width,
+                    center: this.Center,
+                    forward: this.Forward,
+                    length: this.Length,
+                    topPlane: this.TopPlane,
+                    bottomPlane: this.BottomPlane);
         }
 
-        private void InitPlanes(Vector3 centerStart, Vector3 centerEnd)
+        private Vector3[][] GetPlanes(
+            float width,
+            float height,
+            Vector3 centerStart,
+            Vector3 centerEnd,
+            Vector3 forward,
+            Vector3 up)
         {
-            Vector3 halfLeft = Vector3.Cross(this.Forward, Vector3.up).normalized * this.Width / 2;
+            Vector3 halfLeft = Vector3.Cross(forward, up).normalized * width / 2;
             Vector3 leftStart = centerStart + halfLeft;
             Vector3 leftEnd = centerEnd + halfLeft;
             Vector3 rightStart = centerStart - halfLeft;
             Vector3 rightEnd = centerEnd - halfLeft;
 
-            this.TopPlane = new Vector3[]{
+            Vector3[] topPlane = new Vector3[]{
                 leftStart,
                 rightStart,
                 leftEnd,
                 rightEnd
             };
 
-            this.BottomPlane = new Vector3[]{
+            Vector3[] bottomPlane = new Vector3[]{
                 leftStart,
                 rightStart,
                 leftEnd,
                 rightEnd
             };
 
-            for (int i = 0; i < this.TopPlane.Length; i++)
+            for (int i = 0; i < topPlane.Length; i++)
             {
-                this.TopPlane[i] += 0.5f * this.Height * Vector3.up;
-                this.BottomPlane[i] -= 0.5f * this.Height * Vector3.up;
+                topPlane[i] += 0.5f * height * up;
+                bottomPlane[i] -= 0.5f * height * up;
             }
+
+            return new Vector3[][] { topPlane, bottomPlane };
         }
 
-        private void InitCenter(Vector3 centerStart)
+        private Vector3 GetSegmentCenter(
+            float height,
+            Vector3 centerStart,
+            Vector3 forward,
+            Vector3 up)
         {
-            this.Center = centerStart + this.Forward / 2 + 0.5f * this.Height * Vector3.up;
+            return centerStart + forward / 2 + 0.5f * height * up;
         }
 
-        // private Vector3 ExtendSegmentStart(Vector3 prevCenterStart, Vector3 centerStart, Vector3 centerEnd, float width)
-        // {
+        private Vector3 GetSegmentCenter(
+            float width,
+            float height,
+            Vector3 leftStart,
+            Vector3 leftEnd,
+            Vector3 up)
+        {
+            Vector3 forward = leftEnd - leftStart;
+            Vector3 leftCenter = leftStart + forward / 2;
 
-        //     Vector3 prevCenterEnd = centerStart;
-        //     float angleBetweenSegments = Math.Abs(Vector3.Angle(prevCenterEnd - prevCenterStart, centerEnd - centerStart));
-        //     if (angleBetweenSegments > 180) angleBetweenSegments -= 180;
+            Vector3 leftReverse = leftCenter - leftStart;
+            Vector3 topPlaneCenter = leftCenter + Vector3.Cross(leftReverse, up) * 0.5f * width;
+            return topPlaneCenter - 0.5f * height * up;
+        }
 
-        //     Vector3 previousForward = prevCenterEnd - prevCenterStart;
-        //     Vector3 previousLeft = Vector3.Cross(previousForward, Vector3.up).normalized;
-        //     Vector3 prevLeftEnd = prevCenterEnd + previousLeft * width / 2;
-        //     Vector3 forward = centerEnd - centerStart;
-
-        //     float extension = (prevLeftEnd - centerStart).magnitude * Math.Abs(MathF.Sin(angleBetweenSegments * MathF.PI / 180f));
-        //     Vector3 updCenterStart = centerEnd - (forward.normalized * (forward.magnitude + extension));
-        //     return updCenterStart;
-        // }
-
-        public void InitSegmentObject()
+        public GameObject GetSegmentObject(
+            string name,
+            float height,
+            float width,
+            float length,
+            Vector3 center,
+            Vector3 forward,
+            Vector3[] topPlane,
+            Vector3[] bottomPlane)
         {
             GameObject segmentObject = CommonController.FindGameObject(this.Name, true) ?? new GameObject();
-            segmentObject.name = this.Name;
-            segmentObject.transform.position = this.Center;
-            segmentObject.transform.localScale = new Vector3(this.Width, this.Height, this.Length);
-            var headingChange = Quaternion.FromToRotation(segmentObject.transform.forward, this.Forward);
+            segmentObject.name = name;
+            segmentObject.transform.position = center;
+            segmentObject.transform.localScale = new Vector3(width, height, length);
+            var headingChange = Quaternion.FromToRotation(segmentObject.transform.forward, forward);
             segmentObject.transform.localRotation *= headingChange;
             segmentObject.layer = LayerMask.NameToLayer("RoadSegment");
             segmentObject.transform.SetParent(BuiltRoadSegmentsParent.transform);
-            this.SegmentObject = segmentObject;
-            RenderMesh();
+            RenderMesh(topPlane, bottomPlane, segmentObject);
+            CreateBoxCollider();
+            return segmentObject;
         }
-        private void RenderMesh()
+        private BoxCollider CreateBoxCollider(
+            float width,
+            float height,
+            float length,
+            Vector3 center,
+            Vector3 centerStart,
+            Vector3 centerEnd,
+            Vector3 nextCenterEnd)
         {
-            Vector3[] topVertices = new Vector3[this.TopPlane.Length];
-            Vector3[] bottomVertices = new Vector3[this.BottomPlane.Length];
-            Vector3[] allVertices = new Vector3[2 * this.BottomPlane.Length];
+            float angleBetweenSegments = Math.Abs(Vector3.Angle(nextCenterEnd - centerEnd, centerEnd - centerStart));
+            if (angleBetweenSegments > 180) angleBetweenSegments -= 180;
 
-            for (int i = 0; i < this.TopPlane.Length; i++)
+            Vector3 forward = centerEnd - centerStart;
+
+            float extension = width / 2 * Math.Abs(MathF.Sin(angleBetweenSegments * MathF.PI / 180f));
+            Vector3 updCenter = center + (forward.normalized * extension);
+
+            BoxCollider boxCollider = new()
             {
-                allVertices[i] = this.SegmentObject.transform.InverseTransformPoint(this.TopPlane[i]);
-                allVertices[i + this.TopPlane.Length] = this.SegmentObject.transform.InverseTransformPoint(this.BottomPlane[i]);
+                center = updCenter,
+                size = new Vector3(width, height, length + extension)
+            };
+            return boxCollider;
+        }
+
+        private void RenderMesh(Vector3[] topPlane, Vector3[] bottomPlane, GameObject segment)
+        {
+            Vector3[] allVertices = new Vector3[2 * bottomPlane.Length];
+
+            for (int i = 0; i < topPlane.Length; i++)
+            {
+                allVertices[i] = segment.transform.InverseTransformPoint(topPlane[i]);
+                allVertices[i + topPlane.Length] = segment.transform.InverseTransformPoint(bottomPlane[i]);
             }
 
             Mesh mesh = new() { name = "Generated" };
-            MeshRenderer renderer = this.SegmentObject.AddComponent<MeshRenderer>();
-            this.SegmentObject.AddComponent<MeshFilter>().mesh = mesh;
+            segment.AddComponent<MeshRenderer>();
             mesh.vertices = allVertices;
 
             mesh.triangles = new int[] { 
                 //Top
-                0,2, 1,
-                1, 2, 3, 
+                1,0,2,
+                1,2,3, 
                 //Bottom
-                4,6,5,
-                5,6,7
-                };
+                5,4,6,
+                5,6,7,
+                //Left Side
+                6,2,0,
+                6,0,4,
+                //Right Side
+                5,1,3,
+                5,3,7,
+                //Front Side
+                4,0,1,
+                4,1,5,
+                //Back Side
+                7,3,2,
+                7,2,6,
+            };
 
-            mesh.RecalculateBounds();
-            // Vector3 upVector = topPlane[0] - bottomPlane[0];
-            // mesh.normals = new Vector3[] { upVector, upVector, upVector, upVector };
-            // Vector2[] uv = new Vector2[] { new(0f, 1f), new(1f, 1f), new(1f, 0f), new(0f, 0f) };
-            // mesh.uv = uv;
+            segment.AddComponent<MeshFilter>().mesh = mesh;
+            // mesh.RecalculateBounds();
         }
-
     }
 }
