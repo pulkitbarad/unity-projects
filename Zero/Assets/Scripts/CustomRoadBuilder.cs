@@ -349,11 +349,15 @@ public class CustomRoadBuilder : MonoBehaviour
             List<Vector3> collisionPoints = new();
             foreach (Collider collider in overalppingColliders)
             {
+                Vector3[] colliderBounds = BuiltRoadSegments[collider.gameObject.name].TopPlane;
+
                 Vector3 direction = end - origin;
                 if (collider.Raycast(
                             ray: new Ray(origin, direction),
                             hitInfo: out RaycastHit rayHitInfo,
-                            maxDistance: direction.magnitude))
+                            maxDistance: direction.magnitude)
+                    && !IsPointOnLineSegment(rayHitInfo.point, colliderBounds[0], colliderBounds[1])
+                    && !IsPointOnLineSegment(rayHitInfo.point, colliderBounds[2], colliderBounds[3]))
                 {
                     collisionPoints.Add(rayHitInfo.point);
                     CustomRenderer.RenderSphere(rayHitInfo.point, color: UnityEngine.Color.green);
@@ -378,6 +382,11 @@ public class CustomRoadBuilder : MonoBehaviour
             return true;
         }
 
+        private bool IsPointOnLineSegment(Vector3 point, Vector3 start, Vector3 end)
+        {
+            return Math.Round(Vector3.Cross(point - start, end - point).magnitude, 2) == 0;
+
+        }
         private bool IsPointInsideBounds(Vector3 point, Vector3[] bounds, float margin = 5)
         {
             float maxX = bounds[0].x;
@@ -457,7 +466,6 @@ public class CustomRoadBuilder : MonoBehaviour
             this.Forward = this.CenterEnd - this.CenterStart;
             if (extension > 0)
                 this.CenterEnd += this.Forward.normalized * extension;
-            this.Forward = this.CenterEnd - this.CenterStart;
 
             this.Center = GetSegmentCenter(
                 height: height,
@@ -549,12 +557,8 @@ public class CustomRoadBuilder : MonoBehaviour
 
             for (int i = 0; i < topPlane.Length; i++)
             {
-                var temp = topPlane[i];
                 topPlane[i] += 0.5f * height * up;
                 bottomPlane[i] -= 0.5f * height * up;
-                CustomRenderer.RenderSphere(topPlane[i], this.Name + "Top" + i, size: 1);
-                CustomRenderer.RenderSphere(bottomPlane[i], this.Name + "Bottom" + i, size: 1);
-                CustomRenderer.RenderSphere(temp, this.Name + "Center" + i, size: 1);
             }
 
             return new Vector3[][] { topPlane, bottomPlane };
@@ -609,10 +613,7 @@ public class CustomRoadBuilder : MonoBehaviour
             {
                 allVertices[i] = segment.transform.InverseTransformPoint(topPlane[i]);
                 allVertices[i + topPlane.Length] = segment.transform.InverseTransformPoint(bottomPlane[i]);
-                Debug.Log("vertx=" + segment.transform.InverseTransformPoint(topPlane[i]).ToString());
             }
-            Debug.Log("Length=" + (topPlane[0] - topPlane[2]).magnitude);
-
 
             Mesh mesh = new() { name = "Generated" };
             segment.AddComponent<MeshRenderer>();
