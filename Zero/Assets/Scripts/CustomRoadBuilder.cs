@@ -62,14 +62,22 @@ public class CustomRoadBuilder : MonoBehaviour
             parentTransform: RoadControlsParent.transform);
     }
 
-    public static GameObject InitStaticObject(string objectName, float size, UnityEngine.Color? color)
+    public static GameObject InitStaticObject(
+        string objectName,
+        float size,
+        UnityEngine.Color? color)
     {
 
         GameObject gameObject = CommonController.FindGameObject(objectName, true);
 
         if (gameObject == null)
         {
-            gameObject = CustomRenderer.RenderCylinder(objectName: objectName, position: Vector3.zero, size: size, color: color);
+            gameObject =
+            CustomRenderer.RenderCylinder(
+                objectName: objectName,
+                position: Vector3.zero,
+                size: size,
+                color: color);
             gameObject.transform.SetParent(RoadControlsParent.transform);
             InitialStaticLocalScale.Add(gameObject.name, gameObject.transform.localScale);
         }
@@ -126,10 +134,13 @@ public class CustomRoadBuilder : MonoBehaviour
 
     public static void RepositionControlObjects(bool isCurved)
     {
-        Vector3 startPosition = CameraMovement.GetTerrainHitPoint(CommonController.GetScreenCenterPoint());
+        Vector3 startPosition =
+            CameraMovement
+            .GetTerrainHitPoint(CommonController.GetScreenCenterPoint());
 
         StartObject.transform.position = startPosition;
-        EndObject.transform.position = startPosition + 200f * CameraMovement.MainCameraRoot.transform.right;
+        EndObject.transform.position =
+            startPosition + 200f * CameraMovement.MainCameraRoot.transform.right;
         if (isCurved)
         {
             ControlObject.transform.position = InitCurveControlPosition(isCurved);
@@ -159,7 +170,9 @@ public class CustomRoadBuilder : MonoBehaviour
         {
             this.Name = name;
             this.IsCurved = isCurved;
-            this.RoadObject = CommonController.FindGameObject(name, true) ?? new GameObject("Road" + BuiltRoads.Count);
+            this.RoadObject =
+                CommonController.FindGameObject(name, true)
+                    ?? new GameObject("Road" + BuiltRoads.Count);
             this.RoadObject.transform.SetParent(BuiltRoadsParent.transform);
 
             if (!this.IsCurved)
@@ -195,12 +208,18 @@ public class CustomRoadBuilder : MonoBehaviour
                 this.Segments = new();
                 for (int i = 0; i < centerVertices.Count - 1; i++)
                 {
-                    string roadSegmentName = String.Concat("RoadSegment", (CustomRoadBuilder.BuiltRoadSegments.Count + i).ToString());
+                    string roadSegmentName =
+                    String.Concat(
+                        "RoadSegment",
+                        (CustomRoadBuilder.BuiltRoadSegments.Count + i).ToString());
                     CustomRoadSegment newSegment = new(
                                 name: roadSegmentName,
                                 centerStart: centerVertices[i],
                                 centerEnd: centerVertices[i + 1],
-                                nextCenterEnd: centerVertices[i == centerVertices.Count - 2 ? i : i + 2],
+                                nextCenterEnd:
+                                    centerVertices[
+                                        i == centerVertices.Count - 2
+                                        ? i : i + 2],
                                 width: this.RoadWidth,
                                 height: this.RoadHeight,
                                 parentRoad: this,
@@ -307,7 +326,8 @@ public class CustomRoadBuilder : MonoBehaviour
                     string colliderGameObjectName = collider.gameObject.name;
 
                     if (BuiltRoadSegments.ContainsKey(colliderGameObjectName)
-                        && !BuiltRoadSegments[colliderGameObjectName].ParentRoad.Name.Equals(this.Name)
+                        && !BuiltRoadSegments[colliderGameObjectName]
+                            .ParentRoad.Name.Equals(this.Name)
                         && !IsColliderWithinbounds(collider, segmentBounds))
                     {
                         partialOverlaps.Add(collider);
@@ -349,20 +369,25 @@ public class CustomRoadBuilder : MonoBehaviour
             List<Vector3> collisionPoints = new();
             foreach (Collider collider in overalppingColliders)
             {
-                Vector3[] colliderBounds = BuiltRoadSegments[collider.gameObject.name].TopPlane;
+                Vector3[] colliderBounds =
+                    BuiltRoadSegments[collider.gameObject.name].TopPlane;
 
                 Vector3 direction = end - origin;
                 if (collider.Raycast(
-                            ray: new Ray(origin, direction),
-                            hitInfo: out RaycastHit rayHitInfo,
-                            maxDistance: direction.magnitude)
-                    && !IsPointOnLineSegment(rayHitInfo.point, colliderBounds[0], colliderBounds[1])
-                    && !IsPointOnLineSegment(rayHitInfo.point, colliderBounds[2], colliderBounds[3]))
+                        ray: new Ray(origin, direction),
+                        hitInfo: out RaycastHit rayHitInfo,
+                        maxDistance: direction.magnitude)
+                    && !IsPointOnLineSegment(
+                            rayHitInfo.point,
+                            colliderBounds[0],
+                            colliderBounds[1])
+                    && !IsPointOnLineSegment(
+                            rayHitInfo.point,
+                            colliderBounds[2],
+                            colliderBounds[3]))
                 {
                     collisionPoints.Add(rayHitInfo.point);
                     CustomRenderer.RenderSphere(rayHitInfo.point, color: UnityEngine.Color.green);
-                    CustomRenderer.RenderSphere(origin, color: UnityEngine.Color.blue);
-                    CustomRenderer.RenderSphere(end, color: UnityEngine.Color.yellow);
                 }
             }
             return collisionPoints;
@@ -519,11 +544,19 @@ public class CustomRoadBuilder : MonoBehaviour
                 return 0;
             else
             {
-                float angleBetweenSegments = Math.Abs(Vector3.Angle(nextCenterEnd - centerEnd, centerEnd - centerStart));
+                float angleBetweenSegments =
+                 Math.Abs(
+                    Vector3.Angle(
+                        nextCenterEnd - centerEnd,
+                        centerEnd - centerStart));
                 if (angleBetweenSegments > 180)
                     angleBetweenSegments -= 180;
 
-                return width / 2 * Math.Abs(MathF.Sin(angleBetweenSegments * MathF.PI / 180f));
+                return
+                    width / 2
+                    * Math.Abs(
+                        MathF.Sin(
+                            angleBetweenSegments * MathF.PI / 180f));
             }
         }
 
@@ -535,7 +568,9 @@ public class CustomRoadBuilder : MonoBehaviour
             Vector3 forward,
             Vector3 up)
         {
-            Vector3 halfLeft = 0.5f * width * Vector3.Cross(forward, up).normalized;
+            Vector3 halfLeft =
+                0.5f * width
+                * Vector3.Cross(forward, up).normalized;
             Vector3 leftStart = centerStart + halfLeft;
             Vector3 leftEnd = centerEnd + halfLeft;
             Vector3 rightStart = centerStart - halfLeft;
@@ -566,8 +601,13 @@ public class CustomRoadBuilder : MonoBehaviour
 
         public void InitSegmentObject()
         {
-            GameObject segmentObject = CommonController.FindGameObject(this.Name, true) ?? GameObject.CreatePrimitive(PrimitiveType.Cube);
-            var headingChange = Quaternion.FromToRotation(segmentObject.transform.forward, this.Forward);
+            GameObject segmentObject =
+                CommonController.FindGameObject(this.Name, true)
+                ?? GameObject.CreatePrimitive(PrimitiveType.Cube);
+            var headingChange =
+                Quaternion.FromToRotation(
+                    segmentObject.transform.forward,
+                    this.Forward);
 
             segmentObject.name = this.Name;
             segmentObject.transform.position = this.Center;
@@ -611,8 +651,10 @@ public class CustomRoadBuilder : MonoBehaviour
 
             for (int i = 0; i < topPlane.Length; i++)
             {
-                allVertices[i] = segment.transform.InverseTransformPoint(topPlane[i]);
-                allVertices[i + topPlane.Length] = segment.transform.InverseTransformPoint(bottomPlane[i]);
+                allVertices[i] =
+                    segment.transform.InverseTransformPoint(topPlane[i]);
+                allVertices[i + topPlane.Length] =
+                    segment.transform.InverseTransformPoint(bottomPlane[i]);
             }
 
             Mesh mesh = new() { name = "Generated" };

@@ -169,7 +169,11 @@ public class CurvedLine : MonoBehaviour
             curvePoints.Add(curve);
         }
         curvePoints.Add(endPosition);
-        CustomRenderer.RenderLine(line.name, Color.red, width: 10f, linePoints: curvePoints.ToArray());
+        CustomRenderer.RenderLine(
+            line.name,
+            Color.red,
+            width: 10f,
+            linePoints: curvePoints.ToArray());
         return curvePoints;
     }
 }
