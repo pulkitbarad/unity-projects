@@ -232,40 +232,54 @@ public class CustomRoadBuilder : MonoBehaviour
         return point.x > minX && point.x < maxX && point.y > minY && point.y < maxY;
     }
 
-    private static Vector3[] GetPerpendicularLine(
+    private static Vector3[] GetLeftParallelLine(
         Vector3[] vertices,
-        float distance,
-        bool isLeft)
+        float distance)
     {
-        Vector3[] perpendicularLine = new Vector3[vertices.Length];
+        return GetParallelLines(vertices, distance)[0];
+    }
+
+    private static Vector3[] GetRightParallelLine(
+        Vector3[] vertices,
+        float distance)
+    {
+        return GetParallelLines(vertices, distance)[1];
+    }
+
+    private static Vector3[][] GetParallelLines(
+        Vector3[] vertices,
+        float distance)
+    {
+        Vector3[] leftLine = new Vector3[vertices.Length];
+        Vector3[] rightLine = new Vector3[vertices.Length];
         for (int i = 0; i < vertices.Length; i++)
         {
             bool isLastVertex = i == vertices.Length - 1;
-            perpendicularLine[i] =
-                GetPerpendicularPoint(
+            Vector3[] parallelPoints = GetParallelPoints(
                     originPoint: vertices[isLastVertex ? i : i - 1],
                     targetPoint: vertices[isLastVertex ? i - 1 : i],
-                    distance: distance,
-                    isLeft: isLeft);
+                    distance: distance);
+
+            leftLine[i] = parallelPoints[0];
+            rightLine[i] = parallelPoints[1];
         }
-        return perpendicularLine;
+        return new Vector3[][] { leftLine, rightLine };
     }
 
-    private static Vector3 GetPerpendicularPoint(
+    private static Vector3 GetLeftParallelPoint(
         Vector3 originPoint,
         Vector3 targetPoint,
-        float distance,
-        bool isLeft)
+        float distance)
     {
-        Vector3 forwardVector = targetPoint - originPoint;
-        Vector3 upVector = GetUpVector(originPoint, targetPoint);
-        Vector3 leftVector = Vector3.Cross(forwardVector, upVector).normalized;
-        var leftPoint = originPoint + (leftVector * distance);
-        var rightPoint = originPoint - (leftVector * distance);
-        if (isLeft)
-            return leftPoint;
-        else
-            return rightPoint;
+        return GetParallelPoints(originPoint, targetPoint, distance)[0];
+    }
+
+    private static Vector3 GetRightParallelPoint(
+        Vector3 originPoint,
+        Vector3 targetPoint,
+        float distance)
+    {
+        return GetParallelPoints(originPoint, targetPoint, distance)[1];
     }
 
     private static Vector3 GetUpVector(
@@ -277,6 +291,19 @@ public class CustomRoadBuilder : MonoBehaviour
         return Vector3.Cross(forward, right).normalized;
     }
 
+    private static Vector3[] GetParallelPoints(
+        Vector3 originPoint,
+        Vector3 targetPoint,
+        float distance)
+    {
+        Vector3 forwardVector = targetPoint - originPoint;
+        Vector3 upVector = GetUpVector(originPoint, targetPoint);
+        Vector3 leftVector = Vector3.Cross(forwardVector, upVector).normalized;
+        var leftPoint = originPoint + (leftVector * distance);
+        var rightPoint = originPoint - (leftVector * distance);
+        return new Vector3[] { leftPoint, rightPoint };
+    }
+
     public class CustomRoad
     {
         public string Name;
@@ -285,39 +312,28 @@ public class CustomRoadBuilder : MonoBehaviour
         public int VertexCount = 20;
         public bool IsCurved = true;
         public int NumberOfLanes;
-        public bool HasDivider;
-        public float DividerHeight;
-        public float DividerWidth;
+        public bool HasBusLane = false;
         public float SidewalkWidth;
         public float SidewalkHeight;
         public CustomRoadLane[] Lanes;
-        public CustomRoadSegment[] LeftSidewalkSegments;
-        public CustomRoadSegment[] RightSidewalkSegments;
-        public CustomRoadSegment[] DividerSegments;
-        public GameObject[] LaneObjects;
-        public GameObject LeftSidewalkObject;
-        public GameObject RightSidewalkObject;
-        public GameObject DividerObject;
+        public CustomRoadLane LeftSidewalkSegments;
+        public CustomRoadLane RightSidewalkSegments;
         public GameObject RoadObject;
 
         public CustomRoad(
             string name,
             bool isCurved,
-            bool hasDivider,
+            bool hasBusLane,
             int numberOfLanes,
             float sidewalkWidth,
-            float sidewalkHeight = 0.5f,
-            float dividerWidth = 0,
-            float dividerHeight = 0)
+            float sidewalkHeight = 0.5f)
         {
             this.Name = name;
             this.IsCurved = isCurved;
-            this.HasDivider = hasDivider;
+            this.HasBusLane = hasBusLane;
             this.NumberOfLanes = numberOfLanes;
             this.SidewalkHeight = sidewalkHeight;
             this.SidewalkWidth = sidewalkWidth;
-            this.DividerHeight = dividerHeight;
-            this.DividerWidth = dividerWidth;
 
             this.RoadObject =
                 CommonController.FindGameObject(name, true)
@@ -357,35 +373,12 @@ public class CustomRoadBuilder : MonoBehaviour
                 this.Lanes =
                     GetLanes(
                         leftMostVertices:
-                            GetPerpendicularLine(
+                            GetLeftParallelLine(
                                 vertices: centerVertices,
-                                distance: 0.5f * this.RoadWidth,
-                                isLeft: true));
+                                distance: 0.5f * this.RoadWidth));
 
                 this.RenderRoadLines();
             }
-        }
-
-        private bool IsBuildRequired(Vector2 touchPosition)
-        {
-            if (!EventSystem.current.IsPointerOverGameObject())
-            {
-                var roadStartChanged =
-                    !StartObject.transform.position.Equals(Vector3.zero)
-                    && CommonController.HandleGameObjectDrag(StartObject, touchPosition);
-
-                var roadControlChanged =
-                    this.IsCurved
-                    && !ControlObject.transform.position.Equals(Vector3.zero)
-                    && CommonController.HandleGameObjectDrag(ControlObject, touchPosition);
-
-                var roadEndChanged =
-                    !EndObject.transform.position.Equals(Vector3.zero)
-                    && CommonController.HandleGameObjectDrag(EndObject, touchPosition);
-
-                return roadStartChanged || roadControlChanged || roadEndChanged;
-            }
-            else return false;
         }
 
         private CustomRoadLane[] GetLanes(Vector3[] leftMostVertices)
@@ -398,12 +391,31 @@ public class CustomRoadBuilder : MonoBehaviour
                 CustomRoadSegment[] roadSegments =
                     GetRoadSegments(
                         centerVertices:
-                            GetPerpendicularLine(
+                            GetRightParallelLine(
                                 vertices: leftMostVertices,
-                                distance: distanceFromLeftMostLane,
-                                isLeft: true));
+                                distance: distanceFromLeftMostLane));
                 lanes[laneIndex] = new(this.Name, this, roadSegments);
             }
+            return lanes;
+        }
+
+        private CustomRoadLane[] GetSideWalks(Vector3[] centerVertices)
+        {
+            CustomRoadLane[] lanes = new CustomRoadLane[2];
+
+            float distanceToSideWalkCenter =
+                (0.5f * this.NumberOfLanes) + (0.5f * CustomRoadBuilder.RoadLaneWidth);
+
+            Vector3[][] sideWalkCenterVertices = GetParallelLines(
+                        vertices: centerVertices,
+                        distance: distanceToSideWalkCenter);
+
+            CustomRoadSegment[] leftSideWalkSegments =
+                GetRoadSegments(centerVertices: sideWalkCenterVertices[0]);
+            CustomRoadSegment[] rightSideWalkSegments =
+                GetRoadSegments(centerVertices: sideWalkCenterVertices[1]);
+            lanes[0] = new(this.Name, this, leftSideWalkSegments);
+            lanes[1] = new(this.Name, this, rightSideWalkSegments);
             return lanes;
         }
 
@@ -438,6 +450,28 @@ public class CustomRoadBuilder : MonoBehaviour
                 segments[vertexIndex] = newSegment;
             }
             return segments;
+        }
+
+        private bool IsBuildRequired(Vector2 touchPosition)
+        {
+            if (!EventSystem.current.IsPointerOverGameObject())
+            {
+                var roadStartChanged =
+                    !StartObject.transform.position.Equals(Vector3.zero)
+                    && CommonController.HandleGameObjectDrag(StartObject, touchPosition);
+
+                var roadControlChanged =
+                    this.IsCurved
+                    && !ControlObject.transform.position.Equals(Vector3.zero)
+                    && CommonController.HandleGameObjectDrag(ControlObject, touchPosition);
+
+                var roadEndChanged =
+                    !EndObject.transform.position.Equals(Vector3.zero)
+                    && CommonController.HandleGameObjectDrag(EndObject, touchPosition);
+
+                return roadStartChanged || roadControlChanged || roadEndChanged;
+            }
+            else return false;
         }
 
         public void RenderRoad()
@@ -704,28 +738,15 @@ public class CustomRoadBuilder : MonoBehaviour
             Vector3 forward,
             Vector3 up)
         {
-            Vector3[] topPlane = new Vector3[]{
-                CustomRoadBuilder.GetPerpendicularPoint(
+            Vector3[] startPoints = CustomRoadBuilder.GetParallelPoints(
                     originPoint: centerStart,
                     targetPoint: centerEnd,
-                    distance: width*0.5f,
-                    isLeft: true) ,
-                CustomRoadBuilder.GetPerpendicularPoint(
-                    originPoint: centerStart,
-                    targetPoint: centerEnd,
-                    distance: width*0.5f,
-                    isLeft: false) ,
-                CustomRoadBuilder.GetPerpendicularPoint(
+                    distance: width * 0.5f);
+            Vector3[] endPoints = CustomRoadBuilder.GetParallelPoints(
                     originPoint: centerEnd,
                     targetPoint: centerStart,
-                    distance: width*0.5f,
-                    isLeft: true) ,
-                CustomRoadBuilder.GetPerpendicularPoint(
-                    originPoint: centerEnd,
-                    targetPoint: centerStart,
-                    distance: width*0.5f,
-                    isLeft: false)
-            };
+                    distance: width * 0.5f);
+            Vector3[] topPlane = startPoints.Concat(endPoints).ToArray();
 
             Vector3[] bottomPlane = (Vector3[])topPlane.Clone();
 
