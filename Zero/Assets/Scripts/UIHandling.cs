@@ -79,7 +79,7 @@ public class UIHandling : MonoBehaviour
         {
             Vector2 currentTouch0 = _touch0Action.ReadValue<Vector2>();
             if (_isRoadMenuActive)
-                CustomRoadBuilder.CurrentActiveRoad.Rebuild(false, currentTouch0);
+                CustomRoadBuilder.CurrentActiveRoad.Build(false, currentTouch0);
         }
 
         // if (_doubleTouchAction.phase == InputActionPhase.Performed)

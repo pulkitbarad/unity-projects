@@ -14,6 +14,8 @@ public class CommonConfiguration : MonoBehaviour
     [SerializeField] private int RoadMaxVertexCount;// = 30;
     [SerializeField] private int RoadMinVertexCount;// = 6;
     [SerializeField] private int RoadSegmentMinLength;// = 3;
+    [SerializeField] private int RoadLaneWidth;// = 3;
+    [SerializeField] private int RoadSideWalkWidth;// = 3;
 
     [SerializeField] private GameObject MainCameraRoot;
     [SerializeField] private GameObject MainCameraAnchor;
@@ -29,10 +31,12 @@ public class CommonConfiguration : MonoBehaviour
         CameraMovement.MainCameraRotationSpeed = MainCameraRotationSpeed;
         CameraMovement.MainCameraTiltSpeed = MainCameraTiltSpeed;
         CameraMovement.MainCameraTiltAngleThreshold = MainCameraTiltAngleThreshold;
-        CurvedLine.RoadMaxChangeInAngle = RoadMaxChangeInAngle;
-        CurvedLine.RoadMaxVertexCount = RoadMaxVertexCount;
-        CurvedLine.RoadMinVertexCount = RoadMinVertexCount;
-        CurvedLine.RoadSegmentMinLength = RoadSegmentMinLength;
+        CustomRoadBuilder.RoadMaxChangeInAngle = RoadMaxChangeInAngle;
+        CustomRoadBuilder.RoadMaxVertexCount = RoadMaxVertexCount;
+        CustomRoadBuilder.RoadMinVertexCount = RoadMinVertexCount;
+        CustomRoadBuilder.RoadSegmentMinLength = RoadSegmentMinLength;
+        CustomRoadBuilder.RoadLaneWidth = RoadLaneWidth;
+        CustomRoadBuilder.RoadSideWalkWidth = RoadSideWalkWidth;
 
         CameraMovement.MainCamera = MainCamera;
         CameraMovement.MainCameraHolder = MainCameraHolder;

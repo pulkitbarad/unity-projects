@@ -116,6 +116,7 @@ public class CommonController : MonoBehaviour
         return Vector3.Angle(backward2,bound1) + Vector3.Angle(backward2,bound2) == boundAngle;
 
     }
+    
     public static string GetPositionHexCode(params Vector3[] positions)
     {
         Vector3 position = Vector3.zero;
