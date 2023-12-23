@@ -14,6 +14,7 @@ public class CommonConfiguration : MonoBehaviour
     [SerializeField] private int RoadMaxVertexCount;// = 30;
     [SerializeField] private int RoadMinVertexCount;// = 6;
     [SerializeField] private int RoadSegmentMinLength;// = 3;
+    [SerializeField] private int RoadLaneHeight;// = 1;
     [SerializeField] private int RoadLaneWidth;// = 3;
     [SerializeField] private int RoadSideWalkWidth;// = 3;
 
@@ -35,6 +36,7 @@ public class CommonConfiguration : MonoBehaviour
         CustomRoadBuilder.RoadMaxVertexCount = RoadMaxVertexCount;
         CustomRoadBuilder.RoadMinVertexCount = RoadMinVertexCount;
         CustomRoadBuilder.RoadSegmentMinLength = RoadSegmentMinLength;
+        CustomRoadBuilder.RoadLaneHeight = RoadLaneHeight;
         CustomRoadBuilder.RoadLaneWidth = RoadLaneWidth;
         CustomRoadBuilder.RoadSideWalkWidth = RoadSideWalkWidth;
 
