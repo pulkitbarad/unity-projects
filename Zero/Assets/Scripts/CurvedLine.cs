@@ -10,7 +10,7 @@ public class CurvedLine : MonoBehaviour
 
     public static Vector3[] FindBazierLinePoints(params Vector3[] controlPoints)
     {
-        int vertexCount = 2;
+        int vertexCount = 1;
         if (controlPoints.Length > 2)
             vertexCount = CustomRoadBuilder.RoadMinVertexCount;
 

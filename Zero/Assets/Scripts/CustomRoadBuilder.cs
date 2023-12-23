@@ -255,7 +255,7 @@ public class CustomRoadBuilder : MonoBehaviour
 
             if (BuiltRoadSegments.ContainsKey(colliderGameObjectName)
                 && !BuiltRoadSegments[colliderGameObjectName]
-                    .ParentRoad.Name.Equals(roadName)
+                    .ParentLane.ParentRoad.Name.Equals(roadName)
                 && !CustomRoadBuilder.IsColliderWithinbounds(collider, segmentBounds))
             {
                 partialOverlaps.Add(collider);
@@ -355,34 +355,29 @@ public class CustomRoadBuilder : MonoBehaviour
     {
         Vector3[] leftLine = new Vector3[vertices.Length];
         Vector3[] rightLine = new Vector3[vertices.Length];
-        for (int i = 0; i < vertices.Length; i++)
+        Vector3[] parallelPoints = new Vector3[2];
+        for (int i = 1; i < vertices.Length; i++)
         {
-            bool isLastVertex = i == vertices.Length - 1;
-            Vector3[] parallelPoints = GetParallelPoints(
-                    originPoint: vertices[isLastVertex ? i : i - 1],
-                    targetPoint: vertices[isLastVertex ? i - 1 : i],
+            parallelPoints = GetParallelPoints(
+                    originPoint: vertices[i - 1],
+                    targetPoint: vertices[i],
                     distance: distance);
 
-            leftLine[i] = parallelPoints[0];
-            rightLine[i] = parallelPoints[1];
+            leftLine[i - 1] = parallelPoints[0];
+            rightLine[i - 1] = parallelPoints[1];
+            if (i == vertices.Length - 1)
+            {
+                parallelPoints = GetParallelPoints(
+                        originPoint: vertices[i],
+                        targetPoint: vertices[i - 1],
+                        distance: distance);
+                leftLine[i] = parallelPoints[0];
+                rightLine[i] = parallelPoints[1];
+            }
         }
+        Debug.Log("leftLine points=" + leftLine.ToSeparatedString(","));
+        Debug.Log("rightLine points=" + rightLine.ToSeparatedString(","));
         return new Vector3[][] { leftLine, rightLine };
-    }
-
-    private static Vector3 GetLeftParallelPoint(
-        Vector3 originPoint,
-        Vector3 targetPoint,
-        float distance)
-    {
-        return GetParallelPoints(originPoint, targetPoint, distance)[0];
-    }
-
-    private static Vector3 GetRightParallelPoint(
-        Vector3 originPoint,
-        Vector3 targetPoint,
-        float distance)
-    {
-        return GetParallelPoints(originPoint, targetPoint, distance)[1];
     }
 
     private static Vector3 GetUpVector(
@@ -491,7 +486,7 @@ public class CustomRoadBuilder : MonoBehaviour
         private CustomRoadLane[] GetLanes(Vector3[] leftMostVertices)
         {
             CustomRoadLane[] lanes = new CustomRoadLane[this.NumberOfLanes];
-            for (int laneIndex = 0; laneIndex < this.NumberOfLanes - 1; laneIndex++)
+            for (int laneIndex = 0; laneIndex < this.NumberOfLanes; laneIndex++)
             {
                 float distanceFromLeftMostLane =
                     (2 * laneIndex - 1) / 2f / this.NumberOfLanes;
@@ -501,7 +496,8 @@ public class CustomRoadBuilder : MonoBehaviour
                             GetRightParallelLine(
                                 vertices: leftMostVertices,
                                 distance: distanceFromLeftMostLane));
-                lanes[laneIndex] = new(this.Name, this, roadSegments);
+                CustomRoadLane newLane = new(this.Name + "Lane" + laneIndex, this, roadSegments);
+                lanes[laneIndex] = newLane;
             }
             return lanes;
         }
@@ -528,8 +524,7 @@ public class CustomRoadBuilder : MonoBehaviour
 
         private CustomRoadSegment[] GetRoadSegments(Vector3[] centerVertices)
         {
-
-            CustomRoadSegment[] segments = new CustomRoadSegment[centerVertices.Length];
+            CustomRoadSegment[] segments = new CustomRoadSegment[centerVertices.Length - 1];
             for (int vertexIndex = 0; vertexIndex < centerVertices.Length - 1; vertexIndex++)
             {
                 string roadSegmentName =
@@ -541,9 +536,7 @@ public class CustomRoadBuilder : MonoBehaviour
                 Vector3 secondNextVertex =
                     centerVertices[
                         vertexIndex == centerVertices.Length - 2
-                        ? vertexIndex : vertexIndex + 2];
-
-
+                        ? vertexIndex + 1 : vertexIndex + 2];
 
                 CustomRoadSegment newSegment = new(
                             name: roadSegmentName,
@@ -552,7 +545,6 @@ public class CustomRoadBuilder : MonoBehaviour
                             nextCenterEnd: secondNextVertex,
                             width: this.Width,
                             height: this.Height,
-                            parentRoad: this,
                             renderSegment: false);
                 segments[vertexIndex] = newSegment;
             }
@@ -636,7 +628,6 @@ public class CustomRoadBuilder : MonoBehaviour
         public bool RenderIntersections(CustomRoadSegment[] leftSegments, CustomRoadSegment[] rightSegments)
         {
             int activeRoadSegmentCount = leftSegments.Length;
-            // Physics.SyncTransforms();
             for (int segmentIndex = 0; segmentIndex < activeRoadSegmentCount; segmentIndex++)
             {
                 CustomRoadSegment leftSegment = leftSegments[segmentIndex];
@@ -681,7 +672,16 @@ public class CustomRoadBuilder : MonoBehaviour
             this.Name = name;
             this.ParentRoad = parentRoad;
             this.Segments = segments;
-            InitLaneObject(segments[segments.Length / 2 - 1].Center);
+            InitLaneObject(segments[segments.Length > 2 ? segments.Length / 2 - 1 : 0].Center);
+            AssignParentToSegments();
+        }
+
+        public void AssignParentToSegments()
+        {
+            for (int i = 0; i < this.Segments.Length; i++)
+            {
+                this.Segments[i].ParentLane = this;
+            }
         }
 
         public void InitLaneObject(Vector3 position)
@@ -692,7 +692,7 @@ public class CustomRoadBuilder : MonoBehaviour
 
             laneObject.name = this.Name;
             laneObject.transform.position = position;
-            laneObject.transform.SetParent(BuiltRoadSegmentsParent.transform);
+            laneObject.transform.SetParent(this.ParentRoad.RoadObject.transform);
             this.LaneObject = laneObject;
         }
     }
@@ -712,7 +712,7 @@ public class CustomRoadBuilder : MonoBehaviour
         public Vector3 CenterEnd;
         public Vector3 NextCenterEnd;
         public GameObject SegmentObject;
-        public CustomRoad ParentRoad;
+        public CustomRoadLane ParentLane;
 
         public CustomRoadSegment(
              string name,
@@ -721,13 +721,11 @@ public class CustomRoadBuilder : MonoBehaviour
              Vector3 centerStart,
              Vector3 centerEnd,
              Vector3 nextCenterEnd,
-             CustomRoad parentRoad,
              bool renderSegment)
         {
             this.Name = name;
             this.Width = width;
             this.Height = height;
-            this.ParentRoad = parentRoad;
             this.CenterStart = centerStart;
             this.CenterEnd = centerEnd;
             this.NextCenterEnd = nextCenterEnd;
@@ -735,7 +733,6 @@ public class CustomRoadBuilder : MonoBehaviour
             this.Up = CustomRoadBuilder.GetUpVector(
                 start: centerStart,
                 end: centerEnd);
-
 
             float extension = GetSegmentExtension(
                 width: width,
@@ -762,8 +759,8 @@ public class CustomRoadBuilder : MonoBehaviour
                     height: this.Height,
                     centerStart: this.CenterStart,
                     centerEnd: this.CenterEnd,
-                    forward: this.Forward,
                     up: this.Up);
+
             this.TopPlane = planes[0];
             this.BottomPlane = planes[1];
             if (renderSegment)
@@ -811,7 +808,6 @@ public class CustomRoadBuilder : MonoBehaviour
             float height,
             Vector3 centerStart,
             Vector3 centerEnd,
-            Vector3 forward,
             Vector3 up)
         {
             Vector3[] startPoints = CustomRoadBuilder.GetParallelPoints(
@@ -823,7 +819,6 @@ public class CustomRoadBuilder : MonoBehaviour
                     targetPoint: centerStart,
                     distance: width * 0.5f);
             Vector3[] topPlane = startPoints.Concat(endPoints).ToArray();
-
             Vector3[] bottomPlane = (Vector3[])topPlane.Clone();
 
             for (int i = 0; i < topPlane.Length; i++)
@@ -831,7 +826,10 @@ public class CustomRoadBuilder : MonoBehaviour
                 topPlane[i] += 0.5f * height * up;
                 bottomPlane[i] -= 0.5f * height * up;
             }
-
+            CustomRenderer.RenderSphere(topPlane[0], this.Name + "LeftStart", color: Color.black);
+            CustomRenderer.RenderSphere(topPlane[2], this.Name + "LeftEnd", color: Color.blue);
+            CustomRenderer.RenderSphere(bottomPlane[1], this.Name + "RightStart", color: Color.white);
+            CustomRenderer.RenderSphere(bottomPlane[3], this.Name + "RightEnd", color: Color.gray);
             return new Vector3[][] { topPlane, bottomPlane };
         }
 
@@ -868,14 +866,10 @@ public class CustomRoadBuilder : MonoBehaviour
         }
 
         private void AddBoxCollider(
-            float width,
-            float height,
-            float length,
             Vector3 center,
             GameObject segmentObject)
         {
             Vector3 updCenter = center;
-            float updLength = length;
             BoxCollider boxCollider = segmentObject.AddComponent<BoxCollider>();
             boxCollider.center = updCenter;
             boxCollider.size = new Vector3(1, 1, 2);

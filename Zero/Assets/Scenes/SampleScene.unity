@@ -5456,6 +5456,9 @@ MonoBehaviour:
   RoadMaxVertexCount: 30
   RoadMinVertexCount: 6
   RoadSegmentMinLength: 3
+  RoadLaneHeight: 1
+  RoadLaneWidth: 3
+  RoadSideWalkWidth: 2
   MainCameraRoot: {fileID: 1835351740}
   MainCameraAnchor: {fileID: 1089637246}
   MainCameraHolder: {fileID: 2000256590}
