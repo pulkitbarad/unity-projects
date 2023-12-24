@@ -46,7 +46,7 @@ public class CustomRenderer : MonoBehaviour
     public static GameObject GetLineObject(
         string name,
         UnityEngine.Color? color = null,
-        float width = 2f,
+        float width = 0.5f,
         Transform parentTransform = null)
     {
         GameObject lineObject = CommonController.FindGameObject(name, true);
@@ -93,8 +93,8 @@ public class CustomRenderer : MonoBehaviour
     public static GameObject RenderLine(
         string name,
         UnityEngine.Color? color = null,
-        float width = 2f,
-        float pointSize = 5f,
+        float width = 0.5f,
+        float pointSize = 0.5f,
         Transform parentTransform = null,
         bool renderPoints = false,
         params Vector3[] linePoints)
@@ -119,7 +119,7 @@ public class CustomRenderer : MonoBehaviour
     public static GameObject RenderSphere(
         Vector3 position,
         string sphereName = "",
-        float size = 5f,
+        float size = 0.5f,
         Transform parentTransform = null,
         UnityEngine.Color? color = null)
     {
@@ -149,13 +149,13 @@ public class CustomRenderer : MonoBehaviour
     public static GameObject RenderCylinder(
         string objectName,
         Vector3 position,
-        float size = 5f,
+        float size = 1f,
         UnityEngine.Color? color = null)
     {
         GameObject cylinder = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
         if (objectName.Length > 0)
             cylinder.name = objectName;
-        cylinder.transform.localScale = new Vector3(size, 1, size);
+        cylinder.transform.localScale = new Vector3(size, 0.5f, size);
         cylinder.transform.position = position;
         var sphereRenderer = cylinder.GetComponent<Renderer>();
         sphereRenderer.material.color = color ?? UnityEngine.Color.yellow;

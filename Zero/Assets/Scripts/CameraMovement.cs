@@ -25,14 +25,15 @@ public class CameraMovement : MonoBehaviour
     public static void InitializeCamera()
     {
         Transform rootTransform = MainCameraRoot.transform;
-        rootTransform.position = new Vector3(-1033.7561f, 0, -77.6995697f);
+        rootTransform.position = new Vector3(-100f, 0f, 15f);
 
         Transform anchorTransform = MainCameraAnchor.transform;
         anchorTransform.localPosition = Vector3.zero;
         anchorTransform.SetParent(rootTransform);
 
         Transform holderTransform = MainCameraHolder.transform;
-        holderTransform.localPosition = new Vector3(0, 100, -100);
+        //do not set y position zero, it is used as a divisor in relative object scaling
+        holderTransform.localPosition = new Vector3(0, 20, -20);
         holderTransform.eulerAngles = new Vector3(45, 0, 0);
         holderTransform.SetParent(anchorTransform);
 
@@ -178,8 +179,8 @@ public class CameraMovement : MonoBehaviour
         targetPosition = currentPosition + magnitude * cameraDirection;
 
         float tiltAngle = Vector3.Angle(cameraDirection, Vector3.down);
-        if (targetPosition.y < 30)
-            magnitude = (currentPosition.y - 30) / MathF.Cos(tiltAngle * MathF.PI / 180F);
+        if (targetPosition.y < 5)
+            magnitude = (currentPosition.y - 5) / MathF.Cos(tiltAngle * MathF.PI / 180F);
         else if (targetPosition.y > 1000)
             magnitude = (1000 - currentPosition.y) / MathF.Cos(tiltAngle * MathF.PI / 180F);
 

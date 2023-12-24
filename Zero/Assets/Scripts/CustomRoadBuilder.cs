@@ -12,10 +12,10 @@ public class CustomRoadBuilder : MonoBehaviour
     public static float RoadMaxChangeInAngle;
     public static int RoadMaxVertexCount;
     public static int RoadMinVertexCount;
-    public static int RoadSegmentMinLength;
+    public static float RoadSegmentMinLength;
     public static float RoadLaneHeight = 1f;
     public static float RoadLaneWidth = 3f;
-    public static float RoadSideWalkWidth = 2f;
+    public static float RoadSideWalkHeight = 1.5f;
     public static GameObject RoadControlsParent;
     public static GameObject BuiltRoadsParent;
     public static GameObject BuiltRoadSegmentsParent;
@@ -46,16 +46,16 @@ public class CustomRoadBuilder : MonoBehaviour
     {
         StartObject = InitStaticObject(
             objectName: "RoadStart",
-             size: 10,
+             size: 2,
               color: new UnityEngine.Color(0.25f, 0.35f, 0.30f));
         if (isCurved)
             ControlObject = InitStaticObject(
                 objectName: "RoadControl",
-                size: 10,
+                size: 2,
                 color: new UnityEngine.Color(0, 1, 0.20f));
         EndObject = InitStaticObject(
             objectName: "RoadEnd",
-            size: 10,
+            size: 2,
             color: new UnityEngine.Color(0.70f, 0.45f, 0f));
 
         LeftLineObject =
@@ -129,8 +129,9 @@ public class CustomRoadBuilder : MonoBehaviour
             name: "Road" + BuiltRoads.Count,
             isCurved: isCurved,
             hasBusLane: true,
-            numberOfLanes: 4,
-            sidewalkWidth: 2);
+            numberOfLanes: 2,
+            height: CustomRoadBuilder.RoadLaneHeight,
+            sidewalkHeight: CustomRoadBuilder.RoadSideWalkHeight);
         ShowControlObjects(isCurved);
     }
 
@@ -152,7 +153,7 @@ public class CustomRoadBuilder : MonoBehaviour
 
         StartObject.transform.position = startPosition;
         EndObject.transform.position =
-            startPosition + 200f * CameraMovement.MainCameraRoot.transform.right;
+            startPosition + 20f * CameraMovement.MainCameraRoot.transform.right;
         if (isCurved)
         {
             ControlObject.transform.position = InitCurveControlPosition(isCurved);
@@ -246,7 +247,7 @@ public class CustomRoadBuilder : MonoBehaviour
             center: segment.SegmentObject.transform.position,
             halfExtents: segment.SegmentObject.transform.localScale / 2,
             orientation: segment.SegmentObject.transform.rotation,
-            layerMask: LayerMask.GetMask("RoadSegment"));
+            layerMask: LayerMask.GetMask("RoadEdgeLaneSegment"));
         List<Collider> partialOverlaps = new();
 
         foreach (Collider collider in overlaps)
@@ -359,24 +360,22 @@ public class CustomRoadBuilder : MonoBehaviour
         for (int i = 1; i < vertices.Length; i++)
         {
             parallelPoints = GetParallelPoints(
-                    originPoint: vertices[i - 1],
-                    targetPoint: vertices[i],
-                    distance: distance);
+                originPoint: vertices[i - 1],
+                targetPoint: vertices[i],
+                distance: distance);
 
             leftLine[i - 1] = parallelPoints[0];
             rightLine[i - 1] = parallelPoints[1];
             if (i == vertices.Length - 1)
             {
                 parallelPoints = GetParallelPoints(
-                        originPoint: vertices[i],
-                        targetPoint: vertices[i - 1],
-                        distance: distance);
-                leftLine[i] = parallelPoints[0];
-                rightLine[i] = parallelPoints[1];
+                    originPoint: vertices[i],
+                    targetPoint: vertices[i - 1],
+                    distance: distance);
+                leftLine[i] = parallelPoints[1];
+                rightLine[i] = parallelPoints[0];
             }
         }
-        Debug.Log("leftLine points=" + leftLine.ToSeparatedString(","));
-        Debug.Log("rightLine points=" + rightLine.ToSeparatedString(","));
         return new Vector3[][] { leftLine, rightLine };
     }
 
@@ -407,7 +406,6 @@ public class CustomRoadBuilder : MonoBehaviour
         public string Name;
         public float Width;
         public float Height;
-        public float SidewalkWidth;
         public float SidewalkHeight;
         public int VertexCount;
         public int NumberOfLanes;
@@ -421,22 +419,22 @@ public class CustomRoadBuilder : MonoBehaviour
             string name,
             bool isCurved,
             bool hasBusLane,
-            int numberOfLanes,//always an even number
-            float sidewalkWidth,
-            float sidewalkHeight = 0.5f)
+            int numberOfLanes,
+            float height,
+            float sidewalkHeight)
         {
             this.Name = name;
             this.IsCurved = isCurved;
             this.NumberOfLanes = numberOfLanes;
             this.Width = numberOfLanes * CustomRoadBuilder.RoadLaneWidth;
-            this.Height = CustomRoadBuilder.RoadLaneHeight;
-            this.SidewalkHeight = this.Height + sidewalkHeight;
-            this.SidewalkWidth = sidewalkWidth;
+            this.Height = height;
+            this.SidewalkHeight = sidewalkHeight;
             this.HasBusLane = hasBusLane && numberOfLanes > 1;
 
             this.RoadObject =
                 CommonController.FindGameObject(name, true)
                     ?? new GameObject("Road" + BuiltRoads.Count);
+            this.RoadObject.transform.localScale = Vector3.zero;
             this.RoadObject.transform.SetParent(BuiltRoadsParent.transform);
 
             if (!this.IsCurved)
@@ -474,8 +472,9 @@ public class CustomRoadBuilder : MonoBehaviour
                         leftMostVertices:
                             GetLeftParallelLine(
                                 vertices: centerVertices,
-                                distance: 0.5f * this.Width));
-                this.Sidewalks = this.GetsideWalks(centerVertices);
+                                distance: 0.5f * this.Width)
+                            );
+                this.Sidewalks = this.GetSideWalks(centerVertices, this.NumberOfLanes);
 
                 this.RenderRoadLines(
                     leftSegments: this.Lanes[0].Segments,
@@ -489,47 +488,68 @@ public class CustomRoadBuilder : MonoBehaviour
             for (int laneIndex = 0; laneIndex < this.NumberOfLanes; laneIndex++)
             {
                 float distanceFromLeftMostLane =
-                    (2 * laneIndex - 1) / 2f / this.NumberOfLanes;
+                    (2 * laneIndex + 1) / 2f * CustomRoadBuilder.RoadLaneWidth;
+                string laneName = this.Name + "Lane" + laneIndex;
                 CustomRoadSegment[] roadSegments =
                     GetRoadSegments(
+                        laneName: laneName,
+                        width: CustomRoadBuilder.RoadLaneWidth,
+                        height: CustomRoadBuilder.RoadLaneHeight,
                         centerVertices:
                             GetRightParallelLine(
                                 vertices: leftMostVertices,
                                 distance: distanceFromLeftMostLane));
-                CustomRoadLane newLane = new(this.Name + "Lane" + laneIndex, this, roadSegments);
+                CustomRoadLane newLane =
+                new(
+                    name: laneName,
+                    isEdgeLane: laneIndex == 0 || laneIndex == this.NumberOfLanes - 1,
+                    parentRoad: this,
+                    segments: roadSegments);
                 lanes[laneIndex] = newLane;
             }
             return lanes;
         }
 
-        private CustomRoadLane[] GetsideWalks(Vector3[] centerVertices)
+        private CustomRoadLane[] GetSideWalks(Vector3[] centerVertices, int lanesBuilt)
         {
             CustomRoadLane[] lanes = new CustomRoadLane[2];
 
             float distanceToSideWalkCenter =
-                (0.5f * this.NumberOfLanes) + (0.5f * CustomRoadBuilder.RoadLaneWidth);
+                (this.NumberOfLanes + 1) * (0.5f * CustomRoadBuilder.RoadLaneWidth);
 
-            Vector3[][] sideWalkCenterVertices = GetParallelLines(
-                        vertices: centerVertices,
-                        distance: distanceToSideWalkCenter);
+            Vector3[][] sideWalkCenterVertices =
+                GetParallelLines(
+                    vertices: centerVertices,
+                    distance: distanceToSideWalkCenter);
 
             CustomRoadSegment[] leftSideWalkSegments =
-                GetRoadSegments(centerVertices: sideWalkCenterVertices[0]);
+                GetRoadSegments(
+                    laneName: this.Name + "Lane" + lanesBuilt,
+                    width: CustomRoadBuilder.RoadLaneWidth,
+                    height: this.SidewalkHeight,
+                    centerVertices: sideWalkCenterVertices[0]);
+
             CustomRoadSegment[] rightSideWalkSegments =
-                GetRoadSegments(centerVertices: sideWalkCenterVertices[1]);
-            lanes[0] = new(this.Name, this, leftSideWalkSegments);
-            lanes[1] = new(this.Name, this, rightSideWalkSegments);
+                GetRoadSegments(
+                    laneName: this.Name + "Lane" + (lanesBuilt + 1).ToString(),
+                    CustomRoadBuilder.RoadLaneWidth,
+                    this.SidewalkHeight,
+                    centerVertices: sideWalkCenterVertices[1]);
+
+            lanes[0] = new(name: this.Name, isEdgeLane: false, parentRoad: this, segments: leftSideWalkSegments);
+            lanes[1] = new(name: this.Name, isEdgeLane: false, parentRoad: this, segments: rightSideWalkSegments);
             return lanes;
         }
 
-        private CustomRoadSegment[] GetRoadSegments(Vector3[] centerVertices)
+        private CustomRoadSegment[] GetRoadSegments(string laneName, float width, float height, Vector3[] centerVertices)
         {
             CustomRoadSegment[] segments = new CustomRoadSegment[centerVertices.Length - 1];
             for (int vertexIndex = 0; vertexIndex < centerVertices.Length - 1; vertexIndex++)
             {
                 string roadSegmentName =
                 String.Concat(
-                    "RoadSegment",
+                    laneName,
+                    "Segment",
                     (CustomRoadBuilder.BuiltRoadSegments.Count + vertexIndex).ToString());
                 Vector3 currVertex = centerVertices[vertexIndex];
                 Vector3 nextVertex = centerVertices[vertexIndex + 1];
@@ -543,8 +563,8 @@ public class CustomRoadBuilder : MonoBehaviour
                             centerStart: currVertex,
                             centerEnd: nextVertex,
                             nextCenterEnd: secondNextVertex,
-                            width: this.Width,
-                            height: this.Height,
+                            width: width,
+                            height: height,
                             renderSegment: false);
                 segments[vertexIndex] = newSegment;
             }
@@ -575,21 +595,37 @@ public class CustomRoadBuilder : MonoBehaviour
 
         public void RenderRoad()
         {
-            for (int laneIndex = 0; laneIndex < this.Lanes.Length; laneIndex++)
-            {
-                CustomRoadSegment[] segments = this.Lanes[laneIndex].Segments;
-                for (int segmentIndex = 0; segmentIndex < segments.Length; segmentIndex++)
-                {
-                    CustomRoadSegment segment = segments[segmentIndex];
-                    BuiltRoadSegments[segment.Name] = segment;
-                    segment.InitSegmentObject();
-                }
-            }
-
+            this.RenderLanes();
+            this.RenderSidewalks();
             this.RenderIntersections(
                 leftSegments: this.Lanes[0].Segments,
                 rightSegments: this.Lanes[^1].Segments);
             BuiltRoads[this.Name] = this;
+        }
+
+        private void RenderLanes()
+        {
+            for (int laneIndex = 0; laneIndex < this.Lanes.Length; laneIndex++)
+            {
+                RenderLane(this.Lanes[laneIndex].Segments);
+            }
+        }
+
+        private void RenderSidewalks()
+        {
+            for (int laneIndex = 0; laneIndex < this.Sidewalks.Length; laneIndex++)
+            {
+                RenderLane(this.Sidewalks[laneIndex].Segments);
+            }
+        }
+        private void RenderLane(CustomRoadSegment[] segments)
+        {
+            for (int segmentIndex = 0; segmentIndex < segments.Length; segmentIndex++)
+            {
+                CustomRoadSegment segment = segments[segmentIndex];
+                BuiltRoadSegments[segment.Name] = segment;
+                segment.InitSegmentObject();
+            }
         }
 
         public void RenderRoadLines(CustomRoadSegment[] leftSegments, CustomRoadSegment[] rightSegments)
@@ -608,20 +644,20 @@ public class CustomRoadBuilder : MonoBehaviour
             CustomRenderer.RenderLine(
                 name: "RoadLeftEdge",
                 color: UnityEngine.Color.yellow,
-                width: 2,
-                pointSize: 5,
+                width: this.Width,
+                pointSize: 0.5f,
                 parentTransform: RoadControlsParent.transform,
-                renderPoints: true,
+                renderPoints: false,
                 linePoints: leftVertices);
 
             RightLineObject =
             CustomRenderer.RenderLine(
                 name: "RoadRightEdge",
                 color: UnityEngine.Color.red,
-                width: 2,
-                pointSize: 5,
+                width: this.Width,
+                pointSize: 0.5f,
                 parentTransform: RoadControlsParent.transform,
-                renderPoints: true,
+                renderPoints: false,
                 linePoints: rightVertices);
         }
 
@@ -663,13 +699,15 @@ public class CustomRoadBuilder : MonoBehaviour
     public class CustomRoadLane
     {
         public string Name;
+        public bool IsEdgeLane;
         public CustomRoadSegment[] Segments;
         public GameObject LaneObject;
         public CustomRoad ParentRoad;
 
-        public CustomRoadLane(string name, CustomRoad parentRoad, CustomRoadSegment[] segments)
+        public CustomRoadLane(string name, bool isEdgeLane, CustomRoad parentRoad, CustomRoadSegment[] segments)
         {
             this.Name = name;
+            this.IsEdgeLane = isEdgeLane;
             this.ParentRoad = parentRoad;
             this.Segments = segments;
             InitLaneObject(segments[segments.Length > 2 ? segments.Length / 2 - 1 : 0].Center);
@@ -818,7 +856,11 @@ public class CustomRoadBuilder : MonoBehaviour
                     originPoint: centerEnd,
                     targetPoint: centerStart,
                     distance: width * 0.5f);
-            Vector3[] topPlane = startPoints.Concat(endPoints).ToArray();
+            Vector3[] topPlane = new Vector3[4];
+            topPlane[0] = startPoints[0];
+            topPlane[1] = startPoints[1];
+            topPlane[2] = endPoints[1];
+            topPlane[3] = endPoints[0];
             Vector3[] bottomPlane = (Vector3[])topPlane.Clone();
 
             for (int i = 0; i < topPlane.Length; i++)
@@ -826,10 +868,12 @@ public class CustomRoadBuilder : MonoBehaviour
                 topPlane[i] += 0.5f * height * up;
                 bottomPlane[i] -= 0.5f * height * up;
             }
-            CustomRenderer.RenderSphere(topPlane[0], this.Name + "LeftStart", color: Color.black);
-            CustomRenderer.RenderSphere(topPlane[2], this.Name + "LeftEnd", color: Color.blue);
-            CustomRenderer.RenderSphere(bottomPlane[1], this.Name + "RightStart", color: Color.white);
-            CustomRenderer.RenderSphere(bottomPlane[3], this.Name + "RightEnd", color: Color.gray);
+            Debug.Log("centerStart=" + centerStart);
+            Debug.Log("centerEnd=" + centerEnd);
+            Debug.Log("topPlane[0]=" + topPlane[0]);
+            Debug.Log("topPlane[1]=" + topPlane[1]);
+            Debug.Log("topPlane[2]=" + topPlane[2]);
+            Debug.Log("topPlane[3]=" + topPlane[3]);
             return new Vector3[][] { topPlane, bottomPlane };
         }
 
@@ -848,7 +892,7 @@ public class CustomRoadBuilder : MonoBehaviour
             segmentObject.transform.localScale = new Vector3(this.Width, this.Height, this.Length);
             segmentObject.transform.localRotation *= headingChange;
             segmentObject.transform.SetParent(BuiltRoadSegmentsParent.transform);
-            segmentObject.layer = LayerMask.NameToLayer("RoadSegment");
+            segmentObject.layer = LayerMask.NameToLayer("RoadEdgeLaneSegment");
 
             // AddBoxCollider(
             //     width: this.Width,
