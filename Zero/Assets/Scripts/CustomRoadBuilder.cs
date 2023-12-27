@@ -737,6 +737,9 @@ public class CustomRoadBuilder : MonoBehaviour
                          roadName: this.Name,
                          segment: rightSegment,
                          layerMaskName: RoadSidewalkMaskName);
+                if (leftIntersections == null || rightIntersections == null)
+                    return false;
+
                 for (int i = 0; i < leftIntersections.Length - 1; i += 2)
                 {
                     CustomSegmentIntersection intersection = leftIntersections[i];
