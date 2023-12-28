@@ -143,6 +143,7 @@ public class CustomRenderer : MonoBehaviour
             sphere.transform.SetParent(DebuggingParent.transform);
         sphere.SetActive(true);
 
+        Debug.Log(newSphereName + "=" + position);
         return sphere;
     }
 

@@ -180,75 +180,160 @@ public class CustomRoadBuilder : MonoBehaviour
             parentTransform: RoadControlsParent.transform);
     }
 
-    private static CustomSegmentIntersection[] GetIntersectionPointsByRoad(
+    private static CustomRoadLaneIntersection[] GetIntersections(
         string roadName,
-        CustomRoadSegment segment,
+        CustomRoadLane primaryLane,
         string layerMaskName)
     {
-        List<Collider> partialOverlaps = GetPartialOverlaps(roadName, segment, layerMaskName);
-        CustomParallelogram segmentTopPlane = segment.TopPlane;
-        List<CustomSegmentIntersection> intersections = new();
 
-        if (partialOverlaps.Count == 0)
-            return null;
-
-        Dictionary<string, CustomCollisionInfo> leftStartCollisions = CustomRoadBuilder.GetCollisionPointsByLane(
-                origin: segmentTopPlane.LeftStart,
-                end: segmentTopPlane.LeftEnd,
-                overalppingColliders: partialOverlaps);
-        Dictionary<string, CustomCollisionInfo> leftEndCollisions =
-            CustomRoadBuilder.GetCollisionPointsByLane(
-                origin: segmentTopPlane.LeftEnd,
-                end: segmentTopPlane.LeftStart,
-                overalppingColliders: partialOverlaps);
-
-        Dictionary<string, CustomCollisionInfo> rightStartCollisions =
-           CustomRoadBuilder.GetCollisionPointsByLane(
-               origin: segmentTopPlane.RightStart,
-               end: segmentTopPlane.RightEnd,
-               overalppingColliders: partialOverlaps);
-        Dictionary<string, CustomCollisionInfo> rightEndCollisions =
-           CustomRoadBuilder.GetCollisionPointsByLane(
-               origin: segmentTopPlane.RightEnd,
-               end: segmentTopPlane.RightStart,
-               overalppingColliders: partialOverlaps);
-
-        if (leftStartCollisions.Keys.Count != leftEndCollisions.Keys.Count
-            || leftStartCollisions.Keys.Count != rightStartCollisions.Keys.Count
-            || leftStartCollisions.Keys.Count != rightEndCollisions.Keys.Count)
-            return null;
-
-        foreach (var entry in leftStartCollisions)
+        Dictionary<string, List<CustomCollisionInfo>> leftStartCollisionsByLane = new();
+        Dictionary<string, List<CustomCollisionInfo>> leftEndCollisionsByLane = new();
+        Dictionary<string, List<CustomCollisionInfo>> rightStartCollisionsByLane = new();
+        Dictionary<string, List<CustomCollisionInfo>> rightEndCollisionsByLane = new();
+        List<CustomRoadLaneIntersection> intersections = new();
+        for (int segmentIndex = 0; segmentIndex < primaryLane.Segments.Length; segmentIndex++)
         {
+            CustomRoadSegment segment = primaryLane.Segments[segmentIndex];
 
-            string laneName = entry.Key;
-            if (!leftEndCollisions.ContainsKey(laneName)
-            || !rightStartCollisions.ContainsKey(laneName)
-            || !rightEndCollisions.ContainsKey(laneName))
-                return null;
+            Debug.Log("Intersection for segment.Name=" + segment.Name);
+            List<Collider> partialOverlaps = GetPartialOverlaps(roadName, segment, layerMaskName);
+            CustomParallelogram segmentTopPlane = segment.TopPlane;
 
+            if (partialOverlaps.Count > 0)
+            {
+                MergeCollisions(
+                    result: leftStartCollisionsByLane,
+                    inputCollisions: CustomRoadBuilder.GetCollisionPointsByLane(
+                        origin: segmentTopPlane.LeftStart,
+                        end: segmentTopPlane.LeftEnd,
+                        overalppingColliders: partialOverlaps));
+                MergeCollisions(
+                    result: leftEndCollisionsByLane,
+                    inputCollisions: CustomRoadBuilder.GetCollisionPointsByLane(
+                        origin: segmentTopPlane.LeftEnd,
+                        end: segmentTopPlane.LeftStart,
+                        overalppingColliders: partialOverlaps));
 
-            CustomCollisionInfo leftStartCollision = entry.Value;
-            Vector3 leftStart = leftStartCollision.CollisionPoint;
-            Vector3 rightStart = rightStartCollisions[laneName].CollisionPoint;
-            Vector3 leftEnd = leftEndCollisions[laneName].CollisionPoint;
-            Vector3 rightEnd = rightEndCollisions[laneName].CollisionPoint;
+                MergeCollisions(
+                    result: rightStartCollisionsByLane,
+                    inputCollisions: CustomRoadBuilder.GetCollisionPointsByLane(
+                       origin: segmentTopPlane.RightStart,
+                       end: segmentTopPlane.RightEnd,
+                       overalppingColliders: partialOverlaps));
+                MergeCollisions(
+                    result: rightEndCollisionsByLane,
+                    inputCollisions: CustomRoadBuilder.GetCollisionPointsByLane(
+                       origin: segmentTopPlane.RightEnd,
+                       end: segmentTopPlane.RightStart,
+                       overalppingColliders: partialOverlaps));
+            }
+        }
+        if (intersections.Count > 0)
+        {
+            return GetLaneIntersections(
+                primaryLane: primaryLane,
+                leftStartCollisionsByLane: leftStartCollisionsByLane,
+                leftEndCollisionsByLane: rightStartCollisionsByLane,
+                rightStartCollisionsByLane: leftEndCollisionsByLane,
+                rightEndCollisionsByLane: rightEndCollisionsByLane
+            );
+        }
+        return intersections.ToArray();
+    }
 
-            string intersectingRoadName = leftStartCollision.CollidingSegment.ParentLane.ParentRoad.Name;
+    private static CustomRoadLaneIntersection[] GetLaneIntersections(
+        CustomRoadLane primaryLane,
+        Dictionary<string, List<CustomCollisionInfo>> leftStartCollisionsByLane,
+        Dictionary<string, List<CustomCollisionInfo>> leftEndCollisionsByLane,
+        Dictionary<string, List<CustomCollisionInfo>> rightStartCollisionsByLane,
+        Dictionary<string, List<CustomCollisionInfo>> rightEndCollisionsByLane
+        )
+    {
 
+        List<CustomRoadLaneIntersection> laneIntersections = new();
+
+        if (leftStartCollisionsByLane.Keys.Count != leftEndCollisionsByLane.Keys.Count
+            || leftStartCollisionsByLane.Keys.Count != rightStartCollisionsByLane.Keys.Count
+            || leftStartCollisionsByLane.Keys.Count != rightEndCollisionsByLane.Keys.Count)
+            return null;
+
+        SortCollisions(leftStartCollisionsByLane);
+        SortCollisions(rightStartCollisionsByLane);
+        SortCollisions(leftEndCollisionsByLane);
+        SortCollisions(rightEndCollisionsByLane);
+        foreach (var lane in leftStartCollisionsByLane.Keys)
+        {
+            laneIntersections.AddRange(
+                GetLaneIntersections(
+                    primaryLane: primaryLane,
+                    leftStartCollisions: leftStartCollisionsByLane[lane],
+                    rightStartCollisions: rightStartCollisionsByLane[lane],
+                    leftEndCollisions: leftEndCollisionsByLane[lane],
+                    rightEndCollisions: rightEndCollisionsByLane[lane]));
+        }
+        return laneIntersections.ToArray();
+    }
+
+    private static CustomRoadLaneIntersection[] GetLaneIntersections(
+        CustomRoadLane primaryLane,
+        List<CustomCollisionInfo> leftStartCollisions,
+        List<CustomCollisionInfo> rightStartCollisions,
+        List<CustomCollisionInfo> leftEndCollisions,
+        List<CustomCollisionInfo> rightEndCollisions
+    )
+    {
+
+        Debug.Log("Lane intersections for=" + primaryLane.Name);
+        Debug.Log("leftStartCollisions=" + leftStartCollisions.Count);
+        List<CustomRoadLaneIntersection> intersections = new();
+        CustomRoadLane intersectingLane = leftStartCollisions[0].CollidingSegment.ParentLane;
+        for (int i = 0; i < leftStartCollisions.Count - 1; i += 2)
+        {
+            Vector3 leftStart = leftStartCollisions[i].CollisionPoint;
+            Vector3 rightStart = rightStartCollisions[i].CollisionPoint;
+            Vector3 leftEnd = leftEndCollisions[i].CollisionPoint;
+            Vector3 rightEnd = rightEndCollisions[i].CollisionPoint;
+
+            CustomRenderer.RenderSphere(leftStart, primaryLane.Name + intersectingLane.Name + "leftStart");
+            CustomRenderer.RenderSphere(rightStart, primaryLane.Name + intersectingLane.Name + "rightStart");
+            CustomRenderer.RenderSphere(leftEnd, primaryLane.Name + intersectingLane.Name + "leftEnd");
+            CustomRenderer.RenderSphere(rightEnd, primaryLane.Name + intersectingLane.Name + "rightEnd");
             intersections.Add(
-                new CustomSegmentIntersection(
+                new CustomRoadLaneIntersection(
                     intersectionPoints:
                         new CustomParallelogram(
                             leftStart: leftStart,
                             rightStart: rightStart,
                             leftEnd: leftEnd,
                             rightEnd: rightEnd),
-                    sourceSegment: segment,
-                    intersectingSegment: entry.Value.CollidingSegment)
+                    primaryLane: primaryLane,
+                    intersectingLane: intersectingLane)
             );
         }
         return intersections.ToArray();
+    }
+
+    private static void MergeCollisions(
+        Dictionary<string, List<CustomCollisionInfo>> result,
+        Dictionary<string, CustomCollisionInfo> inputCollisions
+        )
+    {
+        foreach (var entry in inputCollisions)
+        {
+            string laneName = entry.Key;
+            if (result.ContainsKey(laneName))
+            {
+                result[laneName].Add(inputCollisions[laneName]);
+            }
+        }
+    }
+
+    private static void SortCollisions(Dictionary<string, List<CustomCollisionInfo>> result)
+    {
+        foreach (var entry in result)
+        {
+            entry.Value.OrderBy(e => e.CollidingSegment.DistanceToLaneStart);
+        }
     }
 
     private static List<Collider> GetPartialOverlaps(
@@ -273,6 +358,7 @@ public class CustomRoadBuilder : MonoBehaviour
                 && !CustomRoadBuilder.IsColliderWithinbounds(collider, segmentTopPlane.GetVertices()))
             {
                 partialOverlaps.Add(collider);
+                Debug.Log("Partial overlap=" + colliderGameObjectName);
             }
         }
         return partialOverlaps;
@@ -283,7 +369,6 @@ public class CustomRoadBuilder : MonoBehaviour
         Vector3 end,
         List<Collider> overalppingColliders)
     {
-        List<string> coveredRoads = new();
         Dictionary<string, CustomCollisionInfo> collisionPoints = new();
         foreach (Collider collider in overalppingColliders)
         {
@@ -305,6 +390,9 @@ public class CustomRoadBuilder : MonoBehaviour
                         colliderTopPlane.LeftEnd,
                         colliderTopPlane.RightEnd))
             {
+                Debug.Log("colliderLaneName=" + colliderLaneName);
+                Debug.Log("colliderSegment=" + colliderSegment.Name);
+                CustomRenderer.RenderSphere(rayHitInfo.point);
                 collisionPoints[colliderLaneName] =
                     new CustomCollisionInfo(
                         collidingSegment: colliderSegment,
@@ -597,21 +685,25 @@ public class CustomRoadBuilder : MonoBehaviour
                 String.Concat(
                     laneName,
                     "Segment",
-                    (CustomRoadBuilder.BuiltRoadSegments.Count + vertexIndex).ToString());
+                    vertexIndex);
                 Vector3 currVertex = centerVertices[vertexIndex];
                 Vector3 nextVertex = centerVertices[vertexIndex + 1];
                 Vector3 secondNextVertex =
                     centerVertices[
                         vertexIndex == centerVertices.Length - 2
                         ? vertexIndex + 1 : vertexIndex + 2];
+                float lengthSoFar = 0f;
+                if (vertexIndex > 0)
+                    lengthSoFar = segments[vertexIndex - 1].DistanceToLaneStart;
 
                 CustomRoadSegment newSegment = new(
                             name: roadSegmentName,
+                            width: width,
+                            height: height,
+                            distanceToLaneStart: lengthSoFar,
                             centerStart: currVertex,
                             centerEnd: nextVertex,
                             nextCenterEnd: secondNextVertex,
-                            width: width,
-                            height: height,
                             renderSegment: false);
                 segments[vertexIndex] = newSegment;
             }
@@ -719,48 +811,39 @@ public class CustomRoadBuilder : MonoBehaviour
 
         public bool RenderIntersections()
         {
-
-            CustomRoadSegment[] leftSegments = this.Sidewalks[0].Segments;
-            CustomRoadSegment[] rightSegments = this.Sidewalks[1].Segments;
-            int activeRoadSegmentCount = leftSegments.Length;
-            for (int segmentIndex = 0; segmentIndex < activeRoadSegmentCount; segmentIndex++)
+            CustomRoadLaneIntersection[] leftIntersections =
+                CustomRoadBuilder.GetIntersections(
+                    roadName: this.Name,
+                    primaryLane: this.Sidewalks[0],
+                    layerMaskName: RoadSidewalkMaskName);
+            CustomRoadLaneIntersection[] rightIntersections =
+                 CustomRoadBuilder.GetIntersections(
+                     roadName: this.Name,
+                    primaryLane: this.Sidewalks[1],
+                     layerMaskName: RoadSidewalkMaskName);
+            if (leftIntersections != null && rightIntersections != null)
             {
-                CustomRoadSegment leftSegment = leftSegments[segmentIndex];
-                CustomRoadSegment rightSegment = rightSegments[segmentIndex];
-                CustomSegmentIntersection[] leftIntersections =
-                    CustomRoadBuilder.GetIntersectionPointsByRoad(
-                        roadName: this.Name,
-                        segment: leftSegment,
-                        layerMaskName: RoadSidewalkMaskName);
-                CustomSegmentIntersection[] rightIntersections =
-                     CustomRoadBuilder.GetIntersectionPointsByRoad(
-                         roadName: this.Name,
-                         segment: rightSegment,
-                         layerMaskName: RoadSidewalkMaskName);
-                if (leftIntersections == null || rightIntersections == null)
-                    return false;
-
-                for (int i = 0; i < leftIntersections.Length - 1; i += 2)
+                for (int i = 0; i < leftIntersections.Length; i++)
                 {
-                    CustomSegmentIntersection intersection = leftIntersections[i];
+                    CustomRoadLaneIntersection intersection = leftIntersections[i];
                     Vector3[] intersectionPoints = intersection.IntersectionPoints.GetVertices();
                     for (int j = 0; j < intersectionPoints.Length; j++)
                     {
                         CustomRenderer.RenderSphere(
                             intersectionPoints[j],
-                            intersection.SourceSegment.Name + "_" + intersection.IntersectingSegment.Name + j,
+                            intersection.PrimaryLane.Name + "_" + intersection.IntersectingLane.Name + j,
                             color: Color.blue);
                     }
                 }
-                for (int i = 0; i < rightIntersections.Length - 1; i += 2)
+                for (int i = 0; i < rightIntersections.Length; i++)
                 {
-                    CustomSegmentIntersection intersection = rightIntersections[i];
+                    CustomRoadLaneIntersection intersection = rightIntersections[i];
                     Vector3[] intersectionPoints = intersection.IntersectionPoints.GetVertices();
                     for (int j = 0; j < intersectionPoints.Length; j++)
                     {
                         CustomRenderer.RenderSphere(
                             intersectionPoints[j],
-                            intersection.SourceSegment.Name + "_" + intersection.IntersectingSegment.Name + j,
+                            intersection.PrimaryLane.Name + "_" + intersection.IntersectingLane.Name + j,
                             color: Color.red);
                     }
                 }
@@ -771,11 +854,11 @@ public class CustomRoadBuilder : MonoBehaviour
 
     public class CustomRoadTIntersection
     {
-        public CustomSegmentIntersection StartSidewalkOverlap;
-        public CustomSegmentIntersection EndSidewalkOverlap;
+        public CustomRoadLaneIntersection StartSidewalkOverlap;
+        public CustomRoadLaneIntersection EndSidewalkOverlap;
         public CustomRoadTIntersection(
-            CustomSegmentIntersection startSidewalkOverlap,
-            CustomSegmentIntersection endSidewalkOverlap)
+            CustomRoadLaneIntersection startSidewalkOverlap,
+            CustomRoadLaneIntersection endSidewalkOverlap)
         {
             this.StartSidewalkOverlap = startSidewalkOverlap;
             this.EndSidewalkOverlap = endSidewalkOverlap;
@@ -871,6 +954,7 @@ public class CustomRoadBuilder : MonoBehaviour
         public float Width;
         public float Height;
         public float Length;
+        public float DistanceToLaneStart;
         public Vector3 CenterStart;
         public Vector3 CenterEnd;
         public Vector3 NextCenterEnd;
@@ -881,6 +965,7 @@ public class CustomRoadBuilder : MonoBehaviour
              string name,
              float width,
              float height,
+             float distanceToLaneStart,
              Vector3 centerStart,
              Vector3 centerEnd,
              Vector3 nextCenterEnd,
@@ -915,6 +1000,7 @@ public class CustomRoadBuilder : MonoBehaviour
 
             this.Forward = this.CenterEnd - this.CenterStart;
             this.Length = this.Forward.magnitude;
+            this.DistanceToLaneStart = distanceToLaneStart + this.Length;
 
             CustomParallelogram[] planes =
                 this.GetPlanes(
@@ -1148,20 +1234,23 @@ public class CustomRoadBuilder : MonoBehaviour
         }
     }
 
-    public class CustomSegmentIntersection
+    public class CustomRoadLaneIntersection
     {
         public CustomParallelogram IntersectionPoints;
-        public CustomRoadSegment SourceSegment;
-        public CustomRoadSegment IntersectingSegment;
+        public CustomRoadLane PrimaryLane;
+        public CustomRoadLane IntersectingLane;
+        public float DistanceToPrimaryLaneStart;
+        public float DistanceToIntersectingLaneStart;
 
-        public CustomSegmentIntersection(
+        public CustomRoadLaneIntersection(
             CustomParallelogram intersectionPoints,
-            CustomRoadSegment sourceSegment,
-            CustomRoadSegment intersectingSegment)
+            CustomRoadLane primaryLane,
+            CustomRoadLane intersectingLane)
         {
             this.IntersectionPoints = intersectionPoints;
-            this.SourceSegment = sourceSegment;
-            this.IntersectingSegment = intersectingSegment;
+            this.PrimaryLane = primaryLane;
+            this.IntersectingLane = intersectingLane;
+            this.IntersectingLane = intersectingLane;
         }
     }
 }
