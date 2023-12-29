@@ -195,12 +195,13 @@ public class CustomRoadBuilder : MonoBehaviour
         {
             CustomRoadSegment segment = primaryLane.Segments[segmentIndex];
 
-            Debug.Log("Intersection for segment.Name=" + segment.Name);
             List<Collider> partialOverlaps = GetPartialOverlaps(roadName, segment, layerMaskName);
             CustomParallelogram segmentTopPlane = segment.TopPlane;
 
+            Debug.Log("segment =" + segment.Name);
             if (partialOverlaps.Count > 0)
             {
+                Debug.Log("before count=" + leftStartCollisionsByLane.Values.SelectMany(e => e).Count());
                 MergeCollisions(
                     result: leftStartCollisionsByLane,
                     inputCollisions: CustomRoadBuilder.GetCollisionPointsByLane(
@@ -226,9 +227,12 @@ public class CustomRoadBuilder : MonoBehaviour
                        origin: segmentTopPlane.RightEnd,
                        end: segmentTopPlane.RightStart,
                        overalppingColliders: partialOverlaps));
+                Debug.Log("after count=" + leftStartCollisionsByLane.Values.SelectMany(e => e).Count());
             }
         }
-        if (intersections.Count > 0)
+
+
+        if (leftStartCollisionsByLane.Keys.Count > 0)
         {
             return GetLaneIntersections(
                 primaryLane: primaryLane,
@@ -251,11 +255,6 @@ public class CustomRoadBuilder : MonoBehaviour
     {
 
         List<CustomRoadLaneIntersection> laneIntersections = new();
-
-        if (leftStartCollisionsByLane.Keys.Count != leftEndCollisionsByLane.Keys.Count
-            || leftStartCollisionsByLane.Keys.Count != rightStartCollisionsByLane.Keys.Count
-            || leftStartCollisionsByLane.Keys.Count != rightEndCollisionsByLane.Keys.Count)
-            return null;
 
         SortCollisions(leftStartCollisionsByLane);
         SortCollisions(rightStartCollisionsByLane);
@@ -282,9 +281,7 @@ public class CustomRoadBuilder : MonoBehaviour
         List<CustomCollisionInfo> rightEndCollisions
     )
     {
-
-        Debug.Log("Lane intersections for=" + primaryLane.Name);
-        Debug.Log("leftStartCollisions=" + leftStartCollisions.Count);
+        Debug.Log("2 lane=" + primaryLane.Name);
         List<CustomRoadLaneIntersection> intersections = new();
         CustomRoadLane intersectingLane = leftStartCollisions[0].CollidingSegment.ParentLane;
         for (int i = 0; i < leftStartCollisions.Count - 1; i += 2)
@@ -293,11 +290,11 @@ public class CustomRoadBuilder : MonoBehaviour
             Vector3 rightStart = rightStartCollisions[i].CollisionPoint;
             Vector3 leftEnd = leftEndCollisions[i].CollisionPoint;
             Vector3 rightEnd = rightEndCollisions[i].CollisionPoint;
+            CustomRenderer.RenderSphere(leftStart);
+            CustomRenderer.RenderSphere(leftEnd);
+            CustomRenderer.RenderSphere(rightStart);
+            CustomRenderer.RenderSphere(rightEnd);
 
-            CustomRenderer.RenderSphere(leftStart, primaryLane.Name + intersectingLane.Name + "leftStart");
-            CustomRenderer.RenderSphere(rightStart, primaryLane.Name + intersectingLane.Name + "rightStart");
-            CustomRenderer.RenderSphere(leftEnd, primaryLane.Name + intersectingLane.Name + "leftEnd");
-            CustomRenderer.RenderSphere(rightEnd, primaryLane.Name + intersectingLane.Name + "rightEnd");
             intersections.Add(
                 new CustomRoadLaneIntersection(
                     intersectionPoints:
@@ -324,6 +321,10 @@ public class CustomRoadBuilder : MonoBehaviour
             if (result.ContainsKey(laneName))
             {
                 result[laneName].Add(inputCollisions[laneName]);
+            }
+            else
+            {
+                result[laneName] = new() { inputCollisions[laneName] };
             }
         }
     }
@@ -358,7 +359,6 @@ public class CustomRoadBuilder : MonoBehaviour
                 && !CustomRoadBuilder.IsColliderWithinbounds(collider, segmentTopPlane.GetVertices()))
             {
                 partialOverlaps.Add(collider);
-                Debug.Log("Partial overlap=" + colliderGameObjectName);
             }
         }
         return partialOverlaps;
@@ -390,17 +390,13 @@ public class CustomRoadBuilder : MonoBehaviour
                         colliderTopPlane.LeftEnd,
                         colliderTopPlane.RightEnd))
             {
-                Debug.Log("colliderLaneName=" + colliderLaneName);
-                Debug.Log("colliderSegment=" + colliderSegment.Name);
-                CustomRenderer.RenderSphere(rayHitInfo.point);
                 collisionPoints[colliderLaneName] =
                     new CustomCollisionInfo(
                         collidingSegment: colliderSegment,
                         collisionPoint: rayHitInfo.point);
             }
         }
-        return
-             collisionPoints;
+        return collisionPoints;
     }
 
     private class CustomCollisionInfo
@@ -816,12 +812,12 @@ public class CustomRoadBuilder : MonoBehaviour
                     roadName: this.Name,
                     primaryLane: this.Sidewalks[0],
                     layerMaskName: RoadSidewalkMaskName);
-            CustomRoadLaneIntersection[] rightIntersections =
-                 CustomRoadBuilder.GetIntersections(
-                     roadName: this.Name,
-                    primaryLane: this.Sidewalks[1],
-                     layerMaskName: RoadSidewalkMaskName);
-            if (leftIntersections != null && rightIntersections != null)
+            CustomRoadLaneIntersection[] rightIntersections = null;
+            //  CustomRoadBuilder.GetIntersections(
+            //      roadName: this.Name,
+            //     primaryLane: this.Sidewalks[1],
+            //      layerMaskName: RoadSidewalkMaskName);
+            if (leftIntersections != null)
             {
                 for (int i = 0; i < leftIntersections.Length; i++)
                 {
@@ -835,18 +831,18 @@ public class CustomRoadBuilder : MonoBehaviour
                             color: Color.blue);
                     }
                 }
-                for (int i = 0; i < rightIntersections.Length; i++)
-                {
-                    CustomRoadLaneIntersection intersection = rightIntersections[i];
-                    Vector3[] intersectionPoints = intersection.IntersectionPoints.GetVertices();
-                    for (int j = 0; j < intersectionPoints.Length; j++)
-                    {
-                        CustomRenderer.RenderSphere(
-                            intersectionPoints[j],
-                            intersection.PrimaryLane.Name + "_" + intersection.IntersectingLane.Name + j,
-                            color: Color.red);
-                    }
-                }
+                // for (int i = 0; i < rightIntersections.Length; i++)
+                // {
+                //     CustomRoadLaneIntersection intersection = rightIntersections[i];
+                //     Vector3[] intersectionPoints = intersection.IntersectionPoints.GetVertices();
+                //     for (int j = 0; j < intersectionPoints.Length; j++)
+                //     {
+                //         CustomRenderer.RenderSphere(
+                //             intersectionPoints[j],
+                //             intersection.PrimaryLane.Name + "_" + intersection.IntersectingLane.Name + j,
+                //             color: Color.red);
+                //     }
+                // }
             }
             return true;
         }
