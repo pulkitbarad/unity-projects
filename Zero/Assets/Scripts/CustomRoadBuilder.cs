@@ -186,110 +186,81 @@ public class CustomRoadBuilder : MonoBehaviour
         string layerMaskName)
     {
 
-        Dictionary<string, List<CustomCollisionInfo>> leftStartCollisionsByLane = new();
-        Dictionary<string, List<CustomCollisionInfo>> leftEndCollisionsByLane = new();
-        Dictionary<string, List<CustomCollisionInfo>> rightStartCollisionsByLane = new();
-        Dictionary<string, List<CustomCollisionInfo>> rightEndCollisionsByLane = new();
+        List<CustomCollisionInfo> collisions = new();
         List<CustomRoadLaneIntersection> intersections = new();
         for (int segmentIndex = 0; segmentIndex < primaryLane.Segments.Length; segmentIndex++)
         {
             CustomRoadSegment segment = primaryLane.Segments[segmentIndex];
-
             List<Collider> partialOverlaps = GetPartialOverlaps(roadName, segment, layerMaskName);
-            CustomParallelogram segmentTopPlane = segment.TopPlane;
+            Debug.Log(segment.Name + " partial overlaps= " + partialOverlaps.Select(e => e.gameObject.name).ToCommaSeparatedString());
 
-            Debug.Log("segment =" + segment.Name);
             if (partialOverlaps.Count > 0)
             {
-                Debug.Log("before count=" + leftStartCollisionsByLane.Values.SelectMany(e => e).Count());
-                MergeCollisions(
-                    result: leftStartCollisionsByLane,
-                    inputCollisions: CustomRoadBuilder.GetCollisionPointsByLane(
-                        origin: segmentTopPlane.LeftStart,
-                        end: segmentTopPlane.LeftEnd,
-                        overalppingColliders: partialOverlaps));
-                MergeCollisions(
-                    result: leftEndCollisionsByLane,
-                    inputCollisions: CustomRoadBuilder.GetCollisionPointsByLane(
-                        origin: segmentTopPlane.LeftEnd,
-                        end: segmentTopPlane.LeftStart,
-                        overalppingColliders: partialOverlaps));
-
-                MergeCollisions(
-                    result: rightStartCollisionsByLane,
-                    inputCollisions: CustomRoadBuilder.GetCollisionPointsByLane(
-                       origin: segmentTopPlane.RightStart,
-                       end: segmentTopPlane.RightEnd,
-                       overalppingColliders: partialOverlaps));
-                MergeCollisions(
-                    result: rightEndCollisionsByLane,
-                    inputCollisions: CustomRoadBuilder.GetCollisionPointsByLane(
-                       origin: segmentTopPlane.RightEnd,
-                       end: segmentTopPlane.RightStart,
-                       overalppingColliders: partialOverlaps));
-                Debug.Log("after count=" + leftStartCollisionsByLane.Values.SelectMany(e => e).Count());
+                collisions.AddRange(
+                    CustomRoadBuilder.GetCollisions(
+                        segment,
+                        overalppingColliders: partialOverlaps)
+                        .OrderBy(e => e.PrimarySegment.DistanceToLaneStart));
             }
         }
-
-
-        if (leftStartCollisionsByLane.Keys.Count > 0)
+        var interSectingLanes = collisions.Select(e => e.CollidingSegment.ParentLane.Name);
+        foreach (var interSectingLane in interSectingLanes)
         {
-            return GetLaneIntersections(
-                primaryLane: primaryLane,
-                leftStartCollisionsByLane: leftStartCollisionsByLane,
-                leftEndCollisionsByLane: rightStartCollisionsByLane,
-                rightStartCollisionsByLane: leftEndCollisionsByLane,
-                rightEndCollisionsByLane: rightEndCollisionsByLane
-            );
+            intersections.AddRange(
+                GetLaneIntersections(
+                    primaryLane: primaryLane,
+                    collisions: collisions
+                    .Where(e =>
+                        e.CollidingSegment.ParentLane.Name
+                        .Equals(interSectingLane))
+                    .ToList()));
         }
         return intersections.ToArray();
     }
 
     private static CustomRoadLaneIntersection[] GetLaneIntersections(
         CustomRoadLane primaryLane,
-        Dictionary<string, List<CustomCollisionInfo>> leftStartCollisionsByLane,
-        Dictionary<string, List<CustomCollisionInfo>> leftEndCollisionsByLane,
-        Dictionary<string, List<CustomCollisionInfo>> rightStartCollisionsByLane,
-        Dictionary<string, List<CustomCollisionInfo>> rightEndCollisionsByLane
-        )
+        List<CustomCollisionInfo> collisions)
     {
-
-        List<CustomRoadLaneIntersection> laneIntersections = new();
-
-        SortCollisions(leftStartCollisionsByLane);
-        SortCollisions(rightStartCollisionsByLane);
-        SortCollisions(leftEndCollisionsByLane);
-        SortCollisions(rightEndCollisionsByLane);
-        foreach (var lane in leftStartCollisionsByLane.Keys)
-        {
-            laneIntersections.AddRange(
-                GetLaneIntersections(
-                    primaryLane: primaryLane,
-                    leftStartCollisions: leftStartCollisionsByLane[lane],
-                    rightStartCollisions: rightStartCollisionsByLane[lane],
-                    leftEndCollisions: leftEndCollisionsByLane[lane],
-                    rightEndCollisions: rightEndCollisionsByLane[lane]));
-        }
-        return laneIntersections.ToArray();
-    }
-
-    private static CustomRoadLaneIntersection[] GetLaneIntersections(
-        CustomRoadLane primaryLane,
-        List<CustomCollisionInfo> leftStartCollisions,
-        List<CustomCollisionInfo> rightStartCollisions,
-        List<CustomCollisionInfo> leftEndCollisions,
-        List<CustomCollisionInfo> rightEndCollisions
-    )
-    {
-        Debug.Log("2 lane=" + primaryLane.Name);
         List<CustomRoadLaneIntersection> intersections = new();
-        CustomRoadLane intersectingLane = leftStartCollisions[0].CollidingSegment.ParentLane;
-        for (int i = 0; i < leftStartCollisions.Count - 1; i += 2)
+        CustomRoadLane intersectingLane = collisions[0].CollidingSegment.ParentLane;
+        List<CustomCollisionInfo> sortedCollisions =
+            collisions
+            .OrderBy(e => e.CollidingSegment.DistanceToLaneStart).ToList();
+
+        List<Vector3> leftStartCollisionPoints =
+            sortedCollisions
+            .Where(e => e.CollisionBounds.LeftStart != Vector3.zero)
+            .Select(e => e.CollisionBounds.LeftStart).ToList();
+        List<Vector3> rightStartCollisionPoints =
+            sortedCollisions
+            .Where(e => e.CollisionBounds.RightStart != Vector3.zero)
+            .Select(e => e.CollisionBounds.RightStart).ToList();
+        List<Vector3> leftEndCollisionPoints =
+            sortedCollisions
+            .Where(e => e.CollisionBounds.LeftEnd != Vector3.zero)
+            .Select(e => e.CollisionBounds.LeftEnd).ToList();
+        List<Vector3> rightEndCollisionPoints =
+            sortedCollisions
+            .Where(e => e.CollisionBounds.RightEnd != Vector3.zero)
+            .Select(e => e.CollisionBounds.RightEnd).ToList();
+        Debug.Log("leftStartCollisionPoints count=" + leftStartCollisionPoints.Count());
+        Debug.Log("rightStartCollisionPoints count=" + rightStartCollisionPoints.Count());
+        Debug.Log("leftEndCollisionPoints count=" + leftEndCollisionPoints.Count());
+        Debug.Log("rightEndCollisionPoints count=" + rightEndCollisionPoints.Count());
+        if (
+            leftStartCollisionPoints.Count() != leftEndCollisionPoints.Count()
+            || leftStartCollisionPoints.Count() != rightStartCollisionPoints.Count()
+            || leftStartCollisionPoints.Count() != rightEndCollisionPoints.Count()
+        )
+            return null;
+
+        for (int i = 0; i < leftStartCollisionPoints.Count; i++)
         {
-            Vector3 leftStart = leftStartCollisions[i].CollisionPoint;
-            Vector3 rightStart = rightStartCollisions[i].CollisionPoint;
-            Vector3 leftEnd = leftEndCollisions[i].CollisionPoint;
-            Vector3 rightEnd = rightEndCollisions[i].CollisionPoint;
+            Vector3 leftStart = leftStartCollisionPoints[i];
+            Vector3 rightStart = rightStartCollisionPoints[i];
+            Vector3 leftEnd = leftEndCollisionPoints[i];
+            Vector3 rightEnd = rightEndCollisionPoints[i];
             CustomRenderer.RenderSphere(leftStart);
             CustomRenderer.RenderSphere(leftEnd);
             CustomRenderer.RenderSphere(rightStart);
@@ -310,33 +281,6 @@ public class CustomRoadBuilder : MonoBehaviour
         return intersections.ToArray();
     }
 
-    private static void MergeCollisions(
-        Dictionary<string, List<CustomCollisionInfo>> result,
-        Dictionary<string, CustomCollisionInfo> inputCollisions
-        )
-    {
-        foreach (var entry in inputCollisions)
-        {
-            string laneName = entry.Key;
-            if (result.ContainsKey(laneName))
-            {
-                result[laneName].Add(inputCollisions[laneName]);
-            }
-            else
-            {
-                result[laneName] = new() { inputCollisions[laneName] };
-            }
-        }
-    }
-
-    private static void SortCollisions(Dictionary<string, List<CustomCollisionInfo>> result)
-    {
-        foreach (var entry in result)
-        {
-            entry.Value.OrderBy(e => e.CollidingSegment.DistanceToLaneStart);
-        }
-    }
-
     private static List<Collider> GetPartialOverlaps(
         string roadName,
         CustomRoadSegment segment,
@@ -349,6 +293,7 @@ public class CustomRoadBuilder : MonoBehaviour
             orientation: segment.SegmentObject.transform.rotation,
             layerMask: LayerMask.GetMask(layerMaskName));
         List<Collider> partialOverlaps = new();
+        Debug.Log(segment.Name + " all overlaps= " + overlaps.Select(e => e.gameObject.name).ToCommaSeparatedString());
 
         foreach (Collider collider in overlaps)
         {
@@ -364,53 +309,135 @@ public class CustomRoadBuilder : MonoBehaviour
         return partialOverlaps;
     }
 
-    private static Dictionary<string, CustomCollisionInfo> GetCollisionPointsByLane(
-        Vector3 origin,
-        Vector3 end,
+    private static CustomCollisionInfo[] GetCollisions(
+        CustomRoadSegment primarySegment,
         List<Collider> overalppingColliders)
     {
-        Dictionary<string, CustomCollisionInfo> collisionPoints = new();
+        List<CustomCollisionInfo> collisions = new();
         foreach (Collider collider in overalppingColliders)
         {
             CustomRoadSegment colliderSegment = BuiltRoadSegments[collider.gameObject.name];
-            string colliderLaneName = colliderSegment.ParentLane.Name;
-            CustomParallelogram colliderTopPlane = colliderSegment.TopPlane;
+            CustomParallelogram primaryTopPlane = primarySegment.TopPlane;
 
-            Vector3 direction = end - origin;
-            if (collider.Raycast(
-                    ray: new Ray(origin, direction),
-                    hitInfo: out RaycastHit rayHitInfo,
-                    maxDistance: direction.magnitude)
-                && !IsPointOnLineSegment(
-                        rayHitInfo.point,
-                        colliderTopPlane.LeftStart,
-                        colliderTopPlane.RightStart)
-                && !IsPointOnLineSegment(
-                        rayHitInfo.point,
-                        colliderTopPlane.LeftEnd,
-                        colliderTopPlane.RightEnd))
+            CustomCollisionInfo collision = new(
+                    primarySegment: primarySegment,
+                    collidingSegment: colliderSegment,
+                    new CustomParallelogram(
+                        Vector3.zero,
+                        Vector3.zero,
+                        Vector3.zero,
+                        Vector3.zero));
+
+            if (GetRayHitPointOnSegment(
+                origin: primaryTopPlane.LeftStart,
+                end: primaryTopPlane.LeftEnd,
+                maxDistance: primarySegment.OldLength,
+                collider: collider,
+                hitPoint: out Vector3? hitPoint))
             {
-                collisionPoints[colliderLaneName] =
-                    new CustomCollisionInfo(
-                        collidingSegment: colliderSegment,
-                        collisionPoint: rayHitInfo.point);
+                collision.CollisionBounds.LeftStart = hitPoint.Value;
+                // Debug.Log("left start=" + hitPoint.Value);
+                CustomRenderer.RenderSphere(hitPoint.Value);
             }
+
+            if (GetRayHitPointOnSegment(
+                origin: primaryTopPlane.RightStart,
+                end: primaryTopPlane.RightEnd,
+                maxDistance: primarySegment.OldLength,
+                collider: collider,
+                hitPoint: out Vector3? hitPoint2))
+            {
+                collision.CollisionBounds.RightStart = hitPoint2.Value;
+                // Debug.Log("right start=" + hitPoint2.Value);
+                CustomRenderer.RenderSphere(hitPoint2.Value);
+            }
+
+            if (GetRayHitPointOnSegment(
+                origin: primaryTopPlane.LeftEnd,
+                end: primaryTopPlane.LeftStart,
+                maxDistance: primarySegment.OldLength,
+                collider: collider,
+                hitPoint: out Vector3? hitPoint3))
+            {
+                collision.CollisionBounds.LeftEnd = hitPoint3.Value;
+                // Debug.Log("left end=" + hitPoint3.Value);
+                CustomRenderer.RenderSphere(hitPoint3.Value);
+            }
+
+            if (GetRayHitPointOnSegment(
+                origin: primaryTopPlane.RightEnd,
+                end: primaryTopPlane.RightStart,
+                maxDistance: primarySegment.OldLength,
+                collider: collider,
+                hitPoint: out Vector3? hitPoint4))
+            {
+                collision.CollisionBounds.RightEnd = hitPoint4.Value;
+                // Debug.Log("right end=" + hitPoint4.Value);
+                CustomRenderer.RenderSphere(hitPoint4.Value);
+            }
+            Debug.Log(primarySegment.Name + "-" + colliderSegment.Name + " collision vertices=" + collision.CollisionBounds.GetVertices().ToCommaSeparatedString());
+
+            collisions.Add(collision);
         }
-        return collisionPoints;
+        return collisions.ToArray();
+    }
+
+    private static bool GetRayHitPointOnSegment(
+        Vector3 origin,
+        Vector3 end,
+        float maxDistance,
+        Collider collider,
+        out Vector3? hitPoint)
+    {
+        CustomRoadSegment colliderSegment = BuiltRoadSegments[collider.gameObject.name];
+        CustomParallelogram colliderTopPlane = colliderSegment.TopPlane;
+        Vector3 direction = end - origin;
+        if (collider.Raycast(
+                ray: new Ray(origin, direction),
+                hitInfo: out RaycastHit rayHitInfo,
+                maxDistance: maxDistance)
+            && (
+                colliderSegment.PreviousSibling == null
+                || !IsPointInsideBounds(
+                    rayHitInfo.point,
+                    colliderSegment.PreviousSibling.TopPlane.GetVertices()
+                ))
+            && (
+                colliderSegment.NextSibling == null
+                || !IsPointInsideBounds(
+                    rayHitInfo.point,
+                    colliderSegment.NextSibling.TopPlane.GetVertices()
+                ))
+            && !IsPointOnLineSegment(
+                    rayHitInfo.point,
+                    colliderTopPlane.LeftStart,
+                    colliderTopPlane.RightStart)
+            && !IsPointOnLineSegment(
+                    rayHitInfo.point,
+                    colliderTopPlane.LeftEnd,
+                    colliderTopPlane.RightEnd))
+        {
+            hitPoint = rayHitInfo.point;
+            return true;
+        }
+        hitPoint = null;
+        return false;
     }
 
     private class CustomCollisionInfo
     {
+        public CustomRoadSegment PrimarySegment;
         public CustomRoadSegment CollidingSegment;
-        public Vector3 CollisionPoint;
-
+        public CustomParallelogram CollisionBounds;
         public CustomCollisionInfo(
+            CustomRoadSegment primarySegment,
             CustomRoadSegment collidingSegment,
-            Vector3 collisionPoint
+            CustomParallelogram collisionBounds
         )
         {
+            this.PrimarySegment = primarySegment;
             this.CollidingSegment = collidingSegment;
-            this.CollisionPoint = collisionPoint;
+            this.CollisionBounds = collisionBounds;
         }
     }
 
@@ -434,7 +461,7 @@ public class CustomRoadBuilder : MonoBehaviour
         return Math.Round(Vector3.Cross(point - start, end - point).magnitude, 2) == 0;
 
     }
-    private static bool IsPointInsideBounds(Vector3 point, Vector3[] bounds, float margin = 5)
+    private static bool IsPointInsideBounds(Vector3 point, Vector3[] bounds, float margin = 0)
     {
         float maxX = bounds[0].x;
         float maxY = bounds[0].y;
@@ -687,19 +714,27 @@ public class CustomRoadBuilder : MonoBehaviour
                 Vector3 secondNextVertex =
                     centerVertices[
                         vertexIndex == centerVertices.Length - 2
-                        ? vertexIndex + 1 : vertexIndex + 2];
+                        ? vertexIndex + 1
+                        : vertexIndex + 2];
+                CustomRoadSegment previousSegment =
+                    vertexIndex == 0
+                    ? null
+                    : segments[vertexIndex - 1];
+
                 float lengthSoFar = 0f;
                 if (vertexIndex > 0)
                     lengthSoFar = segments[vertexIndex - 1].DistanceToLaneStart;
 
                 CustomRoadSegment newSegment = new(
                             name: roadSegmentName,
+                            index: vertexIndex,
                             width: width,
                             height: height,
                             distanceToLaneStart: lengthSoFar,
                             centerStart: currVertex,
                             centerEnd: nextVertex,
                             nextCenterEnd: secondNextVertex,
+                            previousSibling: previousSegment,
                             renderSegment: false);
                 segments[vertexIndex] = newSegment;
             }
@@ -812,11 +847,11 @@ public class CustomRoadBuilder : MonoBehaviour
                     roadName: this.Name,
                     primaryLane: this.Sidewalks[0],
                     layerMaskName: RoadSidewalkMaskName);
-            CustomRoadLaneIntersection[] rightIntersections = null;
-            //  CustomRoadBuilder.GetIntersections(
-            //      roadName: this.Name,
-            //     primaryLane: this.Sidewalks[1],
-            //      layerMaskName: RoadSidewalkMaskName);
+            CustomRoadLaneIntersection[] rightIntersections =
+             CustomRoadBuilder.GetIntersections(
+                 roadName: this.Name,
+                primaryLane: this.Sidewalks[1],
+                 layerMaskName: RoadSidewalkMaskName);
             if (leftIntersections != null)
             {
                 for (int i = 0; i < leftIntersections.Length; i++)
@@ -825,24 +860,24 @@ public class CustomRoadBuilder : MonoBehaviour
                     Vector3[] intersectionPoints = intersection.IntersectionPoints.GetVertices();
                     for (int j = 0; j < intersectionPoints.Length; j++)
                     {
-                        CustomRenderer.RenderSphere(
-                            intersectionPoints[j],
-                            intersection.PrimaryLane.Name + "_" + intersection.IntersectingLane.Name + j,
-                            color: Color.blue);
+                        // CustomRenderer.RenderSphere(
+                        //     intersectionPoints[j],
+                        //     intersection.PrimaryLane.Name + "_" + intersection.IntersectingLane.Name + j,
+                        //     color: Color.blue);
                     }
                 }
-                // for (int i = 0; i < rightIntersections.Length; i++)
-                // {
-                //     CustomRoadLaneIntersection intersection = rightIntersections[i];
-                //     Vector3[] intersectionPoints = intersection.IntersectionPoints.GetVertices();
-                //     for (int j = 0; j < intersectionPoints.Length; j++)
-                //     {
-                //         CustomRenderer.RenderSphere(
-                //             intersectionPoints[j],
-                //             intersection.PrimaryLane.Name + "_" + intersection.IntersectingLane.Name + j,
-                //             color: Color.red);
-                //     }
-                // }
+                for (int i = 0; i < rightIntersections.Length; i++)
+                {
+                    CustomRoadLaneIntersection intersection = rightIntersections[i];
+                    Vector3[] intersectionPoints = intersection.IntersectionPoints.GetVertices();
+                    for (int j = 0; j < intersectionPoints.Length; j++)
+                    {
+                        // CustomRenderer.RenderSphere(
+                        //     intersectionPoints[j],
+                        //     intersection.PrimaryLane.Name + "_" + intersection.IntersectingLane.Name + j,
+                        //     color: Color.red);
+                    }
+                }
             }
             return true;
         }
@@ -947,31 +982,40 @@ public class CustomRoadBuilder : MonoBehaviour
         public Vector3 Center;
         public Vector3 Forward;
         public Vector3 Up;
+        public int Index;
         public float Width;
         public float Height;
         public float Length;
         public float DistanceToLaneStart;
+        public float OldLength;
         public Vector3 CenterStart;
         public Vector3 CenterEnd;
         public Vector3 NextCenterEnd;
         public GameObject SegmentObject;
+        public CustomRoadSegment PreviousSibling;
+        public CustomRoadSegment NextSibling;
         public CustomRoadLane ParentLane;
 
         public CustomRoadSegment(
              string name,
+             int index,
              float width,
              float height,
              float distanceToLaneStart,
              Vector3 centerStart,
              Vector3 centerEnd,
              Vector3 nextCenterEnd,
+             CustomRoadSegment previousSibling,
              bool renderSegment)
         {
             this.Name = name;
+            this.PreviousSibling = previousSibling;
+            this.Index = index;
             this.Width = width;
             this.Height = height;
             this.CenterStart = centerStart;
             this.CenterEnd = centerEnd;
+
             this.NextCenterEnd = nextCenterEnd;
 
             this.Up = CustomRoadBuilder.GetUpVector(
@@ -985,8 +1029,11 @@ public class CustomRoadBuilder : MonoBehaviour
                 nextCenterEnd: nextCenterEnd);
 
             this.Forward = this.CenterEnd - this.CenterStart;
+            this.OldLength = this.Forward.magnitude;
             if (extension > 0)
+            {
                 this.CenterEnd += this.Forward.normalized * extension;
+            }
 
             this.Center = GetSegmentCenter(
                 height: height,
@@ -1010,6 +1057,8 @@ public class CustomRoadBuilder : MonoBehaviour
             this.BottomPlane = planes[1];
             if (renderSegment)
                 this.InitSegmentObject();
+            if (this.PreviousSibling != null)
+                this.PreviousSibling.NextSibling = this;
         }
 
         private Vector3 GetSegmentCenter(
@@ -1028,7 +1077,7 @@ public class CustomRoadBuilder : MonoBehaviour
             Vector3 nextCenterEnd)
         {
 
-            if (nextCenterEnd.Equals(centerEnd))
+            if (nextCenterEnd == null || nextCenterEnd.Equals(centerEnd))
                 return 0;
             else
             {
@@ -1097,35 +1146,35 @@ public class CustomRoadBuilder : MonoBehaviour
             segmentObject.transform.localScale = new Vector3(this.Width, this.Height, this.Length);
             segmentObject.transform.localRotation *= headingChange;
             segmentObject.transform.SetParent(BuiltRoadSegmentsParent.transform);
+
             if (this.ParentLane.LaneIndex == -1 || this.ParentLane.LaneIndex == this.ParentLane.ParentRoad.NumberOfLanes)
                 segmentObject.layer = LayerMask.NameToLayer(RoadSidewalkMaskName);
             else if (this.ParentLane.LaneIndex == 0 || this.ParentLane.LaneIndex == this.ParentLane.ParentRoad.NumberOfLanes - 1)
                 segmentObject.layer = LayerMask.NameToLayer(RoadEdgeLaneMaskName);
 
-            // AddBoxCollider(
-            //     width: this.Width,
-            //     height: this.Height,
-            //     length: this.Length,
-            //     center: Vector3.zero,
-            //     segmentObject: segmentObject);
-
+            this.SegmentObject = segmentObject;
+            // AddBoxCollider();
             // RenderMesh(
             //     topPlane: this.TopPlane,
             //     bottomPlane: this.BottomPlane,
             //     segment: segmentObject);
 
-            this.SegmentObject = segmentObject;
         }
 
-        private void AddBoxCollider(
-            Vector3 center,
-            GameObject segmentObject)
-        {
-            Vector3 updCenter = center;
-            BoxCollider boxCollider = segmentObject.AddComponent<BoxCollider>();
-            boxCollider.center = updCenter;
-            boxCollider.size = new Vector3(1, 1, 2);
-        }
+        // private void AddBoxCollider()
+        // {
+        //     if (!this.SegmentObject.TryGetComponent<BoxCollider>(out var boxCollider))
+        //     {
+        //         boxCollider = this.SegmentObject.AddComponent<BoxCollider>();
+        //     }
+        //     Debug.Log("segment=" + this.Name);
+        //     Debug.Log("old length=" + this.OldLength);
+        //     Debug.Log("new length=" + this.Length);
+        //     boxCollider.center = new(0, 0, 0 - (0.5f * (this.OldLength - this.Length) / this.Length));
+        //     boxCollider.size = new(1, 1, this.OldLength / this.Length);
+        //     Debug.Log("boxCollider.center=" + boxCollider.center);
+        //     Debug.Log("boxCollider.size=" + boxCollider.size);
+        // }
 
         private void RenderMesh(CustomParallelogram topPlane, CustomParallelogram bottomPlane, GameObject segment)
         {
