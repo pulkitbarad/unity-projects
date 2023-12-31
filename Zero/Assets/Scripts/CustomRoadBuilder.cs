@@ -180,305 +180,6 @@ public class CustomRoadBuilder : MonoBehaviour
             parentTransform: RoadControlsParent.transform);
     }
 
-    private static CustomRoadLaneIntersection[] GetIntersections(
-        string roadName,
-        CustomRoadLane primaryLane,
-        string layerMaskName)
-    {
-
-        List<CustomCollisionInfo> collisions = new();
-        List<CustomRoadLaneIntersection> intersections = new();
-        for (int segmentIndex = 0; segmentIndex < primaryLane.Segments.Length; segmentIndex++)
-        {
-            CustomRoadSegment segment = primaryLane.Segments[segmentIndex];
-            List<Collider> partialOverlaps = GetPartialOverlaps(roadName, segment, layerMaskName);
-            Debug.Log(segment.Name + " partial overlaps= " + partialOverlaps.Select(e => e.gameObject.name).ToCommaSeparatedString());
-
-            if (partialOverlaps.Count > 0)
-            {
-                collisions.AddRange(
-                    CustomRoadBuilder.GetCollisions(
-                        segment,
-                        overalppingColliders: partialOverlaps)
-                        .OrderBy(e => e.PrimarySegment.DistanceToLaneStart));
-            }
-        }
-        var interSectingLanes = collisions.Select(e => e.CollidingSegment.ParentLane.Name);
-        foreach (var interSectingLane in interSectingLanes)
-        {
-            intersections.AddRange(
-                GetLaneIntersections(
-                    primaryLane: primaryLane,
-                    collisions: collisions
-                    .Where(e =>
-                        e.CollidingSegment.ParentLane.Name
-                        .Equals(interSectingLane))
-                    .ToList()));
-        }
-        return intersections.ToArray();
-    }
-
-    private static CustomRoadLaneIntersection[] GetLaneIntersections(
-        CustomRoadLane primaryLane,
-        List<CustomCollisionInfo> collisions)
-    {
-        List<CustomRoadLaneIntersection> intersections = new();
-        CustomRoadLane intersectingLane = collisions[0].CollidingSegment.ParentLane;
-        List<CustomCollisionInfo> sortedCollisions =
-            collisions
-            .OrderBy(e => e.CollidingSegment.DistanceToLaneStart).ToList();
-
-        List<Vector3> leftStartCollisionPoints =
-            sortedCollisions
-            .Where(e => e.CollisionBounds.LeftStart != Vector3.zero)
-            .Select(e => e.CollisionBounds.LeftStart).ToList();
-        List<Vector3> rightStartCollisionPoints =
-            sortedCollisions
-            .Where(e => e.CollisionBounds.RightStart != Vector3.zero)
-            .Select(e => e.CollisionBounds.RightStart).ToList();
-        List<Vector3> leftEndCollisionPoints =
-            sortedCollisions
-            .Where(e => e.CollisionBounds.LeftEnd != Vector3.zero)
-            .Select(e => e.CollisionBounds.LeftEnd).ToList();
-        List<Vector3> rightEndCollisionPoints =
-            sortedCollisions
-            .Where(e => e.CollisionBounds.RightEnd != Vector3.zero)
-            .Select(e => e.CollisionBounds.RightEnd).ToList();
-        Debug.Log("leftStartCollisionPoints count=" + leftStartCollisionPoints.Count());
-        Debug.Log("rightStartCollisionPoints count=" + rightStartCollisionPoints.Count());
-        Debug.Log("leftEndCollisionPoints count=" + leftEndCollisionPoints.Count());
-        Debug.Log("rightEndCollisionPoints count=" + rightEndCollisionPoints.Count());
-        if (
-            leftStartCollisionPoints.Count() != leftEndCollisionPoints.Count()
-            || leftStartCollisionPoints.Count() != rightStartCollisionPoints.Count()
-            || leftStartCollisionPoints.Count() != rightEndCollisionPoints.Count()
-        )
-            return null;
-
-        for (int i = 0; i < leftStartCollisionPoints.Count; i++)
-        {
-            Vector3 leftStart = leftStartCollisionPoints[i];
-            Vector3 rightStart = rightStartCollisionPoints[i];
-            Vector3 leftEnd = leftEndCollisionPoints[i];
-            Vector3 rightEnd = rightEndCollisionPoints[i];
-            CustomRenderer.RenderSphere(leftStart);
-            CustomRenderer.RenderSphere(leftEnd);
-            CustomRenderer.RenderSphere(rightStart);
-            CustomRenderer.RenderSphere(rightEnd);
-
-            intersections.Add(
-                new CustomRoadLaneIntersection(
-                    intersectionPoints:
-                        new CustomParallelogram(
-                            leftStart: leftStart,
-                            rightStart: rightStart,
-                            leftEnd: leftEnd,
-                            rightEnd: rightEnd),
-                    primaryLane: primaryLane,
-                    intersectingLane: intersectingLane)
-            );
-        }
-        return intersections.ToArray();
-    }
-
-    private static List<Collider> GetPartialOverlaps(
-        string roadName,
-        CustomRoadSegment segment,
-        string layerMaskName)
-    {
-        CustomParallelogram segmentTopPlane = segment.TopPlane;
-        Collider[] overlaps = Physics.OverlapBox(
-            center: segment.SegmentObject.transform.position,
-            halfExtents: segment.SegmentObject.transform.localScale / 2,
-            orientation: segment.SegmentObject.transform.rotation,
-            layerMask: LayerMask.GetMask(layerMaskName));
-        List<Collider> partialOverlaps = new();
-        Debug.Log(segment.Name + " all overlaps= " + overlaps.Select(e => e.gameObject.name).ToCommaSeparatedString());
-
-        foreach (Collider collider in overlaps)
-        {
-            string colliderGameObjectName = collider.gameObject.name;
-            if (BuiltRoadSegments.ContainsKey(colliderGameObjectName)
-                && !BuiltRoadSegments[colliderGameObjectName]
-                    .ParentLane.ParentRoad.Name.Equals(roadName)
-                && !CustomRoadBuilder.IsColliderWithinbounds(collider, segmentTopPlane.GetVertices()))
-            {
-                partialOverlaps.Add(collider);
-            }
-        }
-        return partialOverlaps;
-    }
-
-    private static CustomCollisionInfo[] GetCollisions(
-        CustomRoadSegment primarySegment,
-        List<Collider> overalppingColliders)
-    {
-        List<CustomCollisionInfo> collisions = new();
-        foreach (Collider collider in overalppingColliders)
-        {
-            CustomRoadSegment colliderSegment = BuiltRoadSegments[collider.gameObject.name];
-            CustomParallelogram primaryTopPlane = primarySegment.TopPlane;
-
-            CustomCollisionInfo collision = new(
-                    primarySegment: primarySegment,
-                    collidingSegment: colliderSegment,
-                    new CustomParallelogram(
-                        Vector3.zero,
-                        Vector3.zero,
-                        Vector3.zero,
-                        Vector3.zero));
-
-            if (GetRayHitPointOnSegment(
-                origin: primaryTopPlane.LeftStart,
-                end: primaryTopPlane.LeftEnd,
-                maxDistance: primarySegment.OldLength,
-                collider: collider,
-                hitPoint: out Vector3? hitPoint))
-            {
-                collision.CollisionBounds.LeftStart = hitPoint.Value;
-                // Debug.Log("left start=" + hitPoint.Value);
-                CustomRenderer.RenderSphere(hitPoint.Value);
-            }
-
-            if (GetRayHitPointOnSegment(
-                origin: primaryTopPlane.RightStart,
-                end: primaryTopPlane.RightEnd,
-                maxDistance: primarySegment.OldLength,
-                collider: collider,
-                hitPoint: out Vector3? hitPoint2))
-            {
-                collision.CollisionBounds.RightStart = hitPoint2.Value;
-                // Debug.Log("right start=" + hitPoint2.Value);
-                CustomRenderer.RenderSphere(hitPoint2.Value);
-            }
-
-            if (GetRayHitPointOnSegment(
-                origin: primaryTopPlane.LeftEnd,
-                end: primaryTopPlane.LeftStart,
-                maxDistance: primarySegment.OldLength,
-                collider: collider,
-                hitPoint: out Vector3? hitPoint3))
-            {
-                collision.CollisionBounds.LeftEnd = hitPoint3.Value;
-                // Debug.Log("left end=" + hitPoint3.Value);
-                CustomRenderer.RenderSphere(hitPoint3.Value);
-            }
-
-            if (GetRayHitPointOnSegment(
-                origin: primaryTopPlane.RightEnd,
-                end: primaryTopPlane.RightStart,
-                maxDistance: primarySegment.OldLength,
-                collider: collider,
-                hitPoint: out Vector3? hitPoint4))
-            {
-                collision.CollisionBounds.RightEnd = hitPoint4.Value;
-                // Debug.Log("right end=" + hitPoint4.Value);
-                CustomRenderer.RenderSphere(hitPoint4.Value);
-            }
-            Debug.Log(primarySegment.Name + "-" + colliderSegment.Name + " collision vertices=" + collision.CollisionBounds.GetVertices().ToCommaSeparatedString());
-
-            collisions.Add(collision);
-        }
-        return collisions.ToArray();
-    }
-
-    private static bool GetRayHitPointOnSegment(
-        Vector3 origin,
-        Vector3 end,
-        float maxDistance,
-        Collider collider,
-        out Vector3? hitPoint)
-    {
-        CustomRoadSegment colliderSegment = BuiltRoadSegments[collider.gameObject.name];
-        CustomParallelogram colliderTopPlane = colliderSegment.TopPlane;
-        Vector3 direction = end - origin;
-        if (collider.Raycast(
-                ray: new Ray(origin, direction),
-                hitInfo: out RaycastHit rayHitInfo,
-                maxDistance: maxDistance)
-            && (
-                colliderSegment.PreviousSibling == null
-                || !IsPointInsideBounds(
-                    rayHitInfo.point,
-                    colliderSegment.PreviousSibling.TopPlane.GetVertices()
-                ))
-            && (
-                colliderSegment.NextSibling == null
-                || !IsPointInsideBounds(
-                    rayHitInfo.point,
-                    colliderSegment.NextSibling.TopPlane.GetVertices()
-                ))
-            && !IsPointOnLineSegment(
-                    rayHitInfo.point,
-                    colliderTopPlane.LeftStart,
-                    colliderTopPlane.RightStart)
-            && !IsPointOnLineSegment(
-                    rayHitInfo.point,
-                    colliderTopPlane.LeftEnd,
-                    colliderTopPlane.RightEnd))
-        {
-            hitPoint = rayHitInfo.point;
-            return true;
-        }
-        hitPoint = null;
-        return false;
-    }
-
-    private class CustomCollisionInfo
-    {
-        public CustomRoadSegment PrimarySegment;
-        public CustomRoadSegment CollidingSegment;
-        public CustomParallelogram CollisionBounds;
-        public CustomCollisionInfo(
-            CustomRoadSegment primarySegment,
-            CustomRoadSegment collidingSegment,
-            CustomParallelogram collisionBounds
-        )
-        {
-            this.PrimarySegment = primarySegment;
-            this.CollidingSegment = collidingSegment;
-            this.CollisionBounds = collisionBounds;
-        }
-    }
-
-
-    private static bool IsColliderWithinbounds(Collider collider, Vector3[] bounds)
-    {
-        CustomParallelogram colliderTopPlane = BuiltRoadSegments[collider.gameObject.name].TopPlane;
-        return colliderTopPlane.GetVertices().Length > 0 && IsRectWithinBounds(colliderTopPlane, bounds);
-    }
-
-    private static bool IsRectWithinBounds(CustomParallelogram rectangle, Vector3[] bounds)
-    {
-        for (int i = 0; i < 4; i++)
-            if (!IsPointInsideBounds(rectangle.GetVertices()[i], bounds))
-                return false;
-        return true;
-    }
-
-    private static bool IsPointOnLineSegment(Vector3 point, Vector3 start, Vector3 end)
-    {
-        return Math.Round(Vector3.Cross(point - start, end - point).magnitude, 2) == 0;
-
-    }
-    private static bool IsPointInsideBounds(Vector3 point, Vector3[] bounds, float margin = 0)
-    {
-        float maxX = bounds[0].x;
-        float maxY = bounds[0].y;
-        float minX = bounds[0].x;
-        float minY = bounds[0].y;
-
-        for (int i = 1; i < 4; i++)
-        {
-            if (bounds[i].x > maxX) maxX = bounds[i].x;
-            if (bounds[i].y > maxY) maxY = bounds[i].y;
-            //
-            if (bounds[i].x < minX) minX = bounds[i].x;
-            if (bounds[i].y < minY) minY = bounds[i].y;
-        }
-        return point.x > minX && point.x < maxX && point.y > minY && point.y < maxY;
-    }
-
     private static Vector3[] GetLeftParallelLine(
         Vector3[] vertices,
         float distance)
@@ -843,15 +544,18 @@ public class CustomRoadBuilder : MonoBehaviour
         public bool RenderIntersections()
         {
             CustomRoadLaneIntersection[] leftIntersections =
-                CustomRoadBuilder.GetIntersections(
+                 new CustomCollisionMap(
+                     roadName: this.Name,
+                     primaryLane: this.Sidewalks[0],
+                     layerMaskName: RoadSidewalkMaskName).GetIntersections();
+
+            CustomRoadLaneIntersection[] rightIntersections =
+                new CustomCollisionMap(
                     roadName: this.Name,
                     primaryLane: this.Sidewalks[0],
-                    layerMaskName: RoadSidewalkMaskName);
-            CustomRoadLaneIntersection[] rightIntersections =
-             CustomRoadBuilder.GetIntersections(
-                 roadName: this.Name,
-                primaryLane: this.Sidewalks[1],
-                 layerMaskName: RoadSidewalkMaskName);
+                    layerMaskName: RoadSidewalkMaskName).GetIntersections();
+
+
             if (leftIntersections != null)
             {
                 for (int i = 0; i < leftIntersections.Length; i++)
@@ -1296,6 +1000,374 @@ public class CustomRoadBuilder : MonoBehaviour
             this.PrimaryLane = primaryLane;
             this.IntersectingLane = intersectingLane;
             this.IntersectingLane = intersectingLane;
+        }
+    }
+
+    private class CustomCollisionMap
+    {
+        public static int COLLISION_ORIGIN_LEFT_START = 0;
+        public static int COLLISION_ORIGIN_RIGHT_START = 1;
+        public static int COLLISION_ORIGIN_LEFT_END = 2;
+        public static int COLLISION_ORIGIN_RIGHT_END = 3;
+
+        public CustomRoadLane PrimaryLane;
+        public string RoadName;
+        public string LayerMaskName;
+        public List<CustomCollisionInfo> Collisions;
+        public Dictionary<string, List<CustomCollisionInfo>> CollisionsByCollidingLane = new();
+        public List<CustomCollisionInfo> LeftStartCollisions = new();
+        public List<CustomCollisionInfo> RightStartCollisions = new();
+        public List<CustomCollisionInfo> LeftEndCollisions = new();
+        public List<CustomCollisionInfo> RightEndCollisions = new();
+        public bool IsValid = false;
+
+        public CustomCollisionMap(
+            string roadName,
+            CustomRoadLane primaryLane,
+            string layerMaskName)
+        {
+            this.RoadName = roadName;
+            this.LayerMaskName = layerMaskName;
+            this.PrimaryLane = primaryLane;
+            for (int segmentIndex = 0; segmentIndex < primaryLane.Segments.Length; segmentIndex++)
+            {
+                CustomRoadSegment segment = primaryLane.Segments[segmentIndex];
+                List<Collider> partialOverlaps = GetPartialOverlaps(roadName, segment, layerMaskName);
+                Debug.Log(segment.Name + " partial overlaps= " + partialOverlaps.Select(e => e.gameObject.name).ToCommaSeparatedString());
+
+                if (partialOverlaps.Count > 0)
+                {
+                    this.GetCollisions(
+                        primarySegment: segment,
+                        overalppingColliders: partialOverlaps);
+                }
+            }
+        }
+
+        public CustomRoadLaneIntersection[] GetIntersections()
+        {
+            GenerateCollisonLists();
+            List<CustomRoadLaneIntersection> intersections = new();
+            if (this.IsValid)
+            {
+                foreach (var entry in this.CollisionsByCollidingLane)
+                {
+                    CustomRoadLane intersectingLane = entry.Value[0].CollidingSegment.ParentLane;
+                    CustomRoadLane primaryLane = entry.Value[0].PrimarySegment.ParentLane;
+                    for (int i = 0; i < this.LeftStartCollisions.Count; i++)
+                    {
+                        Vector3 leftStart = this.LeftStartCollisions[i].CollisionPoint;
+                        Vector3 rightStart = this.RightStartCollisions[i].CollisionPoint;
+                        Vector3 leftEnd = this.LeftEndCollisions[i].CollisionPoint;
+                        Vector3 rightEnd = this.RightEndCollisions[i].CollisionPoint;
+                        CustomRenderer.RenderSphere(leftStart);
+                        CustomRenderer.RenderSphere(leftEnd);
+                        CustomRenderer.RenderSphere(rightStart);
+                        CustomRenderer.RenderSphere(rightEnd);
+
+                        intersections.Add(
+                            new CustomRoadLaneIntersection(
+                                intersectionPoints:
+                                    new CustomParallelogram(
+                                        leftStart: leftStart,
+                                        rightStart: rightStart,
+                                        leftEnd: leftEnd,
+                                        rightEnd: rightEnd),
+                                primaryLane: primaryLane,
+                                intersectingLane: intersectingLane)
+                        );
+                    }
+                }
+            }
+            return intersections.ToArray();
+        }
+
+        public void GenerateCollisonLists()
+        {
+            CustomCollisionInfo[] sortedCollisions =
+                this.CollisionsByCollidingLane.Values
+                .SelectMany(e => e)
+                .OrderBy(e => e.PrimarySegment.Index)
+                .ToArray();
+            foreach (CustomCollisionInfo collision in sortedCollisions)
+            {
+                if (collision.CollisionOriginType == CustomCollisionMap.COLLISION_ORIGIN_LEFT_START)
+                    this.LeftStartCollisions.Add(collision);
+                else if (collision.CollisionOriginType == CustomCollisionMap.COLLISION_ORIGIN_RIGHT_START)
+                    this.RightStartCollisions.Add(collision);
+                else if (collision.CollisionOriginType == CustomCollisionMap.COLLISION_ORIGIN_LEFT_END)
+                    this.LeftEndCollisions.Add(collision);
+                else if (collision.CollisionOriginType == CustomCollisionMap.COLLISION_ORIGIN_RIGHT_END)
+                    this.RightEndCollisions.Add(collision);
+            }
+            Debug.Log("leftStartCollisionPoints count=" + LeftStartCollisions.Count());
+            Debug.Log("rightStartCollisionPoints count=" + RightStartCollisions.Count());
+            Debug.Log("leftEndCollisionPoints count=" + LeftEndCollisions.Count());
+            Debug.Log("rightEndCollisionPoints count=" + RightEndCollisions.Count());
+            if (this.LeftStartCollisions.Count() == this.LeftEndCollisions.Count()
+                && this.LeftStartCollisions.Count() == this.RightStartCollisions.Count()
+                && this.LeftStartCollisions.Count() == this.RightEndCollisions.Count())
+            {
+                this.IsValid = true;
+            }
+        }
+
+        private List<Collider> GetPartialOverlaps(
+            string roadName,
+            CustomRoadSegment segment,
+            string layerMaskName)
+        {
+            CustomParallelogram segmentTopPlane = segment.TopPlane;
+            Collider[] overlaps = Physics.OverlapBox(
+                center: segment.SegmentObject.transform.position,
+                halfExtents: segment.SegmentObject.transform.localScale / 2,
+                orientation: segment.SegmentObject.transform.rotation,
+                layerMask: LayerMask.GetMask(layerMaskName));
+            List<Collider> partialOverlaps = new();
+            Debug.Log(segment.Name + " all overlaps= " + overlaps.Select(e => e.gameObject.name).ToCommaSeparatedString());
+
+            foreach (Collider collider in overlaps)
+            {
+                string colliderGameObjectName = collider.gameObject.name;
+                if (BuiltRoadSegments.ContainsKey(colliderGameObjectName)
+                    && !BuiltRoadSegments[colliderGameObjectName]
+                        .ParentLane.ParentRoad.Name.Equals(roadName)
+                    && !IsColliderWithinbounds(collider, segmentTopPlane.GetVertices()))
+                {
+                    partialOverlaps.Add(collider);
+                }
+            }
+            return partialOverlaps;
+        }
+
+        private void GetCollisions(
+            CustomRoadSegment primarySegment,
+            List<Collider> overalppingColliders)
+        {
+            foreach (Collider collider in overalppingColliders)
+            {
+                CustomRoadSegment colliderSegment = BuiltRoadSegments[collider.gameObject.name];
+                CustomParallelogram primaryTopPlane = primarySegment.TopPlane;
+
+                if (GetRayHitPointOnSegment(
+                    origin: primaryTopPlane.LeftStart,
+                    end: primaryTopPlane.LeftEnd,
+                    maxDistance: primarySegment.OldLength,
+                    collider: collider,
+                    hitPoint: out Vector3? hitPoint))
+                {
+                    Vector3 collisionPoint = hitPoint.Value;
+                    this.AddCollision(
+                        primarySegment: primarySegment,
+                        collidingSegment: colliderSegment,
+                        collisionPoint: collisionPoint,
+                        collisionOriginType: CustomCollisionMap.COLLISION_ORIGIN_LEFT_START,
+                        distanceFromOrigin: (collisionPoint - primaryTopPlane.LeftStart).magnitude);
+                    CustomRenderer.RenderSphere(collisionPoint);
+                }
+
+                if (GetRayHitPointOnSegment(
+                    origin: primaryTopPlane.RightStart,
+                    end: primaryTopPlane.RightEnd,
+                    maxDistance: primarySegment.OldLength,
+                    collider: collider,
+                    hitPoint: out Vector3? hitPoint2))
+                {
+                    Vector3 collisionPoint = hitPoint2.Value;
+                    this.AddCollision(
+                        primarySegment: primarySegment,
+                        collidingSegment: colliderSegment,
+                        collisionPoint: collisionPoint,
+                        collisionOriginType: CustomCollisionMap.COLLISION_ORIGIN_RIGHT_START,
+                        distanceFromOrigin: (collisionPoint - primaryTopPlane.RightStart).magnitude);
+                    CustomRenderer.RenderSphere(collisionPoint);
+                }
+
+                if (GetRayHitPointOnSegment(
+                    origin: primaryTopPlane.LeftEnd,
+                    end: primaryTopPlane.LeftStart,
+                    maxDistance: primarySegment.OldLength,
+                    collider: collider,
+                    hitPoint: out Vector3? hitPoint3))
+                {
+                    Vector3 collisionPoint = hitPoint3.Value;
+                    this.AddCollision(
+                        primarySegment: primarySegment,
+                        collidingSegment: colliderSegment,
+                        collisionPoint: collisionPoint,
+                        collisionOriginType: CustomCollisionMap.COLLISION_ORIGIN_LEFT_END,
+                        distanceFromOrigin: (collisionPoint - primaryTopPlane.LeftEnd).magnitude);
+                    CustomRenderer.RenderSphere(collisionPoint);
+                }
+
+                if (GetRayHitPointOnSegment(
+                    origin: primaryTopPlane.RightEnd,
+                    end: primaryTopPlane.RightStart,
+                    maxDistance: primarySegment.OldLength,
+                    collider: collider,
+                    hitPoint: out Vector3? hitPoint4))
+                {
+                    Vector3 collisionPoint = hitPoint4.Value;
+                    this.AddCollision(
+                        primarySegment: primarySegment,
+                        collidingSegment: colliderSegment,
+                        collisionPoint: collisionPoint,
+                        collisionOriginType: CustomCollisionMap.COLLISION_ORIGIN_RIGHT_END,
+                        distanceFromOrigin: (collisionPoint - primaryTopPlane.RightEnd).magnitude);
+                    CustomRenderer.RenderSphere(collisionPoint);
+                }
+            }
+        }
+
+
+        public void AddCollision(
+            CustomRoadSegment primarySegment,
+            CustomRoadSegment collidingSegment,
+            Vector3 collisionPoint,
+            int collisionOriginType,
+            float distanceFromOrigin)
+        {
+
+            CustomCollisionInfo collision = new(
+                 primarySegment: primarySegment,
+                 collidingSegment: collidingSegment,
+                 collisionPoint: collisionPoint,
+                 collisionOriginType: collisionOriginType,
+                 distanceFromOrigin: distanceFromOrigin);
+
+            string collidingLaneName = collision.CollidingSegment.ParentLane.Name;
+
+            if (!this.CollisionsByCollidingLane.ContainsKey(collidingLaneName))
+                this.CollisionsByCollidingLane[collidingLaneName] = new();
+
+            //Validate if the collision is too close to collision with another subsequent segment on the same colliding lane,
+            // caused by the segment extensions in cureved roads
+            int lookupIndex =
+                this.CollisionsByCollidingLane
+                    [collidingLaneName]
+                        .FindIndex(e =>
+                            e.CollidingSegment.ParentLane.Name
+                            .Equals(collidingLaneName)
+                                && (e.CollisionPoint - collision.CollisionPoint).magnitude
+                                        < collision.CollidingSegment.Width
+                                && e.DistanceFromOrigin < collision.DistanceFromOrigin);
+            if (lookupIndex != -1)
+            {
+                if (this.CollisionsByCollidingLane[collidingLaneName][lookupIndex]
+                    .DistanceFromOrigin > collision.DistanceFromOrigin)
+                {
+                    this.CollisionsByCollidingLane[collidingLaneName][lookupIndex] = collision;
+                }
+            }
+            else
+            {
+                this.CollisionsByCollidingLane[collidingLaneName].Add(collision);
+            }
+        }
+
+        private static bool GetRayHitPointOnSegment(
+            Vector3 origin,
+            Vector3 end,
+            float maxDistance,
+            Collider collider,
+            out Vector3? hitPoint)
+        {
+            CustomRoadSegment colliderSegment = BuiltRoadSegments[collider.gameObject.name];
+            CustomParallelogram colliderTopPlane = colliderSegment.TopPlane;
+            Vector3 direction = end - origin;
+            if (collider.Raycast(
+                    ray: new Ray(origin, direction),
+                    hitInfo: out RaycastHit rayHitInfo,
+                    maxDistance: maxDistance)
+                && (
+                    colliderSegment.PreviousSibling == null
+                    || !IsPointInsideBounds(
+                        rayHitInfo.point,
+                        colliderSegment.PreviousSibling.TopPlane.GetVertices()
+                    ))
+                && (
+                    colliderSegment.NextSibling == null
+                    || !IsPointInsideBounds(
+                        rayHitInfo.point,
+                        colliderSegment.NextSibling.TopPlane.GetVertices()
+                    ))
+                && !IsPointOnLineSegment(
+                        rayHitInfo.point,
+                        colliderTopPlane.LeftStart,
+                        colliderTopPlane.RightStart)
+                && !IsPointOnLineSegment(
+                        rayHitInfo.point,
+                        colliderTopPlane.LeftEnd,
+                        colliderTopPlane.RightEnd))
+            {
+                hitPoint = rayHitInfo.point;
+                return true;
+            }
+            hitPoint = null;
+            return false;
+        }
+
+        private static bool IsColliderWithinbounds(Collider collider, Vector3[] bounds)
+        {
+            CustomParallelogram colliderTopPlane = BuiltRoadSegments[collider.gameObject.name].TopPlane;
+            return colliderTopPlane.GetVertices().Length > 0 && IsRectWithinBounds(colliderTopPlane, bounds);
+        }
+
+        private static bool IsRectWithinBounds(CustomParallelogram rectangle, Vector3[] bounds)
+        {
+            for (int i = 0; i < 4; i++)
+                if (!IsPointInsideBounds(rectangle.GetVertices()[i], bounds))
+                    return false;
+            return true;
+        }
+
+        private static bool IsPointOnLineSegment(Vector3 point, Vector3 start, Vector3 end)
+        {
+            return Math.Round(Vector3.Cross(point - start, end - point).magnitude, 2) == 0;
+
+        }
+        private static bool IsPointInsideBounds(Vector3 point, Vector3[] bounds, float margin = 0)
+        {
+            float maxX = bounds[0].x;
+            float maxY = bounds[0].y;
+            float minX = bounds[0].x;
+            float minY = bounds[0].y;
+
+            for (int i = 1; i < 4; i++)
+            {
+                if (bounds[i].x > maxX) maxX = bounds[i].x;
+                if (bounds[i].y > maxY) maxY = bounds[i].y;
+                //
+                if (bounds[i].x < minX) minX = bounds[i].x;
+                if (bounds[i].y < minY) minY = bounds[i].y;
+            }
+            return point.x > minX && point.x < maxX && point.y > minY && point.y < maxY;
+        }
+    }
+
+    private class CustomCollisionInfo
+    {
+        public string CollisionId;
+        public CustomRoadSegment PrimarySegment;
+        public CustomRoadSegment CollidingSegment;
+        public Vector3 CollisionPoint;
+        public float DistanceFromOrigin;
+        public int CollisionOriginType;
+
+        public CustomCollisionInfo(
+            CustomRoadSegment primarySegment,
+            CustomRoadSegment collidingSegment,
+            Vector3 collisionPoint,
+            int collisionOriginType,
+            float distanceFromOrigin
+        )
+        {
+            this.PrimarySegment = primarySegment;
+            this.CollidingSegment = collidingSegment;
+            this.CollisionPoint = collisionPoint;
+            this.CollisionOriginType = collisionOriginType;
+            this.DistanceFromOrigin = distanceFromOrigin;
+            this.CollisionId = primarySegment.Name + collidingSegment.Name + collisionOriginType;
         }
     }
 }
