@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class CameraMovement : MonoBehaviour
+public class ZeroCameraMovement
 {
     private static float _cameraInitialHeight = 1f;
 
@@ -17,12 +17,8 @@ public class CameraMovement : MonoBehaviour
     public static GameObject MainCameraAnchor;
     public static GameObject MainCameraHolder;
     public static GameObject MainCameraRoot;
-    void Start()
-    {
-        InitializeCamera();
-    }
 
-    public static void InitializeCamera()
+    public static void Initialise()
     {
         Transform rootTransform = MainCameraRoot.transform;
         rootTransform.position = new Vector3(-100f, 0f, 15f);
@@ -68,8 +64,8 @@ public class CameraMovement : MonoBehaviour
 
     public static void TiltCamera(Vector2 currentTouch0, Vector2 currentTouch1)
     {
-        var touch0Delta = currentTouch0 - CommonController._startTouch0;
-        var touch1Delta = currentTouch1 - CommonController._startTouch1;
+        var touch0Delta = currentTouch0 - ZeroUIHandler._startTouch0;
+        var touch1Delta = currentTouch1 - ZeroUIHandler._startTouch1;
 
         var maxDeltaMagnitude = Math.Abs(Math.Max(touch0Delta.magnitude, touch1Delta.magnitude));
         if (maxDeltaMagnitude < 0)
@@ -145,8 +141,8 @@ public class CameraMovement : MonoBehaviour
 
     public static void ZoomCamera(Vector2 currentTouch0, Vector2 currentTouch1)
     {
-        var touch0Delta = currentTouch0 - CommonController._startTouch0;
-        var touch1Delta = currentTouch1 - CommonController._startTouch1;
+        var touch0Delta = currentTouch0 - ZeroUIHandler._startTouch0;
+        var touch1Delta = currentTouch1 - ZeroUIHandler._startTouch1;
 
         var maxDeltaMagnitude = Math.Abs(Math.Max(touch0Delta.magnitude, touch1Delta.magnitude));
         if (maxDeltaMagnitude < 0)
@@ -288,7 +284,7 @@ public class CameraMovement : MonoBehaviour
 
     public static bool IsTouchPinchingOut(Vector2 touch0, Vector2 touch1)
     {
-        return (CommonController._startTouch0 - CommonController._startTouch1).magnitude < (touch0 - touch1).magnitude;
+        return (ZeroUIHandler._startTouch0 - ZeroUIHandler._startTouch1).magnitude < (touch0 - touch1).magnitude;
     }
 
     public static Vector3 GetTerrainHitPoint(Vector2 origin)
@@ -307,18 +303,18 @@ public class CameraMovement : MonoBehaviour
     }
     public static void ScaleStaticRoadObjects()
     {
-        ScaleStaticObject(CustomRoadBuilder.StartObject);
-        ScaleStaticObject(CustomRoadBuilder.ControlObject);
-        ScaleStaticObject(CustomRoadBuilder.EndObject);
+        ScaleStaticObject(ZeroRoadBuilder.StartObject);
+        ScaleStaticObject(ZeroRoadBuilder.ControlObject);
+        ScaleStaticObject(ZeroRoadBuilder.EndObject);
     }
 
     public static void ScaleStaticObject(GameObject gameObject)
     {
         float magnitude = MainCameraHolder.transform.localPosition.y / _cameraInitialHeight;
 
-        if (CustomRoadBuilder.InitialStaticLocalScale.ContainsKey(gameObject.name))
+        if (ZeroRoadBuilder.InitialStaticLocalScale.ContainsKey(gameObject.name))
         {
-            Vector3 initialScale = CustomRoadBuilder.InitialStaticLocalScale[gameObject.name];
+            Vector3 initialScale = ZeroRoadBuilder.InitialStaticLocalScale[gameObject.name];
             gameObject.transform.localScale =
             new Vector3(
                initialScale.x * magnitude,

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-public class CustomRenderer : MonoBehaviour
+public class ZeroRenderer
 {
 
     private static readonly List<GameObject> _lineObjectPool = new();
@@ -13,7 +13,7 @@ public class CustomRenderer : MonoBehaviour
     private static Material _baseLineMaterial;
     public static bool IsDebugEnabled = false;
 
-    void Start()
+    public static void Initialise()
     {
         _baseLineMaterial = Resources.Load("Material/LineMaterial", typeof(Material)) as Material;
         InstantiateLinePool();
@@ -49,7 +49,7 @@ public class CustomRenderer : MonoBehaviour
         float width = 0.5f,
         Transform parentTransform = null)
     {
-        GameObject lineObject = CommonController.FindGameObject(name, true);
+        GameObject lineObject = ZeroController.FindGameObject(name, true);
 
         if (lineObject == null)
         {
@@ -100,7 +100,7 @@ public class CustomRenderer : MonoBehaviour
         params Vector3[] linePoints)
     {
         GameObject lineObject =
-            CommonController.FindGameObject(name, true) ?? GetLineObject(name, color, width: width, parentTransform);
+            ZeroController.FindGameObject(name, true) ?? GetLineObject(name, color, width: width, parentTransform);
         LineRenderer lineRenderer = lineObject.GetComponent<LineRenderer>();
         lineRenderer.positionCount = linePoints.Length;
         Transform lineTransform = lineObject.transform;
@@ -125,7 +125,7 @@ public class CustomRenderer : MonoBehaviour
     {
         string newSphereName = sphereName.Length > 0 ? sphereName : "Sphere" + _existingSpheres.Count;
 
-        GameObject sphere = CommonController.FindGameObject(newSphereName, true);
+        GameObject sphere = ZeroController.FindGameObject(newSphereName, true);
         if (sphere == null)
         {
             sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);

@@ -4110,13 +4110,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1458476511}
   - component: {fileID: 1458476515}
-  - component: {fileID: 1458476512}
   - component: {fileID: 1458476510}
-  - component: {fileID: 1458476514}
-  - component: {fileID: 1458476519}
-  - component: {fileID: 1458476518}
-  - component: {fileID: 1458476517}
-  - component: {fileID: 1458476520}
   m_Layer: 0
   m_Name: ScriptReference
   m_TagString: Untagged
@@ -4136,6 +4130,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e556529a4f7295d4aae9a63d11273378, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  MainCameraMoveSpeed: 0.5
+  MainCameraSmoothing: 2
+  MainCameraZoomSpeed: 50
+  MainCameraRotationSpeed: 50
+  MainCameraTiltSpeed: 50
+  MainCameraTiltAngleThreshold: 10
+  RoadMaxChangeInAngle: 15
+  RoadMaxVertexCount: 30
+  RoadMinVertexCount: 6
+  RoadSegmentMinLength: 3
+  RoadLaneHeight: 0.25
+  RoadLaneWidth: 3
+  RoadSideWalkHeight: 0.3
+  MainCameraRoot: {fileID: 1835351740}
+  MainCameraAnchor: {fileID: 1089637246}
+  MainCameraHolder: {fileID: 2000256590}
+  MainCamera: {fileID: 330585545}
 --- !u!4 &1458476511
 Transform:
   m_ObjectHideFlags: 0
@@ -4151,47 +4162,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1458476512
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1458476509}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 000d96567ef6b73438919bad13fb5ee5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  MainCameraMoveSpeed: 1
-  MainCameraSmoothing: 2
-  MainCameraZoomSpeed: 100
-  MainCameraRotationSpeed: 100
-  MainCameraTiltSpeed: 1
-  MainCameraTiltAngleThreshold: 10
-  RoadMaxChangeInAngle: 15
-  RoadMaxVertexCount: 30
-  RoadMinVertexCount: 6
-  RoadSegmentMinLength: 3
-  RoadLaneHeight: 0.25
-  RoadLaneWidth: 3
-  RoadSideWalkHeight: 0.3
-  MainCameraRoot: {fileID: 1835351740}
-  MainCameraAnchor: {fileID: 1089637246}
-  MainCameraHolder: {fileID: 2000256590}
-  MainCamera: {fileID: 330585545}
---- !u!114 &1458476514
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1458476509}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: eee93064f3f94f24e85b202ab3a76c11, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &1458476515
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4223,54 +4193,6 @@ MonoBehaviour:
   m_DefaultActionMap: Player
   m_SplitScreenIndex: -1
   m_Camera: {fileID: 0}
---- !u!114 &1458476517
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1458476509}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e44fa1a84a1863d41a60f78d986ed610, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!114 &1458476518
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1458476509}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 63d09167cd8d2e94d864c3cf0c13cb58, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!114 &1458476519
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1458476509}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9829b6714c5aeaa4d9be331f719e5625, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!114 &1458476520
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1458476509}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 88d49eb3f6c23f249810aed1e7829c6e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &1468427560
 GameObject:
   m_ObjectHideFlags: 0

@@ -4,15 +4,13 @@ using System.Linq;
 using Unity.VisualScripting;
 using UnityEngine;
 
-public class CurvedLine : MonoBehaviour
+public class ZeroCurvedLine
 {
-
-
     public static Vector3[] FindBazierLinePoints(params Vector3[] controlPoints)
     {
         int vertexCount = 1;
         if (controlPoints.Length > 2)
-            vertexCount = CustomRoadBuilder.RoadMinVertexCount;
+            vertexCount = ZeroRoadBuilder.RoadMinVertexCount;
 
         return FindBazierLinePoints(vertexCount, controlPoints);
     }
@@ -34,9 +32,9 @@ public class CurvedLine : MonoBehaviour
                 Vector3 prevSegment = bazierLinePoints[p - 1] - bazierLinePoints[p - 2];
                 float currAngle = Vector3.Angle(currSegment, prevSegment);
 
-                if (vertexCount < CustomRoadBuilder.RoadMaxVertexCount
-                    && currSegment.magnitude >= CustomRoadBuilder.RoadSegmentMinLength
-                    && currAngle > CustomRoadBuilder.RoadMaxChangeInAngle)
+                if (vertexCount < ZeroRoadBuilder.RoadMaxVertexCount
+                    && currSegment.magnitude >= ZeroRoadBuilder.RoadSegmentMinLength
+                    && currAngle > ZeroRoadBuilder.RoadMaxChangeInAngle)
                 {
                     return FindBazierLinePoints(vertexCount + 1, controlPoints);
                 }
@@ -151,7 +149,7 @@ public class CurvedLine : MonoBehaviour
             curvePoints.Add(curve);
         }
         curvePoints.Add(endPosition);
-        CustomRenderer.RenderLine(
+        ZeroRenderer.RenderLine(
             line.name,
             Color.red,
             width: 10f,
