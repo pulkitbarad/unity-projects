@@ -55,6 +55,7 @@ public class ZeroCollisionMap
 
         foreach (Collider collider in overlaps)
         {
+            Debug.Log("Checking overlap collider=" + collider.gameObject.name);
             string colliderGameObjectName = collider.gameObject.name;
             if (ZeroRoadBuilder.BuiltRoadSegments.ContainsKey(colliderGameObjectName)
                 && !ZeroRoadBuilder.BuiltRoadSegments[colliderGameObjectName]
@@ -197,6 +198,9 @@ public class ZeroCollisionMap
             List<ZeroCollisionInfo> rightStartCollisions = new();
             List<ZeroCollisionInfo> leftEndCollisions = new();
             List<ZeroCollisionInfo> rightEndCollisions = new();
+            Debug.Log("Primary lane=" + this.PrimaryLane.Name
+            + ", Collding lane=" + collidingLaneName
+            + ", collisions =" + entry.Value.Count());
 
             foreach (ZeroCollisionInfo collision in entry.Value)
             {
@@ -214,8 +218,7 @@ public class ZeroCollisionMap
             //because current implementation only supports bending a road in one direction during construction.
             //And each intersection should have the same number of left/right start/end collision points,
             // to make one (or two) valid parallelogram(s).
-            if (
-                (leftStartCollisions.Count() == 2
+            if ((leftStartCollisions.Count() == 2
                     || leftStartCollisions.Count() == 1)
                 && leftStartCollisions.Count() == leftEndCollisions.Count()
                 && rightStartCollisions.Count() == rightEndCollisions.Count()
@@ -228,6 +231,7 @@ public class ZeroCollisionMap
                 rightEndCollisions = rightEndCollisions.OrderBy(e => -e.DistanceFromOrigin).ToList();
                 intersections.Add(
                 new ZeroLaneIntersection(
+                    name: this.PrimaryLane.Name + leftStartCollisions[0].CollidingSegment.ParentLane.Name + "I0",
                     intersectionPoints:
                         new ZeroParallelogram(
                             leftStart: leftStartCollisions[0].CollisionPoint,
@@ -236,6 +240,7 @@ public class ZeroCollisionMap
                             rightEnd: rightEndCollisions[0].CollisionPoint),
                     primaryLane: this.PrimaryLane,
                     intersectingLane: leftStartCollisions[0].CollidingSegment.ParentLane));
+
                 //If primary lane is intersecting twice with another lane,
                 // intersection closest to the primary lane start will have 
                 //left (and right) start points closer to their ray origin point used in collision detection   
@@ -244,6 +249,7 @@ public class ZeroCollisionMap
                 {
                     intersections.Add(
                     new ZeroLaneIntersection(
+                        name: this.PrimaryLane.Name + leftStartCollisions[1].CollidingSegment.ParentLane.Name + "I1",
                         intersectionPoints:
                             new ZeroParallelogram(
                                 leftStart: leftStartCollisions[1].CollisionPoint,
@@ -259,11 +265,6 @@ public class ZeroCollisionMap
                 this.IsValid = false;
         }
         return intersections.ToArray();
-        // Debug.Log(
-        //     "left start count=" + this.LeftStartCollisions.Count() +
-        //     ", right start count=" + this.RightStartCollisions.Count() +
-        //     ", left end count=" + this.LeftEndCollisions.Count() +
-        //     ", right end count= " + this.RightEndCollisions.Count());
     }
 
     private static bool GetRayHitPointOnSegment(
@@ -276,6 +277,7 @@ public class ZeroCollisionMap
         ZeroRoadSegment colliderSegment = ZeroRoadBuilder.BuiltRoadSegments[collider.gameObject.name];
         ZeroParallelogram colliderTopPlane = colliderSegment.TopPlane;
         Vector3 direction = end - origin;
+
         if (collider.Raycast(
                 ray: new Ray(origin, direction),
                 hitInfo: out RaycastHit rayHitInfo,

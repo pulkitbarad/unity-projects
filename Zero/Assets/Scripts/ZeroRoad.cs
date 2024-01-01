@@ -240,9 +240,9 @@ public class ZeroRoad
                 Vector3[] intersectionPoints = intersection.IntersectionPoints.GetVertices();
                 for (int j = 0; j < intersectionPoints.Length; j++)
                 {
-                    string pointName = intersection.Name + j;
+                    string pointName = intersection.Name + "L" + j;
                     if (registeredPoints.Contains(pointName))
-                        pointName = intersection.Name + (j + 1).ToString();
+                        pointName = i.ToString() + j.ToString();
                     ZeroRenderer.RenderSphere(
                         intersectionPoints[j],
                         pointName,
@@ -256,9 +256,9 @@ public class ZeroRoad
                 Vector3[] intersectionPoints = intersection.IntersectionPoints.GetVertices();
                 for (int j = 0; j < intersectionPoints.Length; j++)
                 {
-                    string pointName = intersection.Name + j;
+                    string pointName = intersection.Name + "R" + j;
                     if (registeredPoints.Contains(pointName))
-                        pointName = intersection.Name + (j + 1).ToString();
+                        pointName = i.ToString() + j.ToString();
                     ZeroRenderer.RenderSphere(
                         intersectionPoints[j],
                         pointName,

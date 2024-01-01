@@ -128,7 +128,6 @@ public class ZeroRenderer
         GameObject sphere = ZeroController.FindGameObject(objectName: newSphereName, findDisabled: true);
         if (sphere == null)
         {
-            Debug.Log("creating new sphere=" + newSphereName);
             sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             _existingSpheres.Add(newSphereName);
         }

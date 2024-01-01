@@ -147,9 +147,10 @@ public class ZeroRoadSegment
         segmentObject.transform.localScale = new Vector3(this.Width, this.Height, this.Length);
         segmentObject.transform.SetParent(ZeroRoadBuilder.BuiltRoadSegmentsParent.transform);
 
-        if (this.ParentLane.LaneIndex == -1 || this.ParentLane.LaneIndex == this.ParentLane.ParentRoad.NumberOfLanes)
+        int numOfLanes = this.ParentLane.ParentRoad.NumberOfLanes;
+        if (this.ParentLane.LaneIndex == numOfLanes || this.ParentLane.LaneIndex == numOfLanes + 1)
             segmentObject.layer = LayerMask.NameToLayer(ZeroRoadBuilder.RoadSidewalkMaskName);
-        else if (this.ParentLane.LaneIndex == 0 || this.ParentLane.LaneIndex == this.ParentLane.ParentRoad.NumberOfLanes - 1)
+        else if (this.ParentLane.LaneIndex == 0 || this.ParentLane.LaneIndex == numOfLanes - 1)
             segmentObject.layer = LayerMask.NameToLayer(ZeroRoadBuilder.RoadEdgeLaneMaskName);
 
         segmentObject.SetActive(true);

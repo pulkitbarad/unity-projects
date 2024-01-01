@@ -11,13 +11,14 @@ public class ZeroLaneIntersection
     public ZeroRoadLane IntersectingLane;
 
     public ZeroLaneIntersection(
+        string name,
         ZeroParallelogram intersectionPoints,
         ZeroRoadLane primaryLane,
         ZeroRoadLane intersectingLane)
     {
+        this.Name = name;
         IntersectionPoints = intersectionPoints;
         PrimaryLane = primaryLane;
         IntersectingLane = intersectingLane;
-        Name = PrimaryLane.Name + IntersectingLane.Name;
     }
 }
