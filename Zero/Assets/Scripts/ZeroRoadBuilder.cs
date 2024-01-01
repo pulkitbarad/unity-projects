@@ -135,8 +135,8 @@ public class ZeroRoadBuilder
 
     public static void StartBuilding(bool isCurved)
     {
+        CurrentActiveRoad?.Hide();
         CurrentActiveRoad = new ZeroRoad(
-            name: "Road" + BuiltRoads.Count,
             isCurved: isCurved,
             hasBusLane: true,
             numberOfLanes: 2,
@@ -148,10 +148,12 @@ public class ZeroRoadBuilder
     public static void ConfirmBuilding()
     {
         HideControlObjects();
-        CurrentActiveRoad.RenderRoad();
+        CurrentActiveRoad = null;
     }
     public static void CancelBuilding()
     {
+        CurrentActiveRoad.Hide();
+        CurrentActiveRoad = null;
         HideControlObjects();
     }
 

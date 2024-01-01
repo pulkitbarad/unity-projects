@@ -187,7 +187,7 @@ public class ZeroUIHandler
         _objectBeingDragged = "";
     }
 
- public static bool HandleGameObjectDrag(GameObject gameObject, Vector2 touchPosition, GameObject followerObject = null)
+    public static bool HandleGameObjectDrag(GameObject gameObject, Vector2 touchPosition, GameObject followerObject = null)
     {
         if (!EventSystem.current.IsPointerOverGameObject() || _objectBeingDragged.Length > 0)
         {

@@ -36,8 +36,7 @@ public class ZeroCollisionMap
         for (int segmentIndex = 0; segmentIndex < primaryLane.Segments.Length; segmentIndex++)
         {
             ZeroRoadSegment segment = primaryLane.Segments[segmentIndex];
-            List<Collider> partialOverlaps = GetPartialOverlaps(roadName, segment, layerMaskName);
-            Debug.Log(segment.Name + " partial overlaps= " + partialOverlaps.Select(e => e.gameObject.name).ToCommaSeparatedString());
+            List<Collider> partialOverlaps = GetPartialOverlaps(segment);
 
             if (partialOverlaps.Count > 0)
             {
@@ -48,7 +47,7 @@ public class ZeroCollisionMap
         }
     }
 
-    public ZeroLaneIntersection[] GetIntersections()
+    public ZeroLaneIntersection[] GetLaneIntersections()
     {
         GenerateCollisonLists();
         List<ZeroLaneIntersection> intersections = new();
@@ -64,10 +63,6 @@ public class ZeroCollisionMap
                     Vector3 rightStart = this.RightStartCollisions[i].CollisionPoint;
                     Vector3 leftEnd = this.LeftEndCollisions[i].CollisionPoint;
                     Vector3 rightEnd = this.RightEndCollisions[i].CollisionPoint;
-                    ZeroRenderer.RenderSphere(leftStart);
-                    ZeroRenderer.RenderSphere(leftEnd);
-                    ZeroRenderer.RenderSphere(rightStart);
-                    ZeroRenderer.RenderSphere(rightEnd);
 
                     intersections.Add(
                         new ZeroLaneIntersection(
@@ -104,10 +99,6 @@ public class ZeroCollisionMap
             else if (collision.CollisionOriginType == ZeroCollisionMap.COLLISION_ORIGIN_RIGHT_END)
                 this.RightEndCollisions.Add(collision);
         }
-        Debug.Log("leftStartCollisionPoints count=" + LeftStartCollisions.Count());
-        Debug.Log("rightStartCollisionPoints count=" + RightStartCollisions.Count());
-        Debug.Log("leftEndCollisionPoints count=" + LeftEndCollisions.Count());
-        Debug.Log("rightEndCollisionPoints count=" + RightEndCollisions.Count());
         if (this.LeftStartCollisions.Count() == this.LeftEndCollisions.Count()
             && this.LeftStartCollisions.Count() == this.RightStartCollisions.Count()
             && this.LeftStartCollisions.Count() == this.RightEndCollisions.Count())
@@ -116,26 +107,22 @@ public class ZeroCollisionMap
         }
     }
 
-    private List<Collider> GetPartialOverlaps(
-        string roadName,
-        ZeroRoadSegment segment,
-        string layerMaskName)
+    private List<Collider> GetPartialOverlaps( ZeroRoadSegment segment)
     {
         ZeroParallelogram segmentTopPlane = segment.TopPlane;
         Collider[] overlaps = Physics.OverlapBox(
             center: segment.SegmentObject.transform.position,
             halfExtents: segment.SegmentObject.transform.localScale / 2,
             orientation: segment.SegmentObject.transform.rotation,
-            layerMask: LayerMask.GetMask(layerMaskName));
+            layerMask: LayerMask.GetMask(this.LayerMaskName));
         List<Collider> partialOverlaps = new();
-        Debug.Log(segment.Name + " all overlaps= " + overlaps.Select(e => e.gameObject.name).ToCommaSeparatedString());
 
         foreach (Collider collider in overlaps)
         {
             string colliderGameObjectName = collider.gameObject.name;
             if (ZeroRoadBuilder.BuiltRoadSegments.ContainsKey(colliderGameObjectName)
                 && !ZeroRoadBuilder.BuiltRoadSegments[colliderGameObjectName]
-                    .ParentLane.ParentRoad.Name.Equals(roadName)
+                    .ParentLane.ParentRoad.Name.Equals(this.RoadName)
                 && !IsColliderWithinbounds(collider, segmentTopPlane.GetVertices()))
             {
                 partialOverlaps.Add(collider);
@@ -167,7 +154,6 @@ public class ZeroCollisionMap
                     collisionPoint: collisionPoint,
                     collisionOriginType: ZeroCollisionMap.COLLISION_ORIGIN_LEFT_START,
                     distanceFromOrigin: (collisionPoint - primaryTopPlane.LeftStart).magnitude);
-                ZeroRenderer.RenderSphere(collisionPoint);
             }
 
             if (GetRayHitPointOnSegment(
@@ -184,7 +170,6 @@ public class ZeroCollisionMap
                     collisionPoint: collisionPoint,
                     collisionOriginType: ZeroCollisionMap.COLLISION_ORIGIN_RIGHT_START,
                     distanceFromOrigin: (collisionPoint - primaryTopPlane.RightStart).magnitude);
-                ZeroRenderer.RenderSphere(collisionPoint);
             }
 
             if (GetRayHitPointOnSegment(
@@ -201,7 +186,6 @@ public class ZeroCollisionMap
                     collisionPoint: collisionPoint,
                     collisionOriginType: ZeroCollisionMap.COLLISION_ORIGIN_LEFT_END,
                     distanceFromOrigin: (collisionPoint - primaryTopPlane.LeftEnd).magnitude);
-                ZeroRenderer.RenderSphere(collisionPoint);
             }
 
             if (GetRayHitPointOnSegment(
@@ -218,11 +202,9 @@ public class ZeroCollisionMap
                     collisionPoint: collisionPoint,
                     collisionOriginType: ZeroCollisionMap.COLLISION_ORIGIN_RIGHT_END,
                     distanceFromOrigin: (collisionPoint - primaryTopPlane.RightEnd).magnitude);
-                ZeroRenderer.RenderSphere(collisionPoint);
             }
         }
     }
-
 
     public void AddCollision(
         ZeroRoadSegment primarySegment,
