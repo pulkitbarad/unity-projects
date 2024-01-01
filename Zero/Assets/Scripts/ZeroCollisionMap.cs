@@ -19,10 +19,6 @@ public class ZeroCollisionMap
     public string LayerMaskName;
     public List<ZeroCollisionInfo> Collisions;
     public Dictionary<string, List<ZeroCollisionInfo>> CollisionsByCollidingLane = new();
-    public List<ZeroCollisionInfo> LeftStartCollisions = new();
-    public List<ZeroCollisionInfo> RightStartCollisions = new();
-    public List<ZeroCollisionInfo> LeftEndCollisions = new();
-    public List<ZeroCollisionInfo> RightEndCollisions = new();
     public bool IsValid = false;
 
     public ZeroCollisionMap(
@@ -47,67 +43,7 @@ public class ZeroCollisionMap
         }
     }
 
-    public ZeroLaneIntersection[] GetLaneIntersections()
-    {
-        GenerateCollisonLists();
-        List<ZeroLaneIntersection> intersections = new();
-        if (this.IsValid)
-        {
-            foreach (var entry in this.CollisionsByCollidingLane)
-            {
-                ZeroRoadLane intersectingLane = entry.Value[0].CollidingSegment.ParentLane;
-                ZeroRoadLane primaryLane = entry.Value[0].PrimarySegment.ParentLane;
-                for (int i = 0; i < this.LeftStartCollisions.Count; i++)
-                {
-                    Vector3 leftStart = this.LeftStartCollisions[i].CollisionPoint;
-                    Vector3 rightStart = this.RightStartCollisions[i].CollisionPoint;
-                    Vector3 leftEnd = this.LeftEndCollisions[i].CollisionPoint;
-                    Vector3 rightEnd = this.RightEndCollisions[i].CollisionPoint;
-
-                    intersections.Add(
-                        new ZeroLaneIntersection(
-                            intersectionPoints:
-                                new ZeroParallelogram(
-                                    leftStart: leftStart,
-                                    rightStart: rightStart,
-                                    leftEnd: leftEnd,
-                                    rightEnd: rightEnd),
-                            primaryLane: primaryLane,
-                            intersectingLane: intersectingLane)
-                    );
-                }
-            }
-        }
-        return intersections.ToArray();
-    }
-
-    public void GenerateCollisonLists()
-    {
-        ZeroCollisionInfo[] sortedCollisions =
-            this.CollisionsByCollidingLane.Values
-            .SelectMany(e => e)
-            .OrderBy(e => e.PrimarySegment.Index)
-            .ToArray();
-        foreach (ZeroCollisionInfo collision in sortedCollisions)
-        {
-            if (collision.CollisionOriginType == ZeroCollisionMap.COLLISION_ORIGIN_LEFT_START)
-                this.LeftStartCollisions.Add(collision);
-            else if (collision.CollisionOriginType == ZeroCollisionMap.COLLISION_ORIGIN_RIGHT_START)
-                this.RightStartCollisions.Add(collision);
-            else if (collision.CollisionOriginType == ZeroCollisionMap.COLLISION_ORIGIN_LEFT_END)
-                this.LeftEndCollisions.Add(collision);
-            else if (collision.CollisionOriginType == ZeroCollisionMap.COLLISION_ORIGIN_RIGHT_END)
-                this.RightEndCollisions.Add(collision);
-        }
-        if (this.LeftStartCollisions.Count() == this.LeftEndCollisions.Count()
-            && this.LeftStartCollisions.Count() == this.RightStartCollisions.Count()
-            && this.LeftStartCollisions.Count() == this.RightEndCollisions.Count())
-        {
-            this.IsValid = true;
-        }
-    }
-
-    private List<Collider> GetPartialOverlaps( ZeroRoadSegment segment)
+    private List<Collider> GetPartialOverlaps(ZeroRoadSegment segment)
     {
         ZeroParallelogram segmentTopPlane = segment.TopPlane;
         Collider[] overlaps = Physics.OverlapBox(
@@ -226,8 +162,8 @@ public class ZeroCollisionMap
         if (!this.CollisionsByCollidingLane.ContainsKey(collidingLaneName))
             this.CollisionsByCollidingLane[collidingLaneName] = new();
 
-        //Validate if the collision is too close to collision with another subsequent segment on the same colliding lane,
-        // caused by the segment extensions in cureved roads
+        //Validate if the collision is too close to a collision with another subsequent segment of the same colliding lane,
+        // this is typically caused by the segment extension in cureved roads.
         int lookupIndex =
             this.CollisionsByCollidingLane
                 [collidingLaneName]
@@ -235,8 +171,7 @@ public class ZeroCollisionMap
                         e.CollidingSegment.ParentLane.Name
                         .Equals(collidingLaneName)
                             && (e.CollisionPoint - collision.CollisionPoint).magnitude
-                                    < collision.CollidingSegment.Width
-                            && e.DistanceFromOrigin < collision.DistanceFromOrigin);
+                                    < collision.CollidingSegment.Width);
         if (lookupIndex != -1)
         {
             if (this.CollisionsByCollidingLane[collidingLaneName][lookupIndex]
@@ -249,6 +184,86 @@ public class ZeroCollisionMap
         {
             this.CollisionsByCollidingLane[collidingLaneName].Add(collision);
         }
+    }
+
+    public ZeroLaneIntersection[] GetLaneIntersections()
+    {
+        List<ZeroLaneIntersection> intersections = new();
+        foreach (var entry in this.CollisionsByCollidingLane)
+        {
+            string collidingLaneName = entry.Key;
+
+            List<ZeroCollisionInfo> leftStartCollisions = new();
+            List<ZeroCollisionInfo> rightStartCollisions = new();
+            List<ZeroCollisionInfo> leftEndCollisions = new();
+            List<ZeroCollisionInfo> rightEndCollisions = new();
+
+            foreach (ZeroCollisionInfo collision in entry.Value)
+            {
+                if (collision.CollisionOriginType == ZeroCollisionMap.COLLISION_ORIGIN_LEFT_START)
+                    leftStartCollisions.Add(collision);
+                else if (collision.CollisionOriginType == ZeroCollisionMap.COLLISION_ORIGIN_RIGHT_START)
+                    rightStartCollisions.Add(collision);
+                else if (collision.CollisionOriginType == ZeroCollisionMap.COLLISION_ORIGIN_LEFT_END)
+                    leftEndCollisions.Add(collision);
+                else if (collision.CollisionOriginType == ZeroCollisionMap.COLLISION_ORIGIN_RIGHT_END)
+                    rightEndCollisions.Add(collision);
+            }
+            //Each lane can intersect twice at maximum with another lane; 
+            //Once for straight lane and twice for curved lanes,
+            //because current implementation only supports bending a road in one direction during construction.
+            //And each intersection should have the same number of left/right start/end collision points,
+            // to make one (or two) valid parallelogram(s).
+            if (
+                (leftStartCollisions.Count() == 2
+                    || leftStartCollisions.Count() == 1)
+                && leftStartCollisions.Count() == leftEndCollisions.Count()
+                && rightStartCollisions.Count() == rightEndCollisions.Count()
+                && leftStartCollisions.Count() == rightStartCollisions.Count()
+            )
+            {
+                leftStartCollisions = leftStartCollisions.OrderBy(e => e.DistanceFromOrigin).ToList();
+                rightStartCollisions = rightStartCollisions.OrderBy(e => e.DistanceFromOrigin).ToList();
+                leftEndCollisions = leftEndCollisions.OrderBy(e => -e.DistanceFromOrigin).ToList();
+                rightEndCollisions = rightEndCollisions.OrderBy(e => -e.DistanceFromOrigin).ToList();
+                intersections.Add(
+                new ZeroLaneIntersection(
+                    intersectionPoints:
+                        new ZeroParallelogram(
+                            leftStart: leftStartCollisions[0].CollisionPoint,
+                            rightStart: rightStartCollisions[0].CollisionPoint,
+                            leftEnd: leftEndCollisions[0].CollisionPoint,
+                            rightEnd: rightEndCollisions[0].CollisionPoint),
+                    primaryLane: this.PrimaryLane,
+                    intersectingLane: leftStartCollisions[0].CollidingSegment.ParentLane));
+                //If primary lane is intersecting twice with another lane,
+                // intersection closest to the primary lane start will have 
+                //left (and right) start points closer to their ray origin point used in collision detection   
+                //Vice versa, left (and right) end points farther from their ray origin point used in collision detection   
+                if (leftStartCollisions.Count() == 2)
+                {
+                    intersections.Add(
+                    new ZeroLaneIntersection(
+                        intersectionPoints:
+                            new ZeroParallelogram(
+                                leftStart: leftStartCollisions[1].CollisionPoint,
+                                rightStart: rightStartCollisions[1].CollisionPoint,
+                                leftEnd: leftEndCollisions[1].CollisionPoint,
+                                rightEnd: rightEndCollisions[1].CollisionPoint),
+                        primaryLane: this.PrimaryLane,
+                        intersectingLane: leftStartCollisions[1].CollidingSegment.ParentLane));
+                }
+                this.IsValid = true;
+            }
+            else
+                this.IsValid = false;
+        }
+        return intersections.ToArray();
+        // Debug.Log(
+        //     "left start count=" + this.LeftStartCollisions.Count() +
+        //     ", right start count=" + this.RightStartCollisions.Count() +
+        //     ", left end count=" + this.LeftEndCollisions.Count() +
+        //     ", right end count= " + this.RightEndCollisions.Count());
     }
 
     private static bool GetRayHitPointOnSegment(

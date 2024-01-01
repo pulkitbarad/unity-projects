@@ -230,6 +230,7 @@ public class ZeroRoad
                 primaryLane: this.Lanes[this.NumberOfLanes + 1],
                 layerMaskName: ZeroRoadBuilder.RoadSidewalkMaskName).GetLaneIntersections();
 
+        List<string> registeredPoints = new();
 
         if (leftIntersections != null)
         {
@@ -239,10 +240,14 @@ public class ZeroRoad
                 Vector3[] intersectionPoints = intersection.IntersectionPoints.GetVertices();
                 for (int j = 0; j < intersectionPoints.Length; j++)
                 {
+                    string pointName = intersection.Name + j;
+                    if (registeredPoints.Contains(pointName))
+                        pointName = intersection.Name + (j + 1).ToString();
                     ZeroRenderer.RenderSphere(
                         intersectionPoints[j],
-                        intersection.PrimaryLane.Name + "_" + intersection.IntersectingLane.Name + j,
+                        pointName,
                         color: Color.blue);
+                    registeredPoints.Add(pointName);
                 }
             }
             for (int i = 0; i < rightIntersections.Length; i++)
@@ -251,10 +256,14 @@ public class ZeroRoad
                 Vector3[] intersectionPoints = intersection.IntersectionPoints.GetVertices();
                 for (int j = 0; j < intersectionPoints.Length; j++)
                 {
+                    string pointName = intersection.Name + j;
+                    if (registeredPoints.Contains(pointName))
+                        pointName = intersection.Name + (j + 1).ToString();
                     ZeroRenderer.RenderSphere(
                         intersectionPoints[j],
-                        intersection.PrimaryLane.Name + "_" + intersection.IntersectingLane.Name + j,
+                        pointName,
                         color: Color.red);
+                    registeredPoints.Add(pointName);
                 }
             }
         }

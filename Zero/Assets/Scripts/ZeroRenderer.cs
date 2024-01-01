@@ -125,9 +125,10 @@ public class ZeroRenderer
     {
         string newSphereName = sphereName.Length > 0 ? sphereName : "Sphere" + _existingSpheres.Count;
 
-        GameObject sphere = ZeroController.FindGameObject(newSphereName, true);
+        GameObject sphere = ZeroController.FindGameObject(objectName: newSphereName, findDisabled: true);
         if (sphere == null)
         {
+            Debug.Log("creating new sphere=" + newSphereName);
             sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             _existingSpheres.Add(newSphereName);
         }
