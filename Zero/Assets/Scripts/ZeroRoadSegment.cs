@@ -18,7 +18,7 @@ public class ZeroRoadSegment
     public float Width;
     public float Height;
     public float Length;
-    public float DistanceToLaneStart;
+    public float LengthSofar;
     public float OldLength;
     public Vector3 CenterStart;
     public Vector3 CenterEnd;
@@ -32,7 +32,7 @@ public class ZeroRoadSegment
          int index,
          float width,
          float height,
-         float distanceToLaneStart,
+         float lengthSoFar,
          Vector3 centerStart,
          Vector3 centerEnd,
          Vector3 nextCenterEnd,
@@ -67,7 +67,7 @@ public class ZeroRoadSegment
 
         this.Forward = this.CenterEnd - this.CenterStart;
         this.Length = this.Forward.magnitude;
-        this.DistanceToLaneStart = distanceToLaneStart + this.Length;
+        this.LengthSofar = lengthSoFar + this.Length;
 
         ZeroParallelogram[] planes = this.GetPlanes();
 
@@ -147,10 +147,12 @@ public class ZeroRoadSegment
         segmentObject.transform.localScale = new Vector3(this.Width, this.Height, this.Length);
         segmentObject.transform.SetParent(ZeroRoadBuilder.BuiltRoadSegmentsParent.transform);
 
-        int numOfLanes = this.ParentLane.ParentRoad.NumberOfLanes;
-        if (this.ParentLane.LaneIndex == numOfLanes || this.ParentLane.LaneIndex == numOfLanes + 1)
+        ZeroRoadLane parentLane = this.ParentLane;
+        ZeroRoad parentRoad = parentLane.ParentRoad;
+        int numOfLanes = parentRoad.NumberOfLanes;
+        if (parentLane.LaneIndex == parentRoad.LeftSidewalkIndex || parentLane.LaneIndex == parentRoad.RightSidewalkIndex)
             segmentObject.layer = LayerMask.NameToLayer(ZeroRoadBuilder.RoadSidewalkMaskName);
-        else if (this.ParentLane.LaneIndex == 0 || this.ParentLane.LaneIndex == numOfLanes - 1)
+        else if (parentLane.LaneIndex == 0 || parentLane.LaneIndex == numOfLanes - 1)
             segmentObject.layer = LayerMask.NameToLayer(ZeroRoadBuilder.RoadEdgeLaneMaskName);
 
         segmentObject.SetActive(true);

@@ -76,13 +76,13 @@ public class ZeroRoadLane
 
             float lengthSoFar = 0f;
             if (vertexIndex > 0)
-                lengthSoFar = segments[vertexIndex - 1].DistanceToLaneStart;
+                lengthSoFar = segments[vertexIndex - 1].LengthSofar;
 
             ZeroRoadSegment newSegment = new(
                 index: vertexIndex,
                 width: this.Width,
                 height: this.Height,
-                distanceToLaneStart: lengthSoFar,
+                lengthSoFar: lengthSoFar,
                 centerStart: currVertex,
                 centerEnd: nextVertex,
                 nextCenterEnd: secondNextVertex,

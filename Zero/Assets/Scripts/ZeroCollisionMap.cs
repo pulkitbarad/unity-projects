@@ -186,9 +186,9 @@ public class ZeroCollisionMap
         }
     }
 
-    public ZeroLaneIntersection[] GetLaneIntersections()
+    public Dictionary<string, List<ZeroLaneIntersection>> GetLaneIntersectionsByRoadName()
     {
-        List<ZeroLaneIntersection> intersections = new();
+        Dictionary<string, List<ZeroLaneIntersection>> intersectionsByRoadName = new();
         foreach (var entry in this.CollisionsByCollidingLane)
         {
             string collidingLaneName = entry.Key;
@@ -197,7 +197,7 @@ public class ZeroCollisionMap
             List<ZeroCollisionInfo> rightStartCollisions = new();
             List<ZeroCollisionInfo> leftEndCollisions = new();
             List<ZeroCollisionInfo> rightEndCollisions = new();
-            
+
 
             foreach (ZeroCollisionInfo collision in entry.Value)
             {
@@ -226,9 +226,17 @@ public class ZeroCollisionMap
                 rightStartCollisions = rightStartCollisions.OrderBy(e => e.DistanceFromOrigin).ToList();
                 leftEndCollisions = leftEndCollisions.OrderBy(e => -e.DistanceFromOrigin).ToList();
                 rightEndCollisions = rightEndCollisions.OrderBy(e => -e.DistanceFromOrigin).ToList();
-                intersections.Add(
+
+                string collidingRoadName = leftStartCollisions[0].CollidingSegment.ParentLane.ParentRoad.Name;
+
+                if (!intersectionsByRoadName.ContainsKey(collidingRoadName))
+                {
+                    intersectionsByRoadName[collidingRoadName] = new();
+                }
+                intersectionsByRoadName[collidingRoadName].Add(
                 new ZeroLaneIntersection(
                     name: this.PrimaryLane.Name + leftStartCollisions[0].CollidingSegment.ParentLane.Name + "I0",
+                    primaryLengthSoFar: leftStartCollisions[0].PrimarySegment.LengthSofar,
                     intersectionPoints:
                         new ZeroParallelogram(
                             leftStart: leftStartCollisions[0].CollisionPoint,
@@ -244,9 +252,10 @@ public class ZeroCollisionMap
                 //Vice versa, left (and right) end points farther from their ray origin point used in collision detection   
                 if (leftStartCollisions.Count() == 2)
                 {
-                    intersections.Add(
+                    intersectionsByRoadName[collidingRoadName].Add(
                     new ZeroLaneIntersection(
                         name: this.PrimaryLane.Name + leftStartCollisions[1].CollidingSegment.ParentLane.Name + "I1",
+                    primaryLengthSoFar: leftStartCollisions[1].PrimarySegment.LengthSofar,
                         intersectionPoints:
                             new ZeroParallelogram(
                                 leftStart: leftStartCollisions[1].CollisionPoint,
@@ -261,7 +270,7 @@ public class ZeroCollisionMap
             else
                 this.IsValid = false;
         }
-        return intersections.ToArray();
+        return intersectionsByRoadName;
     }
 
     private static bool GetRayHitPointOnSegment(
