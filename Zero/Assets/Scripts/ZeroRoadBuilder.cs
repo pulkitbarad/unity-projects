@@ -135,6 +135,7 @@ public class ZeroRoadBuilder
 
     public static void StartBuilding(bool isCurved)
     {
+        HideControlObjects();
         CurrentActiveRoad?.Hide();
         CurrentActiveRoad = new ZeroRoad(
             isCurved: isCurved,

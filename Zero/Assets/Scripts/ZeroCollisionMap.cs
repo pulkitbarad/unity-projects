@@ -55,7 +55,6 @@ public class ZeroCollisionMap
 
         foreach (Collider collider in overlaps)
         {
-            Debug.Log("Checking overlap collider=" + collider.gameObject.name);
             string colliderGameObjectName = collider.gameObject.name;
             if (ZeroRoadBuilder.BuiltRoadSegments.ContainsKey(colliderGameObjectName)
                 && !ZeroRoadBuilder.BuiltRoadSegments[colliderGameObjectName]
@@ -198,9 +197,7 @@ public class ZeroCollisionMap
             List<ZeroCollisionInfo> rightStartCollisions = new();
             List<ZeroCollisionInfo> leftEndCollisions = new();
             List<ZeroCollisionInfo> rightEndCollisions = new();
-            Debug.Log("Primary lane=" + this.PrimaryLane.Name
-            + ", Collding lane=" + collidingLaneName
-            + ", collisions =" + entry.Value.Count());
+            
 
             foreach (ZeroCollisionInfo collision in entry.Value)
             {

@@ -163,21 +163,6 @@ public class ZeroRoadSegment
 
     }
 
-    // private void AddBoxCollider()
-    // {
-    //     if (!this.SegmentObject.TryGetComponent<BoxCollider>(out var boxCollider))
-    //     {
-    //         boxCollider = this.SegmentObject.AddComponent<BoxCollider>();
-    //     }
-    //     Debug.Log("segment=" + this.Name);
-    //     Debug.Log("old length=" + this.OldLength);
-    //     Debug.Log("new length=" + this.Length);
-    //     boxCollider.center = new(0, 0, 0 - (0.5f * (this.OldLength - this.Length) / this.Length));
-    //     boxCollider.size = new(1, 1, this.OldLength / this.Length);
-    //     Debug.Log("boxCollider.center=" + boxCollider.center);
-    //     Debug.Log("boxCollider.size=" + boxCollider.size);
-    // }
-
     private void RenderMesh()
     {
         Vector3[] allVertices = new Vector3[2 * this.BottomPlane.GetVertices().Length];

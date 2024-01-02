@@ -143,7 +143,6 @@ public class ZeroRenderer
             sphere.transform.SetParent(DebuggingParent.transform);
         sphere.SetActive(true);
 
-        // Debug.Log(newSphereName + "=" + position);
         return sphere;
     }
 
