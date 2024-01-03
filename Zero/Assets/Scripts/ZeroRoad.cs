@@ -22,7 +22,7 @@ public class ZeroRoad
     public ZeroRoadLane[] Lanes;
     public ZeroRoadLane[] Sidewalks;
     public GameObject RoadObject;
-    public Dictionary<string, List<ZeroRoadIntersection>> RoadIntersectionsByName = new();
+    public Dictionary<string, List<ZeroRoadIntersection>> IntersectionsByRoadName = new();
 
     public ZeroRoad(
         bool isCurved,
@@ -93,7 +93,19 @@ public class ZeroRoad
                    centerVertices:
                    ZeroCurvedLine.FindBazierLinePoints(
                        controlPoints));
-            GetRoadIntersections();
+            this.IntersectionsByRoadName = GetRoadIntersections();
+            int i = 0;
+            foreach (var entry in this.IntersectionsByRoadName)
+            {
+                Debug.Log("entry.Value=" + entry.Value.Count());
+
+                foreach (ZeroRoadIntersection intersection in entry.Value)
+                {
+                    Debug.Log("intersection=" + intersection.ToString());
+                    intersection.RenderVertices();
+                    i++;
+                }
+            }
         }
 
     }
@@ -221,8 +233,9 @@ public class ZeroRoad
         else return false;
     }
 
-    public bool GetRoadIntersections()
+    public Dictionary<string, List<ZeroRoadIntersection>> GetRoadIntersections()
     {
+        Dictionary<string, List<ZeroRoadIntersection>> intersectionsByRoadName = new();
         Dictionary<string, List<ZeroLaneIntersection>> leftIntersectionsByRoadName =
                      new ZeroCollisionMap(
                         roadName: this.Name,
@@ -245,12 +258,12 @@ public class ZeroRoad
 
                 ZeroLaneIntersection[] leftIntersections =
                    leftIntersectionsByRoadName[intersectingRoadName]
-                   .OrderBy(e => e.PrimaryLengthSoFar)
+                   .OrderBy(e => (e.IntersectionPoints.LeftStart - e.PrimaryLane.Segments[0].TopPlane.LeftStart).magnitude)
                    .ToArray();
 
                 ZeroLaneIntersection[] rightIntersections =
                     rightIntersectionsByRoadName[intersectingRoadName]
-                    .OrderBy(e => e.PrimaryLengthSoFar)
+                   .OrderBy(e => (e.IntersectionPoints.LeftStart - e.PrimaryLane.Segments[0].TopPlane.LeftStart).magnitude)
                     .ToArray();
 
                 List<ZeroRoadIntersection> roadIntersections = new();
@@ -259,36 +272,32 @@ public class ZeroRoad
                     && leftIntersections.Length == 2
                     && leftIntersections.Length == rightIntersections.Length)
                 {
-                    for (int i = 0; i < leftIntersections.Length; i++)
+                    ZeroLaneIntersection leftStartIntersection = leftIntersections[0];
+                    ZeroLaneIntersection rightStartIntersection = rightIntersections[0];
+                    ZeroLaneIntersection leftEndIntersection = leftIntersections[1];
+                    ZeroLaneIntersection rightEndIntersection = rightIntersections[1];
+                    if (leftStartIntersection.IntersectingLane.ParentRoad.Name
+                            .Equals(leftEndIntersection.IntersectingLane.ParentRoad.Name)
+                        && leftStartIntersection.IntersectingLane.ParentRoad.Name
+                            .Equals(rightStartIntersection.IntersectingLane.ParentRoad.Name)
+                        && rightStartIntersection.IntersectingLane.ParentRoad.Name
+                            .Equals(rightEndIntersection.IntersectingLane.ParentRoad.Name))
                     {
-                        ZeroLaneIntersection leftStartIntersection = leftIntersections[0];
-                        ZeroLaneIntersection rightStartIntersection = rightIntersections[0];
-                        ZeroLaneIntersection leftEndIntersection = leftIntersections[1];
-                        ZeroLaneIntersection rightEndIntersection = rightIntersections[1];
-                        if (
-                            leftStartIntersection.IntersectingLane.ParentRoad.Name
-                                .Equals(leftEndIntersection.IntersectingLane.ParentRoad.Name)
-                            && leftStartIntersection.IntersectingLane.ParentRoad.Name
-                                .Equals(rightStartIntersection.IntersectingLane.ParentRoad.Name)
-                            && rightStartIntersection.IntersectingLane.ParentRoad.Name
-                                .Equals(rightEndIntersection.IntersectingLane.ParentRoad.Name))
+                        if (!intersectionsByRoadName.ContainsKey(intersectingRoadName))
                         {
-                            if (!this.RoadIntersectionsByName.ContainsKey(intersectingRoadName))
-                            {
-                                this.RoadIntersectionsByName[intersectingRoadName] = new();
-                            }
-                            this.RoadIntersectionsByName[intersectingRoadName].Add(new ZeroRoadIntersection(
-                                primaryLengthSoFar: leftIntersections[0].PrimaryLengthSoFar,
-                                leftStartIntersection: leftIntersections[0],
-                                rightStartIntersection: rightIntersections[0],
-                                leftEndIntersection: leftIntersections[1],
-                                rightEndIntersection: rightIntersections[1]
-                            ));
+                            intersectionsByRoadName[intersectingRoadName] = new();
                         }
+                        intersectionsByRoadName[intersectingRoadName].Add(new ZeroRoadIntersection(
+                            name: this.Name + intersectingRoadName + "I" + intersectionsByRoadName[intersectingRoadName].Count(),
+                            leftStartIntersection: leftStartIntersection,
+                            rightStartIntersection: rightStartIntersection,
+                            leftEndIntersection: leftEndIntersection,
+                            rightEndIntersection: rightEndIntersection
+                        ));
                     }
                 }
             }
         }
-        return true;
+        return intersectionsByRoadName;
     }
 }

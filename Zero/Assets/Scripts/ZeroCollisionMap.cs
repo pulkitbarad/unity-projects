@@ -233,12 +233,13 @@ public class ZeroCollisionMap
                 {
                     intersectionsByRoadName[collidingRoadName] = new();
                 }
+                string laneIntersectionName = this.PrimaryLane.Name + leftStartCollisions[0].CollidingSegment.ParentLane.Name + "I0";
                 intersectionsByRoadName[collidingRoadName].Add(
                 new ZeroLaneIntersection(
-                    name: this.PrimaryLane.Name + leftStartCollisions[0].CollidingSegment.ParentLane.Name + "I0",
-                    primaryLengthSoFar: leftStartCollisions[0].PrimarySegment.LengthSofar,
+                    name: laneIntersectionName,
                     intersectionPoints:
                         new ZeroParallelogram(
+                            name: laneIntersectionName + "P",
                             leftStart: leftStartCollisions[0].CollisionPoint,
                             rightStart: rightStartCollisions[0].CollisionPoint,
                             leftEnd: leftEndCollisions[0].CollisionPoint,
@@ -252,12 +253,13 @@ public class ZeroCollisionMap
                 //Vice versa, left (and right) end points farther from their ray origin point used in collision detection   
                 if (leftStartCollisions.Count() == 2)
                 {
+                    laneIntersectionName = this.PrimaryLane.Name + leftStartCollisions[0].CollidingSegment.ParentLane.Name + "I1";
                     intersectionsByRoadName[collidingRoadName].Add(
                     new ZeroLaneIntersection(
-                        name: this.PrimaryLane.Name + leftStartCollisions[1].CollidingSegment.ParentLane.Name + "I1",
-                    primaryLengthSoFar: leftStartCollisions[1].PrimarySegment.LengthSofar,
+                        name: laneIntersectionName,
                         intersectionPoints:
                             new ZeroParallelogram(
+                                name: laneIntersectionName + "P",
                                 leftStart: leftStartCollisions[1].CollisionPoint,
                                 rightStart: rightStartCollisions[1].CollisionPoint,
                                 leftEnd: leftEndCollisions[1].CollisionPoint,

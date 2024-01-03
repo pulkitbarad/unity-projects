@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class ZeroRoadLane
@@ -91,6 +92,17 @@ public class ZeroRoadLane
             segments[vertexIndex] = newSegment;
         }
         return segments;
+    }
+    public override string ToString()
+    {
+        return "ZeroLaneIntersection("
+        + "\n Name:" + this.Name
+        + "\n LaneIndex:" + this.LaneIndex.ToString()
+        + "\n Width:" + this.Width.ToString()
+        + "\n Height:" + this.Height.ToString()
+        + "\n Segments:" + this.Segments.Select(e => e.Name).ToCommaSeparatedString()
+        + "\n ParentRoad:" + this.ParentRoad.Name
+        + ")";
     }
 
 }

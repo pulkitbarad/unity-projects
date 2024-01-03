@@ -9,11 +9,9 @@ public class ZeroLaneIntersection
     public ZeroParallelogram IntersectionPoints;
     public ZeroRoadLane PrimaryLane;
     public ZeroRoadLane IntersectingLane;
-    public float PrimaryLengthSoFar;
 
     public ZeroLaneIntersection(
         string name,
-        float primaryLengthSoFar,
         ZeroParallelogram intersectionPoints,
         ZeroRoadLane primaryLane,
         ZeroRoadLane intersectingLane)
@@ -22,6 +20,15 @@ public class ZeroLaneIntersection
         this.IntersectionPoints = intersectionPoints;
         this.PrimaryLane = primaryLane;
         this.IntersectingLane = intersectingLane;
-        this.PrimaryLengthSoFar = primaryLengthSoFar;
+    }
+
+    public override string ToString()
+    {
+        return "ZeroLaneIntersection("
+        + "\n Name:" + this.Name
+        + "\n PrimaryLane:" + this.PrimaryLane.ToString()
+        + "\n IntersectingLane:" + this.IntersectingLane.ToString()
+        + "\n IntersectionPoints:" + this.IntersectionPoints.ToString()
+        + ")";
     }
 }

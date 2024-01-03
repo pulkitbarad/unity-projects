@@ -120,6 +120,7 @@ public class ZeroRoadSegment
         Vector3 halfDown = -0.5f * this.Height * this.Up;
         ZeroParallelogram topPlane =
             new(
+                name: this.Name + "Top",
                 leftStart: startPoints[0] + halfUp,
                 rightStart: startPoints[1] + halfUp,
                 leftEnd: endPoints[1] + halfUp,
@@ -127,6 +128,7 @@ public class ZeroRoadSegment
 
         ZeroParallelogram bottomPlane =
             new(
+                name: this.Name + "Bottom",
                  leftStart: startPoints[0] + halfDown,
                  rightStart: startPoints[1] + halfDown,
                  leftEnd: endPoints[1] + halfDown,
