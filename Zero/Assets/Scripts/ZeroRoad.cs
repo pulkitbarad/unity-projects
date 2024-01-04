@@ -88,16 +88,17 @@ public class ZeroRoad
                 controlPoints[0] = ZeroRoadBuilder.StartObject.transform.position;
                 controlPoints[1] = ZeroRoadBuilder.EndObject.transform.position;
             }
+
             this.Lanes =
                GetLanes(
                    centerVertices:
                    ZeroCurvedLine.FindBazierLinePoints(
                        controlPoints));
             this.IntersectionsByRoadName = GetRoadIntersections();
+
             int i = 0;
             foreach (var entry in this.IntersectionsByRoadName)
             {
-
                 foreach (ZeroRoadIntersection intersection in entry.Value)
                 {
                     // intersection.RenderCornerVertices();
@@ -106,7 +107,6 @@ public class ZeroRoad
                 }
             }
         }
-
     }
 
     private ZeroRoadLane[] GetLanes(Vector3[] centerVertices)

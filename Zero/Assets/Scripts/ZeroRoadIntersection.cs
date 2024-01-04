@@ -124,7 +124,7 @@ public class ZeroRoadIntersection
                     this._grid.LSLE,
                     this._grid.LSEM
                 },
-                new int[] { 2, 0, 1, 0, 2, 4 });
+                new int[] { 0, 1, 2, 0, 2, 4, 4, 2, 3 });
         this.RightStartCorner =
             new ZeroPolygon3D(this.Name + "RSC",
                 new Vector3[] {
@@ -134,7 +134,7 @@ public class ZeroRoadIntersection
                     this._grid.RSRE,
                     this._grid.RSEM
                 },
-                new int[] { });
+                new int[] { 2, 1, 0, 2, 0, 4, 4, 3, 2 });
         this.RightEndCorner =
             new ZeroPolygon3D(this.Name + "REC",
                 new Vector3[] {
@@ -144,18 +144,18 @@ public class ZeroRoadIntersection
                     this._grid.RELE,
                     this._grid.RELM
                 },
-                new int[] { });
+                new int[] { 1, 0, 2, 2, 0, 4, 4, 3, 2 });
         this.LeftEndCorner =
             new ZeroPolygon3D(
                 this.Name + "LEC",
                 new Vector3[] {
-                    this._grid.LESM,
-                    this._grid.LELS,
-                    this._grid.LELE,
+                    this._grid.LERM,
                     this._grid.LERE,
-                    this._grid.LERM
+                    this._grid.LELE,
+                    this._grid.LELS,
+                    this._grid.LESM
                 },
-                new int[] { });
+                new int[] { 0, 2, 1, 0, 4, 2, 4, 3, 2 });
     }
 
     private void GetCrosswalks()
