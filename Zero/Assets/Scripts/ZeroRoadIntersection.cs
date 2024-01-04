@@ -10,10 +10,10 @@ public class ZeroRoadIntersection
     public ZeroParallelogram FrontCrosswalk;
     public ZeroParallelogram LeftCrosswalk;
     public ZeroParallelogram RightCrosswalk;
-    public ZeroTriangle LeftStartCorner;
-    public ZeroTriangle RightStartCorner;
-    public ZeroTriangle LeftEndCorner;
-    public ZeroTriangle RightEndCorner;
+    public ZeroPolygon3D LeftStartCorner;
+    public ZeroPolygon3D RightStartCorner;
+    public ZeroPolygon3D LeftEndCorner;
+    public ZeroPolygon3D RightEndCorner;
     private ZeroCrossRoadGrid _grid = new();
     private readonly ZeroLaneIntersection _leftStartIntersection;
     private readonly ZeroLaneIntersection _rightStartIntersection;
@@ -41,6 +41,18 @@ public class ZeroRoadIntersection
         public Vector3 RELE;
         public Vector3 RERS;
         public Vector3 RERE;
+
+        //Midpoints for the sidewalk corner shapes
+        //
+        public Vector3 LSEM;
+        public Vector3 LSRM;
+        public Vector3 RSLM;
+        public Vector3 RSEM;
+        //
+        public Vector3 RESM;
+        public Vector3 RELM;
+        public Vector3 LESM;
+        public Vector3 LERM;
 
     }
 
@@ -82,14 +94,68 @@ public class ZeroRoadIntersection
         this._grid.RELE = this._rightEndIntersection.IntersectionPoints.LeftEnd;
         this._grid.RERS = this._rightEndIntersection.IntersectionPoints.RightStart;
         this._grid.RERE = this._rightEndIntersection.IntersectionPoints.RightEnd;
+        //
+        //
+        this._grid.LSEM = this._grid.LSRE + 0.5f * (this._grid.LSLE - this._grid.LSRE);
+        this._grid.LSRM = this._grid.LSRS + 0.5f * (this._grid.LSRE - this._grid.LSRS);
+        //
+        this._grid.LSEM = this._grid.LSRE + 0.5f * (this._grid.LSLE - this._grid.LSRE);
+        this._grid.LSRM = this._grid.LSRS + 0.5f * (this._grid.LSRE - this._grid.LSRS);
+        //
+        this._grid.RSLM = this._grid.RSLS + 0.5f * (this._grid.RSLE - this._grid.RSLS);
+        this._grid.RSEM = this._grid.RSRE + 0.5f * (this._grid.RSLE - this._grid.RSRE);
+        //
+        this._grid.RELM = this._grid.RELS + 0.5f * (this._grid.RELE - this._grid.RELS);
+        this._grid.RESM = this._grid.RERS + 0.5f * (this._grid.RELS - this._grid.RERS);
+        //
+        this._grid.LESM = this._grid.LELS + 0.5f * (this._grid.LERS - this._grid.LELS);
+        this._grid.LERM = this._grid.LERS + 0.5f * (this._grid.LERE - this._grid.LERS);
     }
 
     private void GetSidewalkCorners()
     {
-        this.LeftStartCorner = new ZeroTriangle(this.Name + "LSC", this._grid.LSRS, this._grid.LSLS, this._grid.LSLE);
-        this.RightEndCorner = new ZeroTriangle(this.Name + "REC", this._grid.RELE, this._grid.RERE, this._grid.RERS);
-        this.LeftEndCorner = new ZeroTriangle(this.Name + "LEC", this._grid.LELS, this._grid.LELE, this._grid.LERE);
-        this.RightStartCorner = new ZeroTriangle(this.Name + "RSC", this._grid.RSRE, this._grid.RSRS, this._grid.RSLS);
+
+        this.LeftStartCorner =
+            new ZeroPolygon3D(this.Name + "LSC",
+                new Vector3[] {
+                    this._grid.LSRM,
+                    this._grid.LSRS,
+                    this._grid.LSLS,
+                    this._grid.LSLE,
+                    this._grid.LSEM
+                },
+                new int[] { 2, 0, 1, 0, 2, 4 });
+        this.RightStartCorner =
+            new ZeroPolygon3D(this.Name + "RSC",
+                new Vector3[] {
+                    this._grid.RSLM,
+                    this._grid.RSLS,
+                    this._grid.RSRS,
+                    this._grid.RSRE,
+                    this._grid.RSEM
+                },
+                new int[] { });
+        this.RightEndCorner =
+            new ZeroPolygon3D(this.Name + "REC",
+                new Vector3[] {
+                    this._grid.RESM,
+                    this._grid.RERS,
+                    this._grid.RERE,
+                    this._grid.RELE,
+                    this._grid.RELM
+                },
+                new int[] { });
+        this.LeftEndCorner =
+            new ZeroPolygon3D(
+                this.Name + "LEC",
+                new Vector3[] {
+                    this._grid.LESM,
+                    this._grid.LELS,
+                    this._grid.LELE,
+                    this._grid.LERE,
+                    this._grid.LERM
+                },
+                new int[] { });
     }
 
     private void GetCrosswalks()
@@ -149,6 +215,7 @@ public class ZeroRoadIntersection
         this.LeftEndCorner.RenderVertices(color ?? Color.gray);
         this.RightEndCorner.RenderVertices(color ?? Color.cyan);
     }
+
     public void RenderCrosswalkVertices(Color? color = null)
     {
         this.BackCrosswalk.RenderVertices(Color.blue);

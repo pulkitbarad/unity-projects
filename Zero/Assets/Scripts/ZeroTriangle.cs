@@ -2,16 +2,18 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class ZeroTriangle
+public class ZeroPolygon3D
 {
 
     public string Name;
     public Vector3[] Vertices;
+    public Vector3[] Triangles;
 
-    public ZeroTriangle(string name, params Vector3[] vertices)
+    public ZeroPolygon3D(string name, Vector3[] vertices, Vector3[] triangles)
     {
         this.Name = name;
         this.Vertices = vertices;
+        this.Triangles = triangles;
     }
 
     public Vector3[] GetVertices()
