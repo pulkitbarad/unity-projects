@@ -142,15 +142,18 @@ public class ZeroRoadIntersection
         + ")";
     }
 
-    public void RenderVertices()
+    public void RenderCornerVertices(Color? color = null)
     {
-        this.FrontCrosswalk.RenderVertices(Color.yellow);
+        this.LeftStartCorner.RenderVertices(color ?? Color.white);
+        this.RightStartCorner.RenderVertices(color ?? Color.black);
+        this.LeftEndCorner.RenderVertices(color ?? Color.gray);
+        this.RightEndCorner.RenderVertices(color ?? Color.cyan);
+    }
+    public void RenderCrosswalkVertices(Color? color = null)
+    {
         this.BackCrosswalk.RenderVertices(Color.blue);
+        this.FrontCrosswalk.RenderVertices(Color.yellow);
         this.LeftCrosswalk.RenderVertices(Color.red);
         this.RightCrosswalk.RenderVertices(Color.green);
-        this.LeftStartCorner.RenderVertices(Color.white);
-        this.RightStartCorner.RenderVertices(Color.black);
-        this.LeftEndCorner.RenderVertices(Color.gray);
-        this.RightEndCorner.RenderVertices(Color.cyan);
     }
 }

@@ -56,7 +56,7 @@ public class ZeroParallelogram
     }
     public void RenderVertices(Color? color = null)
     {
-        Color newColor = color.HasValue ? color.Value : Color.yellow;
+        Color newColor = color ?? Color.yellow;
         ZeroRenderer.RenderSphere(this.LeftStart, this.Name + "LeftStart", color: newColor);
         ZeroRenderer.RenderSphere(this.RightStart, this.Name + "RightStart", color: newColor);
         ZeroRenderer.RenderSphere(this.LeftEnd, this.Name + "LeftEnd", color: newColor);

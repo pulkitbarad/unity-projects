@@ -18,7 +18,7 @@ public class ZeroRoadSegment
     public float Width;
     public float Height;
     public float Length;
-    public float LengthSofar;
+    public float RoadLengthSofar;
     public float OldLength;
     public Vector3 CenterStart;
     public Vector3 CenterEnd;
@@ -32,7 +32,7 @@ public class ZeroRoadSegment
          int index,
          float width,
          float height,
-         float lengthSoFar,
+         float roadLengthSoFar,
          Vector3 centerStart,
          Vector3 centerEnd,
          Vector3 nextCenterEnd,
@@ -67,7 +67,7 @@ public class ZeroRoadSegment
 
         this.Forward = this.CenterEnd - this.CenterStart;
         this.Length = this.Forward.magnitude;
-        this.LengthSofar = lengthSoFar + this.Length;
+        this.RoadLengthSofar = roadLengthSoFar + this.Length;
 
         ZeroParallelogram[] planes = this.GetPlanes();
 

@@ -97,12 +97,11 @@ public class ZeroRoad
             int i = 0;
             foreach (var entry in this.IntersectionsByRoadName)
             {
-                Debug.Log("entry.Value=" + entry.Value.Count());
 
                 foreach (ZeroRoadIntersection intersection in entry.Value)
                 {
-                    Debug.Log("intersection=" + intersection.ToString());
-                    intersection.RenderVertices();
+                    // intersection.RenderCornerVertices();
+                    intersection.RenderCrosswalkVertices();
                     i++;
                 }
             }
@@ -252,48 +251,57 @@ public class ZeroRoad
 
         if (leftIntersectionsByRoadName.Count() == rightIntersectionsByRoadName.Count())
         {
-            List<string> listOfRoads = leftIntersectionsByRoadName.Keys.ToList();
+            List<string> listOfRoads = leftIntersectionsByRoadName.Keys.Intersect(rightIntersectionsByRoadName.Keys).ToList();
             foreach (var intersectingRoadName in listOfRoads)
             {
 
                 ZeroLaneIntersection[] leftIntersections =
                    leftIntersectionsByRoadName[intersectingRoadName]
-                   .OrderBy(e => (e.IntersectionPoints.LeftStart - e.PrimaryLane.Segments[0].TopPlane.LeftStart).magnitude)
+                   .OrderBy(e => e.PrimaryDistance)
+                   .ThenBy(e => (e.IntersectionPoints.LeftStart - e.PrimaryLane.Segments[0].TopPlane.LeftStart).magnitude)
                    .ToArray();
 
                 ZeroLaneIntersection[] rightIntersections =
                     rightIntersectionsByRoadName[intersectingRoadName]
-                   .OrderBy(e => (e.IntersectionPoints.LeftStart - e.PrimaryLane.Segments[0].TopPlane.LeftStart).magnitude)
+                    .OrderBy(e => e.PrimaryDistance)
+                    .ThenBy(e => (e.IntersectionPoints.LeftStart - e.PrimaryLane.Segments[0].TopPlane.LeftStart).magnitude)
                     .ToArray();
 
                 List<ZeroRoadIntersection> roadIntersections = new();
 
                 if (leftIntersections != null
-                    && leftIntersections.Length == 2
+                    && (leftIntersections.Length == 2 || leftIntersections.Length == 4)
                     && leftIntersections.Length == rightIntersections.Length)
                 {
-                    ZeroLaneIntersection leftStartIntersection = leftIntersections[0];
-                    ZeroLaneIntersection rightStartIntersection = rightIntersections[0];
-                    ZeroLaneIntersection leftEndIntersection = leftIntersections[1];
-                    ZeroLaneIntersection rightEndIntersection = rightIntersections[1];
-                    if (leftStartIntersection.IntersectingLane.ParentRoad.Name
-                            .Equals(leftEndIntersection.IntersectingLane.ParentRoad.Name)
-                        && leftStartIntersection.IntersectingLane.ParentRoad.Name
-                            .Equals(rightStartIntersection.IntersectingLane.ParentRoad.Name)
-                        && rightStartIntersection.IntersectingLane.ParentRoad.Name
-                            .Equals(rightEndIntersection.IntersectingLane.ParentRoad.Name))
+                    if (!intersectionsByRoadName.ContainsKey(intersectingRoadName))
+                        intersectionsByRoadName[intersectingRoadName] = new();
+
+                    intersectionsByRoadName[intersectingRoadName].Add(new ZeroRoadIntersection(
+                        name: this.Name + intersectingRoadName + "I" + intersectionsByRoadName[intersectingRoadName].Count(),
+                        leftStartIntersection: leftIntersections[0],
+                        rightStartIntersection: rightIntersections[0],
+                        leftEndIntersection: leftIntersections[1],
+                        rightEndIntersection: rightIntersections[1]
+                    ));
+                    // leftIntersections[0].IntersectionPoints.RenderVertices(Color.white);
+                    // rightIntersections[0].IntersectionPoints.RenderVertices(Color.black);
+                    // leftIntersections[1].IntersectionPoints.RenderVertices(Color.gray);
+                    // rightIntersections[1].IntersectionPoints.RenderVertices(Color.cyan);
+
+
+                    if (leftIntersections.Length == 4)
                     {
-                        if (!intersectionsByRoadName.ContainsKey(intersectingRoadName))
-                        {
-                            intersectionsByRoadName[intersectingRoadName] = new();
-                        }
                         intersectionsByRoadName[intersectingRoadName].Add(new ZeroRoadIntersection(
                             name: this.Name + intersectingRoadName + "I" + intersectionsByRoadName[intersectingRoadName].Count(),
-                            leftStartIntersection: leftStartIntersection,
-                            rightStartIntersection: rightStartIntersection,
-                            leftEndIntersection: leftEndIntersection,
-                            rightEndIntersection: rightEndIntersection
+                            leftStartIntersection: leftIntersections[2],
+                            rightStartIntersection: rightIntersections[2],
+                            leftEndIntersection: leftIntersections[3],
+                            rightEndIntersection: rightIntersections[3]
                         ));
+                        // leftIntersections[2].IntersectionPoints.RenderVertices(Color.green);
+                        // rightIntersections[2].IntersectionPoints.RenderVertices(Color.red);
+                        // leftIntersections[3].IntersectionPoints.RenderVertices(Color.blue);
+                        // rightIntersections[3].IntersectionPoints.RenderVertices(Color.yellow);
                     }
                 }
             }
