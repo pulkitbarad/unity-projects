@@ -9,8 +9,8 @@ using UnityEngine.UIElements;
 public class ZeroRoadSegment
 {
     public string Name;
-    public ZeroParallelogram TopPlane;
-    public ZeroParallelogram BottomPlane;
+
+    public ZeroPolygon3D SegmentBounds;
     public Vector3 Center;
     public Vector3 Forward;
     public Vector3 Up;
@@ -20,6 +20,7 @@ public class ZeroRoadSegment
     public float Length;
     public float RoadLengthSofar;
     public float OldLength;
+    public bool IsPrimitiveShape = true;
     public Vector3 CenterStart;
     public Vector3 CenterEnd;
     public Vector3 NextCenterEnd;
@@ -49,11 +50,40 @@ public class ZeroRoadSegment
         this.CenterEnd = centerEnd;
 
         this.NextCenterEnd = nextCenterEnd;
+        this.RoadLengthSofar = roadLengthSoFar;
 
         this.Up = GetUpVector(
             start: centerStart,
             end: centerEnd);
 
+        ComputeSegmentDimensions();
+
+        this.SegmentBounds =
+            new ZeroPolygon3D(
+                name: this.Name,
+                height: this.Height,
+                up: this.Up,
+                centerPlane: this.GetCenterPlane());
+        // this.IsPrimitiveShape = ValidatePrimitiveShape();
+
+        this.InitSegmentObject();
+        if (this.Index > 0)
+            this.PreviousSibling.NextSibling = this;
+    }
+
+    private bool ValidatePrimitiveShape()
+    {
+        ZeroParallelogram topPlane = this.SegmentBounds.TopPlane;
+        var topPlaneAngle =
+            Math.Round(
+                Vector3.Angle(
+                    topPlane.RightStart - topPlane.LeftStart,
+                    topPlane.LeftEnd - topPlane.LeftStart));
+        return topPlaneAngle == 90 || topPlaneAngle == 270;
+    }
+
+    private void ComputeSegmentDimensions()
+    {
         float extension = GetSegmentExtension();
 
         this.Forward = this.CenterEnd - this.CenterStart;
@@ -67,15 +97,8 @@ public class ZeroRoadSegment
 
         this.Forward = this.CenterEnd - this.CenterStart;
         this.Length = this.Forward.magnitude;
-        this.RoadLengthSofar = roadLengthSoFar + this.Length;
+        this.RoadLengthSofar += this.Length;
 
-        ZeroParallelogram[] planes = this.GetPlanes();
-
-        this.TopPlane = planes[0];
-        this.BottomPlane = planes[1];
-        this.InitSegmentObject();
-        if (this.PreviousSibling != null)
-            this.PreviousSibling.NextSibling = this;
     }
 
     private Vector3 GetSegmentCenter()
@@ -106,7 +129,7 @@ public class ZeroRoadSegment
         }
     }
 
-    private ZeroParallelogram[] GetPlanes()
+    private ZeroParallelogram GetCenterPlane()
     {
         Vector3[] startPoints = GetParallelPoints(
                 originPoint: this.CenterStart,
@@ -116,34 +139,22 @@ public class ZeroRoadSegment
                 originPoint: this.CenterEnd,
                 targetPoint: this.CenterStart,
                 distance: this.Width * 0.5f);
-        Vector3 halfUp = 0.5f * this.Height * this.Up;
-        Vector3 halfDown = -0.5f * this.Height * this.Up;
-        ZeroParallelogram topPlane =
-            new(
-                name: this.Name + "Top",
-                leftStart: startPoints[0] + halfUp,
-                rightStart: startPoints[1] + halfUp,
-                leftEnd: endPoints[1] + halfUp,
-                rightEnd: endPoints[0] + halfUp);
+        return new(
+            name: this.Name + "Center",
+            leftStart: startPoints[0],
+            rightStart: startPoints[1],
+            leftEnd: endPoints[1],
+            rightEnd: endPoints[0]);
 
-        ZeroParallelogram bottomPlane =
-            new(
-                name: this.Name + "Bottom",
-                 leftStart: startPoints[0] + halfDown,
-                 rightStart: startPoints[1] + halfDown,
-                 leftEnd: endPoints[1] + halfDown,
-                 rightEnd: endPoints[0] + halfDown);
-
-        return new ZeroParallelogram[] { topPlane, bottomPlane };
     }
 
     private void InitSegmentObject()
     {
         GameObject segmentObject =
-            ZeroController.FindGameObject(this.Name, true)
-            ?? GameObject.CreatePrimitive(PrimitiveType.Cube);
+             this.IsPrimitiveShape
+                ? ZeroObjectManager.GetNewObject(this.Name, ZeroObjectManager.PoolType.ROAD_CUBE)
+                : ZeroObjectManager.GetNewObject(this.Name, ZeroObjectManager.PoolType.ROAD_POLYGON_3D);
 
-        segmentObject.name = this.Name;
         segmentObject.transform.position = this.Center;
         segmentObject.transform.rotation = Quaternion.LookRotation(this.Forward);
         segmentObject.transform.localScale = new Vector3(this.Width, this.Height, this.Length);
@@ -160,50 +171,31 @@ public class ZeroRoadSegment
         segmentObject.SetActive(true);
         this.SegmentObject = segmentObject;
         ZeroRoadBuilder.BuiltRoadSegments[this.Name] = this;
-        // RenderMesh(
-        //     topPlane: this.TopPlane,
-        //     bottomPlane: this.BottomPlane,
-        //     segment: segmentObject);
 
+        if (!this.IsPrimitiveShape)
+            RenderMesh();
     }
 
     private void RenderMesh()
     {
-        Vector3[] allVertices = new Vector3[2 * this.BottomPlane.GetVertices().Length];
+        List<Vector3> allVertices = new();
+        List<int> allTriangles = new();
 
-        for (int i = 0; i < this.TopPlane.GetVertices().Length; i++)
-        {
-            allVertices[i] =
-                this.SegmentObject.transform.InverseTransformPoint(this.TopPlane.GetVertices()[i]);
-            allVertices[i + this.TopPlane.GetVertices().Length] =
-                this.SegmentObject.transform.InverseTransformPoint(this.BottomPlane.GetVertices()[i]);
-        }
+        allVertices.AddRange(this.SegmentBounds.TopPlane.GetMeshVertices(this.SegmentObject));
+        allVertices.AddRange(this.SegmentBounds.BottomPlane.GetMeshVertices(this.SegmentObject));
+        allTriangles.AddRange(this.SegmentBounds.TopPlane.GetMeshTriangles(this.SegmentObject));
+        allTriangles.AddRange(this.SegmentBounds.BottomPlane.GetMeshTriangles(this.SegmentObject));
+        allTriangles.AddRange(this.SegmentBounds.LeftPlane.GetMeshTriangles(this.SegmentObject));
+        allTriangles.AddRange(this.SegmentBounds.RightPlane.GetMeshTriangles(this.SegmentObject));
 
-        Mesh mesh = new() { name = "Generated" };
+        if (this.Index == 0)
+            allTriangles.AddRange(this.SegmentBounds.BackPlane.GetMeshTriangles(this.SegmentObject));
+        else if (this.Index == this.ParentLane.ParentRoad.NumberOfSegmentsPerLane)
+            allTriangles.AddRange(this.SegmentBounds.FrontPlane.GetMeshTriangles(this.SegmentObject));
+
+        Mesh mesh = new() { name = this.Name + "Mesh" };
         this.SegmentObject.AddComponent<MeshRenderer>();
-        mesh.vertices =
-            new Vector3[]{
-                    //Top
-                    new (-0.5f,0.5f,1),
-                    new (0.5f,0.5f,1),
-                    new (0.5f,0.5f,-1),
-                    new (-0.5f,0.5f,-1),
-                    new (-0.5f,0.5f,-1),
-                    new (-0.5f,-0.5f,1),
-                    //Bottom
-                    new (0.5f,-0.5f,1),
-                    new (0.5f,-0.5f,-1),
-                    new (-0.5f,-0.5f,-1),
-                    new (-0.5f,-0.5f,-1),
-                };
-        mesh.triangles = new int[] { 
-                //Top
-                0,1, 2,
-                0, 2, 3, 
-                //Bottom
-                4,5,6,
-                4,6,7
-                };
+        mesh.vertices = allVertices.ToArray();
         this.SegmentObject.AddComponent<MeshFilter>().mesh = mesh;
         mesh.RecalculateBounds();
     }

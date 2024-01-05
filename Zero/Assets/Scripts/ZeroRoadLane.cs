@@ -11,7 +11,6 @@ public class ZeroRoadLane
     public float Width;
     public float Height;
     public ZeroRoadSegment[] Segments;
-    public GameObject LaneObject;
     public ZeroRoad ParentRoad;
 
     public ZeroRoadLane(
@@ -26,7 +25,6 @@ public class ZeroRoadLane
         this.Width = width;
         this.Height = height;
         this.Name = this.ParentRoad.Name + "L" + laneIndex;
-        InitLaneObject(position: centerVertices[0]);
         this.Segments = GetRoadSegments(
             centerVertices: centerVertices); ;
     }
@@ -43,18 +41,6 @@ public class ZeroRoadLane
         }
     }
 
-    public void InitLaneObject(Vector3 position)
-    {
-        GameObject laneObject =
-            ZeroController.FindGameObject(this.Name, true)
-            ?? new GameObject();
-
-        laneObject.name = this.Name;
-        laneObject.transform.position = position;
-        laneObject.transform.SetParent(this.ParentRoad.RoadObject.transform);
-        laneObject.SetActive(true);
-        this.LaneObject = laneObject;
-    }
 
     private ZeroRoadSegment[] GetRoadSegments(
         Vector3[] centerVertices)

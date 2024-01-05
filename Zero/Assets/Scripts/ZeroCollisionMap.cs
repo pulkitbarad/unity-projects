@@ -45,7 +45,7 @@ public class ZeroCollisionMap
 
     private List<Collider> GetPartialOverlaps(ZeroRoadSegment segment)
     {
-        ZeroParallelogram segmentTopPlane = segment.TopPlane;
+        ZeroParallelogram segmentTopPlane = segment.SegmentBounds.TopPlane;
         Collider[] overlaps = Physics.OverlapBox(
             center: segment.SegmentObject.transform.position,
             halfExtents: segment.SegmentObject.transform.localScale / 2,
@@ -74,7 +74,7 @@ public class ZeroCollisionMap
         foreach (Collider collider in overalppingColliders)
         {
             ZeroRoadSegment colliderSegment = ZeroRoadBuilder.BuiltRoadSegments[collider.gameObject.name];
-            ZeroParallelogram primaryTopPlane = primarySegment.TopPlane;
+            ZeroParallelogram primaryTopPlane = primarySegment.SegmentBounds.TopPlane;
 
             if (GetRayHitPointOnSegment(
                 origin: primaryTopPlane.LeftStart,
@@ -310,7 +310,7 @@ public class ZeroCollisionMap
         out Vector3? hitPoint)
     {
         ZeroRoadSegment colliderSegment = ZeroRoadBuilder.BuiltRoadSegments[collider.gameObject.name];
-        ZeroParallelogram colliderTopPlane = colliderSegment.TopPlane;
+        ZeroParallelogram colliderTopPlane = colliderSegment.SegmentBounds.TopPlane;
         Vector3 direction = end - origin;
 
         if (collider.Raycast(
@@ -321,13 +321,13 @@ public class ZeroCollisionMap
                 colliderSegment.PreviousSibling == null
                 || !IsPointInsideBounds(
                     rayHitInfo.point,
-                    colliderSegment.PreviousSibling.TopPlane.GetVertices()
+                    colliderSegment.PreviousSibling.SegmentBounds.TopPlane.GetVertices()
                 ))
             && (
                 colliderSegment.NextSibling == null
                 || !IsPointInsideBounds(
                     rayHitInfo.point,
-                    colliderSegment.NextSibling.TopPlane.GetVertices()
+                    colliderSegment.NextSibling.SegmentBounds.TopPlane.GetVertices()
                 ))
             && !IsPointOnLineSegment(
                     rayHitInfo.point,
@@ -347,7 +347,7 @@ public class ZeroCollisionMap
 
     private static bool IsColliderWithinbounds(Collider collider, Vector3[] bounds)
     {
-        ZeroParallelogram colliderTopPlane = ZeroRoadBuilder.BuiltRoadSegments[collider.gameObject.name].TopPlane;
+        ZeroParallelogram colliderTopPlane = ZeroRoadBuilder.BuiltRoadSegments[collider.gameObject.name].SegmentBounds.TopPlane;
         return colliderTopPlane.GetVertices().Length > 0 && IsRectWithinBounds(colliderTopPlane, bounds);
     }
 

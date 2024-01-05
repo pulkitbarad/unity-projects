@@ -3,6 +3,7 @@ using UnityEngine;
 using System;
 using UnityEditor;
 using System.Text;
+using System.Collections.Generic;
 
 public class ZeroController : MonoBehaviour
 {
@@ -50,8 +51,8 @@ public class ZeroController : MonoBehaviour
 
     void Start()
     {
+        ZeroObjectManager.InitialisePools();
         ZeroCameraMovement.Initialise();
-        ZeroRenderer.Initialise();
         ZeroUIHandler.Initialise();
         ZeroRoadBuilder.Initialise();
     }
@@ -60,27 +61,6 @@ public class ZeroController : MonoBehaviour
     {
         ZeroUIHandler.HandleInputChanges();
     }
-
-
-    public static GameObject FindGameObject(string objectName, bool findDisabled)
-    {
-        if (findDisabled)
-        {
-            foreach (GameObject go in Resources.FindObjectsOfTypeAll(typeof(GameObject)) as GameObject[])
-            {
-                if (!EditorUtility.IsPersistent(go.transform.root.gameObject)
-                     && !(go.hideFlags == HideFlags.NotEditable || go.hideFlags == HideFlags.HideAndDontSave))
-                {
-                    if (go.name == objectName)
-                        return go;
-                }
-            }
-            return null;
-        }
-        else
-            return GameObject.Find(objectName);
-    }
-
 
     // public static string GetPositionHexCode(params Vector3[] positions)
     // {

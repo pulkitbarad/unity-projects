@@ -1,5 +1,7 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class ZeroParallelogram
@@ -54,6 +56,7 @@ public class ZeroParallelogram
         + ", RightEnd:" + this.RightEnd
         + ")";
     }
+
     public void RenderVertices(Color? color = null)
     {
         Color newColor = color ?? Color.yellow;
@@ -61,5 +64,31 @@ public class ZeroParallelogram
         ZeroRenderer.RenderSphere(this.RightStart, this.Name + "RightStart", color: newColor);
         ZeroRenderer.RenderSphere(this.LeftEnd, this.Name + "LeftEnd", color: newColor);
         ZeroRenderer.RenderSphere(this.RightEnd, this.Name + "RightEnd", color: newColor);
+    }
+
+    public Vector3[] GetMeshVertices(GameObject gameObject)
+    {
+        return this.GetVertices().ToList()
+            .Select(
+                (point) =>
+                {
+                    Vector3 localPoint = gameObject.transform.InverseTransformPoint(point);
+                    Vector3 newPoint =
+                        new(
+                            (float)Math.Round(localPoint.x, 2),
+                            (float)Math.Round(localPoint.y, 2),
+                            (float)Math.Round(localPoint.z, 2));
+                    return newPoint;
+                }
+                ).ToArray();
+    }
+
+    public int[] GetMeshTriangles(GameObject gameObject)
+    {
+        return new int[]{
+                0,2,1,
+                //
+                1,2,3
+            };
     }
 }

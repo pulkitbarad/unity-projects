@@ -15,13 +15,13 @@ public class ZeroRoad
     public float SidewalkHeight;
     public int VertexCount;
     public int NumberOfLanes;
+    public int NumberOfSegmentsPerLane;
     public int LeftSidewalkIndex;
     public int RightSidewalkIndex;
     public bool IsCurved = true;
     public bool HasBusLane = false;
     public ZeroRoadLane[] Lanes;
     public ZeroRoadLane[] Sidewalks;
-    public GameObject RoadObject;
     public Dictionary<string, List<ZeroRoadIntersection>> IntersectionsByRoadName = new();
 
     public ZeroRoad(
@@ -51,12 +51,6 @@ public class ZeroRoad
 
     private void InitRoadObject()
     {
-        this.RoadObject =
-            ZeroController.FindGameObject(this.Name, true)
-                ?? new GameObject(this.Name);
-        this.RoadObject.transform.localScale = Vector3.zero;
-        this.RoadObject.transform.SetParent(ZeroRoadBuilder.BuiltRoadsParent.transform);
-        this.RoadObject.SetActive(true);
         ZeroRoadBuilder.BuiltRoads[this.Name] = this;
     }
 
@@ -89,11 +83,14 @@ public class ZeroRoad
                 controlPoints[1] = ZeroRoadBuilder.EndObject.transform.position;
             }
 
+            Vector3[] centerVertices =
+                   ZeroCurvedLine.FindBazierLinePoints(
+                       controlPoints);
+            this.NumberOfSegmentsPerLane = centerVertices.Length;
+
             this.Lanes =
                GetLanes(
-                   centerVertices:
-                   ZeroCurvedLine.FindBazierLinePoints(
-                       controlPoints));
+                   centerVertices: centerVertices);
             this.IntersectionsByRoadName = GetRoadIntersections();
 
             int i = 0;
@@ -258,13 +255,13 @@ public class ZeroRoad
                 ZeroLaneIntersection[] leftIntersections =
                    leftIntersectionsByRoadName[intersectingRoadName]
                    .OrderBy(e => e.PrimaryDistance)
-                   .ThenBy(e => (e.IntersectionPoints.LeftStart - e.PrimaryLane.Segments[0].TopPlane.LeftStart).magnitude)
+                   .ThenBy(e => (e.IntersectionPoints.LeftStart - e.PrimaryLane.Segments[0].SegmentBounds.TopPlane.LeftStart).magnitude)
                    .ToArray();
 
                 ZeroLaneIntersection[] rightIntersections =
                     rightIntersectionsByRoadName[intersectingRoadName]
                     .OrderBy(e => e.PrimaryDistance)
-                    .ThenBy(e => (e.IntersectionPoints.LeftStart - e.PrimaryLane.Segments[0].TopPlane.LeftStart).magnitude)
+                    .ThenBy(e => (e.IntersectionPoints.LeftStart - e.PrimaryLane.Segments[0].SegmentBounds.TopPlane.LeftStart).magnitude)
                     .ToArray();
 
                 List<ZeroRoadIntersection> roadIntersections = new();

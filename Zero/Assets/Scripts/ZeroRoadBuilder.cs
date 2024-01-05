@@ -22,8 +22,6 @@ public class ZeroRoadBuilder
     public static GameObject StartObject;
     public static GameObject ControlObject;
     public static GameObject EndObject;
-    public static GameObject LeftLineObject;
-    public static GameObject RightLineObject;
     public static ZeroRoad CurrentActiveRoad;
     public static readonly Dictionary<string, Vector3> InitialStaticLocalScale = new();
     public static readonly Dictionary<string, ZeroRoad> BuiltRoads = new();
@@ -68,15 +66,6 @@ public class ZeroRoadBuilder
             size: 2,
             color: new UnityEngine.Color(0.70f, 0.45f, 0f));
 
-        LeftLineObject =
-        ZeroRenderer.GetLineObject(
-            name: RoadLeftEdgeObjectName,
-            parentTransform: RoadControlsParent.transform);
-
-        RightLineObject =
-        ZeroRenderer.GetLineObject(
-            name: RoadRightEdgeObjectName,
-            parentTransform: RoadControlsParent.transform);
     }
 
     public static GameObject InitStaticObject(
@@ -85,7 +74,7 @@ public class ZeroRoadBuilder
         UnityEngine.Color? color)
     {
 
-        GameObject gameObject = ZeroController.FindGameObject(objectName, true);
+        GameObject gameObject = ZeroObjectManager.FindGameObject(objectName, true);
 
         if (gameObject == null)
         {
@@ -120,8 +109,6 @@ public class ZeroRoadBuilder
         EndObject.SetActive(true);
         if (isCurved)
             ControlObject.SetActive(true);
-        LeftLineObject.SetActive(true);
-        RightLineObject.SetActive(true);
     }
 
     public static void HideControlObjects()
@@ -129,8 +116,6 @@ public class ZeroRoadBuilder
         StartObject.SetActive(false);
         ControlObject.SetActive(false);
         EndObject.SetActive(false);
-        LeftLineObject.SetActive(false);
-        RightLineObject.SetActive(false);
     }
 
     public static void StartBuilding(bool isCurved)
@@ -171,15 +156,6 @@ public class ZeroRoadBuilder
         {
             ControlObject.transform.position = InitCurveControlPosition(isCurved);
         }
-        LeftLineObject =
-        ZeroRenderer.GetLineObject(
-            name: RoadLeftEdgeObjectName,
-            parentTransform: RoadControlsParent.transform);
-
-        RightLineObject =
-        ZeroRenderer.GetLineObject(
-            name: RoadRightEdgeObjectName,
-            parentTransform: RoadControlsParent.transform);
     }
 
 
