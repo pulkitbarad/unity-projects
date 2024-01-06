@@ -41,13 +41,23 @@ public class ZeroRoadBuilder
 
     public static void Initialise()
     {
+        InitialiseConfig();
         RoadControlsParent = new GameObject(RoadControlsObjectName);
         BuiltRoadsParent = new GameObject(BuiltRoadsObjectName);
         BuiltRoadSegmentsParent = new GameObject(BuiltRoadSegmentsObjectName);
         BuiltIntersectionsParent = new GameObject(BuiltIntersectionsObjectName);
         InitControlObjects(true);
         HideControlObjects();
-
+    }
+    private static void InitialiseConfig()
+    {
+        ZeroRoadBuilder.RoadMaxChangeInAngle = 15;
+        ZeroRoadBuilder.RoadMaxVertexCount = 30;
+        ZeroRoadBuilder.RoadMinVertexCount = 6;
+        ZeroRoadBuilder.RoadSegmentMinLength = 3;
+        ZeroRoadBuilder.RoadLaneHeight = 0.25f;
+        ZeroRoadBuilder.RoadLaneWidth = 3;
+        ZeroRoadBuilder.RoadSideWalkHeight = 0.3f;
     }
 
     public static void InitControlObjects(bool isCurved)
@@ -74,7 +84,7 @@ public class ZeroRoadBuilder
         UnityEngine.Color? color)
     {
 
-        GameObject gameObject = ZeroObjectManager.GetNewObject(objectName, ZeroObjectManager.PoolType.STATIC_CYLINDER);
+        GameObject gameObject = ZeroObjectManager.GetNewObject(objectName, ZeroObjectManager.ObjectType.STATIC_CYLINDER);
 
         if (gameObject == null)
         {

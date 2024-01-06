@@ -149,11 +149,7 @@ public class ZeroCurvedLine
             curvePoints.Add(curve);
         }
         curvePoints.Add(endPosition);
-        ZeroRenderer.RenderLine(
-            line.name,
-            Color.red,
-            width: 10f,
-            linePoints: curvePoints.ToArray());
+        
         return curvePoints;
     }
 }

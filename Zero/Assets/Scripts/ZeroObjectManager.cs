@@ -7,7 +7,7 @@ using UnityEngine;
 
 public static class ZeroObjectManager
 {
-    public static class PoolType
+    public static class ObjectType
     {
         public static int DEBUG_SPHERE = 0;
         public static int ROAD_CUBE = 1;
@@ -33,10 +33,10 @@ public static class ZeroObjectManager
 
     private static class PoolReference
     {
-        public static List<GameObject> DebugSphere = new();
-        public static List<GameObject> RoadCube = new();
-        public static List<GameObject> RoadPolygon3D = new();
-        public static List<GameObject> StaticCylinder = new();
+        public static GameObject[] DebugSphere;
+        public static GameObject[] RoadCube;
+        public static GameObject[] RoadPolygon3D;
+        public static GameObject[] StaticCylinder;
     }
 
     public static class PoolBatchSize
@@ -55,8 +55,27 @@ public static class ZeroObjectManager
         public static int StaticCylinder;
     }
 
-    public static void InitialisePools()
+    public static void Initialise()
     {
+        InitialiseConfig();
+        InitialisePools();
+    }
+
+    private static void InitialiseConfig()
+    {
+        ZeroObjectManager.PoolBatchSize.DebugSphere = 3000;
+        ZeroObjectManager.PoolBatchSize.RoadCube = 5000;
+        ZeroObjectManager.PoolBatchSize.RoadPolygon3D = 1000;
+        ZeroObjectManager.PoolBatchSize.StaticCylinder = 5;
+    }
+
+    private static void InitialisePools()
+    {
+
+        PoolReference.DebugSphere = new GameObject[PoolBatchSize.DebugSphere];
+        PoolReference.RoadCube = new GameObject[PoolBatchSize.RoadCube];
+        PoolReference.RoadPolygon3D = new GameObject[PoolBatchSize.RoadPolygon3D];
+        PoolReference.StaticCylinder = new GameObject[PoolBatchSize.StaticCylinder];
 
         for (int i = 0;
             i < Math.Max(
@@ -70,45 +89,48 @@ public static class ZeroObjectManager
 
             if (i < PoolBatchSize.DebugSphere)
             {
-                newObject = new(PoolPrefix.DebugSphere + i);
+                newObject = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                newObject.name = PoolPrefix.DebugSphere + i;
                 newObject.transform.SetParent(PoolParent.DebugSphere.transform);
                 newObject.SetActive(false);
-                PoolReference.DebugSphere.Add(newObject);
+                PoolReference.DebugSphere[i] = newObject;
 
             }
             if (i < PoolBatchSize.RoadCube)
             {
-                newObject = new(PoolPrefix.RoadCube + i);
+                newObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                newObject.name = PoolPrefix.RoadCube + i;
                 newObject.transform.SetParent(PoolParent.RoadCube.transform);
                 newObject.SetActive(false);
-                PoolReference.RoadCube.Add(newObject);
+                PoolReference.RoadCube[i] = newObject;
             }
             if (i < PoolBatchSize.RoadPolygon3D)
             {
                 newObject = new(PoolPrefix.RoadPolygon3D + i);
                 newObject.transform.SetParent(PoolParent.RoadPolygon3D.transform);
                 newObject.SetActive(false);
-                PoolReference.RoadPolygon3D.Add(newObject);
+                PoolReference.RoadPolygon3D[i] = newObject;
             }
             if (i < PoolBatchSize.StaticCylinder)
             {
-                newObject = new(PoolPrefix.RoadPolygon3D + i);
-                newObject.transform.SetParent(PoolParent.RoadPolygon3D.transform);
+                newObject = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                newObject.name = PoolPrefix.StaticCylinder + i;
+                newObject.transform.SetParent(PoolParent.StaticCylinder.transform);
                 newObject.SetActive(false);
-                PoolReference.RoadPolygon3D.Add(newObject);
+                PoolReference.StaticCylinder[i] = newObject;
             }
         }
     }
 
     public static GameObject GetNewObject(string name, int objectType)
     {
-        if (objectType == PoolType.DEBUG_SPHERE)
+        if (objectType == ObjectType.DEBUG_SPHERE)
             return GetNewDebugObject(name);
-        else if (objectType == PoolType.ROAD_CUBE)
+        else if (objectType == ObjectType.ROAD_CUBE)
             return GetNewRoadCubeObject(name);
-        else if (objectType == PoolType.ROAD_POLYGON_3D)
+        else if (objectType == ObjectType.ROAD_POLYGON_3D)
             return GetNewRoadPolygon3DObject(name);
-        else if (objectType == PoolType.STATIC_CYLINDER)
+        else if (objectType == ObjectType.STATIC_CYLINDER)
             return GetNewStaticCylinderObject(name);
 
         //TO-DO: Log to the server about unsupported object classification
@@ -119,7 +141,7 @@ public static class ZeroObjectManager
 
     public static bool ReleaseObject(string name, int objectType)
     {
-        if (objectType == PoolType.DEBUG_SPHERE)
+        if (objectType == ObjectType.DEBUG_SPHERE)
         {
             var matches = PoolReference.DebugSphere.Where(e => e.name.Equals(name));
             if (matches.Count() > 0)
@@ -128,7 +150,7 @@ public static class ZeroObjectManager
                 return true;
             }
         }
-        else if (objectType == PoolType.ROAD_CUBE)
+        else if (objectType == ObjectType.ROAD_CUBE)
         {
             var matches = PoolReference.RoadCube.Where(e => e.name.Equals(name));
             if (matches.Count() > 0)
@@ -137,7 +159,7 @@ public static class ZeroObjectManager
                 return true;
             }
         }
-        else if (objectType == PoolType.ROAD_POLYGON_3D)
+        else if (objectType == ObjectType.ROAD_POLYGON_3D)
         {
             var matches = PoolReference.RoadPolygon3D.Where(e => e.name.Equals(name));
             if (matches.Count() > 0)
@@ -146,7 +168,7 @@ public static class ZeroObjectManager
                 return true;
             }
         }
-        else if (objectType == PoolType.STATIC_CYLINDER)
+        else if (objectType == ObjectType.STATIC_CYLINDER)
         {
             var matches = PoolReference.StaticCylinder.Where(e => e.name.Equals(name));
             if (matches.Count() > 0)
@@ -168,7 +190,7 @@ public static class ZeroObjectManager
     private static GameObject GetNewDebugObject(string name)
     {
 
-        for (int i = 0; i < PoolReference.DebugSphere.Count; i++)
+        for (int i = 0; i < PoolReference.DebugSphere.Length; i++)
         {
             var newDebugObject = PoolReference.DebugSphere[i];
             if (!newDebugObject.activeInHierarchy)
@@ -180,7 +202,7 @@ public static class ZeroObjectManager
             }
         }
 
-        if (PoolReference.DebugSphere.Count < PoolMaxSize.DebugSphere)
+        if (PoolReference.DebugSphere.Length < PoolMaxSize.DebugSphere)
         {
             ExtendDebugObjectPool();
             return GetNewRoadCubeObject(name);
@@ -194,7 +216,7 @@ public static class ZeroObjectManager
     private static GameObject GetNewRoadCubeObject(string name)
     {
 
-        for (int i = 0; i < PoolReference.RoadCube.Count; i++)
+        for (int i = 0; i < PoolReference.RoadCube.Length; i++)
         {
             var newRoadObject = PoolReference.RoadCube[i];
             if (!newRoadObject.activeInHierarchy)
@@ -206,7 +228,7 @@ public static class ZeroObjectManager
             }
         }
 
-        if (PoolReference.RoadCube.Count < PoolMaxSize.RoadCube)
+        if (PoolReference.RoadCube.Length < PoolMaxSize.RoadCube)
         {
             ExtendRoadCubeObjectPool();
             return GetNewRoadCubeObject(name);
@@ -220,7 +242,7 @@ public static class ZeroObjectManager
     private static GameObject GetNewRoadPolygon3DObject(string name)
     {
 
-        for (int i = 0; i < PoolReference.RoadPolygon3D.Count; i++)
+        for (int i = 0; i < PoolReference.RoadPolygon3D.Length; i++)
         {
             var newRoadObject = PoolReference.RoadPolygon3D[i];
             if (!newRoadObject.activeInHierarchy)
@@ -232,7 +254,7 @@ public static class ZeroObjectManager
             }
         }
 
-        if (PoolReference.RoadPolygon3D.Count < PoolMaxSize.RoadPolygon3D)
+        if (PoolReference.RoadPolygon3D.Length < PoolMaxSize.RoadPolygon3D)
         {
             ExtendRoadPolygon3DObjectPool();
             return GetNewRoadCubeObject(name);
@@ -245,7 +267,7 @@ public static class ZeroObjectManager
 
     private static GameObject GetNewStaticCylinderObject(string name)
     {
-        for (int i = 0; i < PoolReference.StaticCylinder.Count; i++)
+        for (int i = 0; i < PoolReference.StaticCylinder.Length; i++)
         {
             var newRoadObject = PoolReference.StaticCylinder[i];
             if (!newRoadObject.activeInHierarchy)
@@ -265,34 +287,37 @@ public static class ZeroObjectManager
 
     private static void ExtendDebugObjectPool()
     {
-        for (int i = PoolReference.DebugSphere.Count; i < PoolReference.DebugSphere.Count + PoolMaxSize.DebugSphere; i++)
+        Array.Resize(ref PoolReference.DebugSphere, PoolReference.DebugSphere.Length + PoolMaxSize.DebugSphere);
+        for (int i = PoolReference.DebugSphere.Length; i < PoolReference.DebugSphere.Length + PoolMaxSize.DebugSphere; i++)
         {
-            GameObject newDebugObject = new(PoolPrefix.DebugSphere + i);
-            newDebugObject.transform.SetParent(PoolParent.DebugSphere.transform);
-            newDebugObject.SetActive(false);
-            PoolReference.DebugSphere.Add(newDebugObject);
+            GameObject newObject = new(PoolPrefix.DebugSphere + i);
+            newObject.transform.SetParent(PoolParent.DebugSphere.transform);
+            newObject.SetActive(false);
+            PoolReference.DebugSphere[i] = newObject;
         }
     }
 
     private static void ExtendRoadCubeObjectPool()
     {
-        for (int i = PoolReference.RoadCube.Count; i < PoolReference.RoadCube.Count + PoolMaxSize.RoadCube; i++)
+        Array.Resize(ref PoolReference.RoadCube, PoolReference.RoadCube.Length + PoolMaxSize.RoadCube);
+        for (int i = PoolReference.RoadCube.Length; i < PoolReference.RoadCube.Length + PoolMaxSize.RoadCube; i++)
         {
-            GameObject newRoadObject = new(PoolPrefix.RoadCube + i);
-            newRoadObject.transform.SetParent(PoolParent.RoadCube.transform);
-            newRoadObject.SetActive(false);
-            PoolReference.RoadCube.Add(newRoadObject);
+            GameObject newObject = new(PoolPrefix.RoadCube + i);
+            newObject.transform.SetParent(PoolParent.RoadCube.transform);
+            newObject.SetActive(false);
+            PoolReference.RoadCube[i] = newObject;
         }
     }
 
     private static void ExtendRoadPolygon3DObjectPool()
     {
-        for (int i = PoolReference.RoadPolygon3D.Count; i < PoolReference.RoadPolygon3D.Count + PoolMaxSize.RoadPolygon3D; i++)
+        Array.Resize(ref PoolReference.RoadPolygon3D, PoolReference.RoadPolygon3D.Length + PoolMaxSize.RoadPolygon3D);
+        for (int i = PoolReference.RoadPolygon3D.Length; i < PoolReference.RoadPolygon3D.Length + PoolMaxSize.RoadPolygon3D; i++)
         {
-            GameObject newRoadObject = new(PoolPrefix.RoadPolygon3D + i);
-            newRoadObject.transform.SetParent(PoolParent.RoadPolygon3D.transform);
-            newRoadObject.SetActive(false);
-            PoolReference.RoadPolygon3D.Add(newRoadObject);
+            GameObject newObject = new(PoolPrefix.RoadPolygon3D + i);
+            newObject.transform.SetParent(PoolParent.RoadPolygon3D.transform);
+            newObject.SetActive(false);
+            PoolReference.RoadPolygon3D[i] = newObject;
         }
     }
 

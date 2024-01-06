@@ -116,46 +116,49 @@ public class ZeroRoadIntersection
     {
 
         this.LeftStartCorner =
-            new ZeroPolygon3D(this.Name + "LSC",
-                new Vector3[] {
+            new ZeroPolygon3D(
+                name: this.Name + "LSC",
+                height: _leftStartIntersection.PrimaryLane.Height,
+                topVertices: new Vector3[] {
                     this._grid.LSRM,
                     this._grid.LSRS,
                     this._grid.LSLS,
                     this._grid.LSLE,
                     this._grid.LSEM
-                },
-                new int[] { 0, 1, 2, 0, 2, 4, 4, 2, 3 });
+                });
         this.RightStartCorner =
-            new ZeroPolygon3D(this.Name + "RSC",
-                new Vector3[] {
+            new ZeroPolygon3D(
+                name: this.Name + "RSC",
+                height: _leftStartIntersection.PrimaryLane.Height,
+                topVertices: new Vector3[] {
                     this._grid.RSLM,
                     this._grid.RSLS,
                     this._grid.RSRS,
                     this._grid.RSRE,
                     this._grid.RSEM
-                },
-                new int[] { 2, 1, 0, 2, 0, 4, 4, 3, 2 });
+                });
         this.RightEndCorner =
-            new ZeroPolygon3D(this.Name + "REC",
-                new Vector3[] {
+            new ZeroPolygon3D(
+                name: this.Name + "REC",
+                height: _leftStartIntersection.PrimaryLane.Height,
+                topVertices: new Vector3[] {
                     this._grid.RESM,
                     this._grid.RERS,
                     this._grid.RERE,
                     this._grid.RELE,
                     this._grid.RELM
-                },
-                new int[] { 1, 0, 2, 2, 0, 4, 4, 3, 2 });
+                });
         this.LeftEndCorner =
             new ZeroPolygon3D(
                 this.Name + "LEC",
+                 _leftStartIntersection.PrimaryLane.Height,
                 new Vector3[] {
                     this._grid.LERM,
                     this._grid.LERE,
                     this._grid.LELE,
                     this._grid.LELS,
                     this._grid.LESM
-                },
-                new int[] { 0, 2, 1, 0, 4, 2, 4, 3, 2 });
+                });
     }
 
     private void GetCrosswalks()
@@ -163,34 +166,34 @@ public class ZeroRoadIntersection
         this.LeftCrosswalk =
             new ZeroPolygon(
                 name: this.Name + "LCW",
-                leftStart: this._grid.LELS,
-                rightStart: this._grid.LSLE,
-                leftEnd: this._grid.LERS,
-                rightEnd: this._grid.LSRE
+                 this._grid.LELS,
+                 this._grid.LERS,
+                this._grid.LSRE,
+                this._grid.LSLE
             );
         this.RightCrosswalk =
             new ZeroPolygon(
                 name: this.Name + "RCW",
-                leftStart: this._grid.RSRE,
-                rightStart: this._grid.RERS,
-                leftEnd: this._grid.RSLE,
-                rightEnd: this._grid.RELS
+                this._grid.RSRE,
+                this._grid.RSLE,
+                this._grid.RELS,
+                this._grid.RERS
             );
         this.FrontCrosswalk =
             new ZeroPolygon(
                 name: this.Name + "FCW",
-                leftStart: this._grid.RELE,
-                rightStart: this._grid.LERE,
-                leftEnd: this._grid.RELS,
-                rightEnd: this._grid.LERS
+                this._grid.RELE,
+                this._grid.RELS,
+                this._grid.LERS,
+                this._grid.LERE
             );
         this.BackCrosswalk =
             new ZeroPolygon(
                 name: this.Name + "BCW",
-                leftStart: this._grid.LSRS,
-                rightStart: this._grid.RSLS,
-                leftEnd: this._grid.LSRE,
-                rightEnd: this._grid.RSLE
+                this._grid.LSRS,
+                this._grid.LSRE,
+                this._grid.RSLE,
+                this._grid.RSLS
             );
     }
     public override string ToString()

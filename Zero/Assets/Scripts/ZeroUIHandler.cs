@@ -79,8 +79,8 @@ public class ZeroUIHandler
         }
         else if (_singleTouchAction.phase == InputActionPhase.Performed)
         {
-            Vector2 currentTouch0 = _touch0Action.ReadValue<Vector2>();
-            if (_isRoadMenuActive)
+             Vector2 currentTouch0 = _touch0Action.ReadValue<Vector2>();
+             if (_isRoadMenuActive)
                 ZeroRoadBuilder.CurrentActiveRoad.Build(false, currentTouch0);
         }
 

@@ -51,7 +51,7 @@ public class ZeroRenderer
         UnityEngine.Color? color = null)
     {
 
-        GameObject sphere = ZeroObjectManager.GetNewObject(sphereName, ZeroObjectManager.PoolType.DEBUG_SPHERE);
+        GameObject sphere = ZeroObjectManager.GetNewObject(sphereName, ZeroObjectManager.ObjectType.DEBUG_SPHERE);
 
         sphere.transform.localScale = new Vector3(size, size, size);
         sphere.transform.position = position;
@@ -62,7 +62,6 @@ public class ZeroRenderer
             sphere.transform.SetParent(parentTransform);
         else
             sphere.transform.SetParent(DebuggingParent.transform);
-        sphere.SetActive(true);
 
         return sphere;
     }

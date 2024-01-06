@@ -20,6 +20,7 @@ public class ZeroCameraMovement
 
     public static void Initialise()
     {
+        InitConfig();
         Transform rootTransform = MainCameraRoot.transform;
         rootTransform.position = new Vector3(-100f, 0f, 15f);
 
@@ -38,6 +39,17 @@ public class ZeroCameraMovement
         cameraTransform.SetParent(holderTransform);
 
         _cameraInitialHeight = holderTransform.localPosition.y;
+    }
+
+    private static void InitConfig()
+    {
+        ZeroCameraMovement.MainCameraMoveSpeed = 0.5f;
+        ZeroCameraMovement.MainCameraSmoothing = 2;
+        ZeroCameraMovement.MainCameraZoomSpeed = 50;
+        ZeroCameraMovement.MainCameraRotationSpeed = 50;
+        ZeroCameraMovement.MainCameraTiltSpeed = 50;
+        ZeroCameraMovement.MainCameraTiltAngleThreshold = 10;
+
     }
 
     public static void MoveCamera(Vector2 direction)

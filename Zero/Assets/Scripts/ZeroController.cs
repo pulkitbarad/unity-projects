@@ -7,19 +7,19 @@ using System.Collections.Generic;
 
 public class ZeroController : MonoBehaviour
 {
-    [SerializeField] public float MainCameraMoveSpeed;// = 0.5f;
-    [SerializeField] public float MainCameraSmoothing;// = 2f;
-    [SerializeField] public float MainCameraZoomSpeed;// = 50f;
-    [SerializeField] public float MainCameraRotationSpeed;// = 50f;
-    [SerializeField] public float MainCameraTiltSpeed;// = 50f;
-    [SerializeField] public float MainCameraTiltAngleThreshold;// = 10f;
-    [SerializeField] public float RoadMaxChangeInAngle;// = 15f;
-    [SerializeField] public int RoadMaxVertexCount;// = 30;
-    [SerializeField] public int RoadMinVertexCount;// = 6;
-    [SerializeField] public float RoadSegmentMinLength;// = 3;
-    [SerializeField] public float RoadLaneHeight;// = 0.25;
-    [SerializeField] public float RoadLaneWidth;// = 3;
-    [SerializeField] public float RoadSideWalkHeight;// = 0.3;
+    [SerializeField] public float MainCameraMoveSpeed;
+    [SerializeField] public float MainCameraSmoothing;
+    [SerializeField] public float MainCameraZoomSpeed;
+    [SerializeField] public float MainCameraRotationSpeed;
+    [SerializeField] public float MainCameraTiltSpeed;
+    [SerializeField] public float MainCameraTiltAngleThreshold;
+    [SerializeField] public float RoadMaxChangeInAngle;
+    [SerializeField] public int RoadMaxVertexCount;
+    [SerializeField] public int RoadMinVertexCount;
+    [SerializeField] public float RoadSegmentMinLength;
+    [SerializeField] public float RoadLaneHeight;
+    [SerializeField] public float RoadLaneWidth;
+    [SerializeField] public float RoadSideWalkHeight;
 
     [SerializeField] public GameObject MainCameraRoot;
     [SerializeField] public GameObject MainCameraAnchor;
@@ -28,33 +28,18 @@ public class ZeroController : MonoBehaviour
 
     void Awake()
     {
-        ZeroCameraMovement.MainCameraMoveSpeed = MainCameraMoveSpeed;
-        ZeroCameraMovement.MainCameraSmoothing = MainCameraSmoothing;
-        ZeroCameraMovement.MainCameraZoomSpeed = MainCameraZoomSpeed;
-        ZeroCameraMovement.MainCameraRotationSpeed = MainCameraRotationSpeed;
-        ZeroCameraMovement.MainCameraTiltSpeed = MainCameraTiltSpeed;
-        ZeroCameraMovement.MainCameraTiltAngleThreshold = MainCameraTiltAngleThreshold;
-        ZeroRoadBuilder.RoadMaxChangeInAngle = RoadMaxChangeInAngle;
-        ZeroRoadBuilder.RoadMaxVertexCount = RoadMaxVertexCount;
-        ZeroRoadBuilder.RoadMinVertexCount = RoadMinVertexCount;
-        ZeroRoadBuilder.RoadSegmentMinLength = RoadSegmentMinLength;
-        ZeroRoadBuilder.RoadLaneHeight = RoadLaneHeight;
-        ZeroRoadBuilder.RoadLaneWidth = RoadLaneWidth;
-        ZeroRoadBuilder.RoadSideWalkHeight = RoadSideWalkHeight;
-
         ZeroCameraMovement.MainCamera = MainCamera;
         ZeroCameraMovement.MainCameraHolder = MainCameraHolder;
         ZeroCameraMovement.MainCameraRoot = MainCameraRoot;
         ZeroCameraMovement.MainCameraAnchor = MainCameraAnchor;
     }
 
-
     void Start()
     {
-        ZeroObjectManager.InitialisePools();
+        ZeroObjectManager.Initialise();
+        ZeroRoadBuilder.Initialise();
         ZeroCameraMovement.Initialise();
         ZeroUIHandler.Initialise();
-        ZeroRoadBuilder.Initialise();
     }
 
     void Update()

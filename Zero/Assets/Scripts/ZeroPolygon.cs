@@ -37,16 +37,16 @@ public class ZeroPolygon
 
     public ZeroPolygon(
         string name,
-        params Vector3[] vertices
+        params Vector3[] clockwiseVertices
         )
     {
         this.Name = name;
-        this.Vertices = vertices;
-        this.VertexCount = vertices.Length;
-        this.LeftStart = vertices[0];
-        this.LeftEnd = vertices[1];
-        this.RightEnd = vertices[2];
-        this.RightStart = vertices[3];
+        this.Vertices = clockwiseVertices;
+        this.VertexCount = clockwiseVertices.Length;
+        this.LeftStart = clockwiseVertices[0];
+        this.LeftEnd = clockwiseVertices[1];
+        this.RightEnd = clockwiseVertices[2];
+        this.RightStart = clockwiseVertices[3];
     }
 
     public override string ToString()

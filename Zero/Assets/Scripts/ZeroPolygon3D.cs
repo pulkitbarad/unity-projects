@@ -52,71 +52,91 @@ public class ZeroPolygon3D
         Vector3[] bottomVertices)
     {
         this.Name = name;
-        AssignVerticesWorld(topVertices, bottomVertices);
-        AssignVertexPositions();
-        AssignStandardPlanes(topVertices, bottomVertices);
+        Initialise(topVertices, bottomVertices);
     }
 
-    private void AssignVerticesWorld(
+    public ZeroPolygon3D(
+        string name,
+        float height,
+        Vector3[] topVertices)
+    {
+        Vector3 heightAndDirection = Vector3.Cross(topVertices[0], topVertices[1]).normalized * height;
+        this.Name = name;
+        Vector3[] bottomVertices = topVertices.Select(e => heightAndDirection + e).ToArray();
+        Initialise(topVertices, bottomVertices);
+    }
+
+    private void Initialise(
         Vector3[] topVertices,
         Vector3[] bottomVertices)
     {
-        this._verticesWorld = new Vector3[topVertices.Length * 2];
-        this._verticesWorld.AddRange(topVertices);
-        this._verticesWorld.AddRange(bottomVertices);
+        InitialiseVerticesWorld(topVertices, bottomVertices);
+        InitialiseVertexPositions();
+        InitialiseStandardPlanes(topVertices, bottomVertices);
+
     }
 
-    private void AssignStandardPlanes(
+    private void InitialiseVerticesWorld(
+        Vector3[] topVertices,
+        Vector3[] bottomVertices)
+    {
+        List<Vector3> verticesList = new();
+        verticesList.AddRange(topVertices);
+        verticesList.AddRange(bottomVertices);
+        this._verticesWorld = verticesList.ToArray();
+    }
+
+    private void InitialiseVertexPositions()
+    {
+        int topVertexCount = this._verticesWorld.Length / 2;
+        this._sideVertexPositions = new int[topVertexCount][];
+        for (int i = 0; i < topVertexCount; i++)
+        {
+            this._sideVertexPositions[i] = new int[4];
+            this._sideVertexPositions[i][0] = i;
+            this._sideVertexPositions[i][1] = i + topVertexCount;
+            this._sideVertexPositions[i][2] = i == topVertexCount - 1 ? topVertexCount : i + topVertexCount + 1;
+            this._sideVertexPositions[i][3] = i == topVertexCount - 1 ? 0 : i + 1;
+        }
+        this._topVertexPositions =
+            Enumerable.Range(0, topVertexCount - 1)
+            .ToArray();
+        this._bottomVertexPositions =
+            Enumerable.Range(0, topVertexCount - 1)
+            .Select(i => i + topVertexCount)
+            .ToArray();
+    }
+
+    private void InitialiseStandardPlanes(
         Vector3[] topVertices,
         Vector3[] bottomVertices
     )
     {
         this.TopPlane = new ZeroPolygon(
             name: this.Name + "T",
-            vertices: topVertices
+            clockwiseVertices: topVertices
         );
         this.BottomPlane = new ZeroPolygon(
             name: this.Name + "B",
-            vertices: bottomVertices
+            clockwiseVertices: bottomVertices
         );
         this.LeftPlane = new ZeroPolygon(
             name: this.Name + "L",
-            vertices: this._sideVertexPositions[LeftSideIndex].Select(i => this._verticesWorld[i]).ToArray()
+            clockwiseVertices: this._sideVertexPositions[LeftSideIndex].Select(i => this._verticesWorld[i]).ToArray()
         );
         this.FrontPlane = new ZeroPolygon(
             name: this.Name + "F",
-            vertices: this._sideVertexPositions[FrontSideIndex].Select(i => this._verticesWorld[i]).ToArray()
+            clockwiseVertices: this._sideVertexPositions[FrontSideIndex].Select(i => this._verticesWorld[i]).ToArray()
         );
         this.RightPlane = new ZeroPolygon(
             name: this.Name + "R",
-            vertices: this._sideVertexPositions[RightSideIndex].Select(i => this._verticesWorld[i]).ToArray()
+            clockwiseVertices: this._sideVertexPositions[RightSideIndex].Select(i => this._verticesWorld[i]).ToArray()
         );
         this.BackPlane = new ZeroPolygon(
             name: this.Name + "K",
-            vertices: this._sideVertexPositions[BackSideIndex].Select(i => this._verticesWorld[i]).ToArray()
+            clockwiseVertices: this._sideVertexPositions[BackSideIndex].Select(i => this._verticesWorld[i]).ToArray()
         );
 
-    }
-
-    private void AssignVertexPositions()
-    {
-        int vertexCount = this._verticesWorld.Length;
-        int vertexCountHalf = this._verticesWorld.Length / 2;
-        this._sideVertexPositions = new int[vertexCount][];
-        for (int i = 0; i < vertexCount; i++)
-        {
-            this._sideVertexPositions[i][0] = i;
-            this._sideVertexPositions[i][1] = i + vertexCount;
-            this._sideVertexPositions[i][2] = i + vertexCount + 1;
-            this._sideVertexPositions[i][2] = i + 1;
-        }
-        this._topVertexPositions =
-            Enumerable.Range(0, vertexCountHalf - 1)
-            .ToArray();
-        this._bottomVertexPositions =
-            Enumerable.Range(0, vertexCountHalf - 1)
-            .Select(i => i + vertexCountHalf)
-            .ToArray();
     }
 
     public Vector3[] GetMeshVertices(GameObject gameObject)
@@ -129,16 +149,7 @@ public class ZeroPolygon3D
         bool renderBottomPlane,
         int[] sidesToRender)
     {
-        int topPlaneVertexCount = this.TopPlane.VertexCount;
-        int numberOfTriangles = 0;
-        if (renderTopPlane)
-            numberOfTriangles += topPlaneVertexCount - 2;
-        if (renderBottomPlane)
-            numberOfTriangles += topPlaneVertexCount - 2;
-        //
-        numberOfTriangles += (topPlaneVertexCount - 2) * sidesToRender.Length;
-
-        int[] triangles = new int[numberOfTriangles * 3];
+        List<int> triangles = new();
         if (renderTopPlane)
             triangles.AddRange(
                 ZeroPolygon.GetMeshTriangles(
@@ -156,6 +167,14 @@ public class ZeroPolygon3D
                 ZeroPolygon.GetMeshTriangles(
                     vertexPositions: this._sideVertexPositions[sideIndex]));
         }
-        return triangles;
+        return triangles.ToArray();
     }
+
+    public void RenderVertices(Color? color = null)
+    {
+        int i = 0;
+        foreach (var point in this._verticesWorld)
+            ZeroRenderer.RenderSphere(point, this.Name + i++.ToString(), color: color ?? Color.yellow);
+    }
+
 }

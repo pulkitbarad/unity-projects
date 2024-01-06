@@ -59,7 +59,7 @@ public class ZeroCollisionMap
             if (ZeroRoadBuilder.BuiltRoadSegments.ContainsKey(colliderGameObjectName)
                 && !ZeroRoadBuilder.BuiltRoadSegments[colliderGameObjectName]
                     .ParentLane.ParentRoad.Name.Equals(this.RoadName)
-                && !IsColliderWithinbounds(collider, segmentTopPlane.GetVertices()))
+                && !IsColliderWithinbounds(collider, segmentTopPlane.Vertices))
             {
                 partialOverlaps.Add(collider);
             }
@@ -258,10 +258,10 @@ public class ZeroCollisionMap
                     intersectionPoints:
                         new ZeroPolygon(
                             name: laneIntersectionName + "P",
-                            leftStart: leftStartCollisions[0].CollisionPoint,
-                            rightStart: rightStartCollisions[0].CollisionPoint,
-                            leftEnd: leftEndCollisions[0].CollisionPoint,
-                            rightEnd: rightEndCollisions[0].CollisionPoint),
+                             leftStartCollisions[0].CollisionPoint,
+                             leftEndCollisions[0].CollisionPoint,
+                             rightEndCollisions[0].CollisionPoint,
+                             rightStartCollisions[0].CollisionPoint),
                     primaryLane: this.PrimaryLane,
                     intersectingLane: leftStartCollisions[0].CollidingSegment.ParentLane));
                 // ZeroRenderer.RenderSphere(leftStartCollisions[0].CollisionPoint, sphereName: laneIntersectionName + "LS", color: Color.white);
@@ -283,10 +283,10 @@ public class ZeroCollisionMap
                         intersectionPoints:
                             new ZeroPolygon(
                                 name: laneIntersectionName + "P",
-                                leftStart: leftStartCollisions[1].CollisionPoint,
-                                rightStart: rightStartCollisions[1].CollisionPoint,
-                                leftEnd: leftEndCollisions[1].CollisionPoint,
-                                rightEnd: rightEndCollisions[1].CollisionPoint),
+                             leftStartCollisions[1].CollisionPoint,
+                             leftEndCollisions[1].CollisionPoint,
+                             rightEndCollisions[1].CollisionPoint,
+                             rightStartCollisions[1].CollisionPoint),
                         primaryLane: this.PrimaryLane,
                         intersectingLane: leftStartCollisions[1].CollidingSegment.ParentLane));
                     // ZeroRenderer.RenderSphere(leftStartCollisions[1].CollisionPoint, sphereName: laneIntersectionName + "LS2", color: Color.green);
@@ -321,13 +321,13 @@ public class ZeroCollisionMap
                 colliderSegment.PreviousSibling == null
                 || !IsPointInsideBounds(
                     rayHitInfo.point,
-                    colliderSegment.PreviousSibling.SegmentBounds.TopPlane.GetVertices()
+                    colliderSegment.PreviousSibling.SegmentBounds.TopPlane.Vertices
                 ))
             && (
                 colliderSegment.NextSibling == null
                 || !IsPointInsideBounds(
                     rayHitInfo.point,
-                    colliderSegment.NextSibling.SegmentBounds.TopPlane.GetVertices()
+                    colliderSegment.NextSibling.SegmentBounds.TopPlane.Vertices
                 ))
             && !IsPointOnLineSegment(
                     rayHitInfo.point,
@@ -348,13 +348,13 @@ public class ZeroCollisionMap
     private static bool IsColliderWithinbounds(Collider collider, Vector3[] bounds)
     {
         ZeroPolygon colliderTopPlane = ZeroRoadBuilder.BuiltRoadSegments[collider.gameObject.name].SegmentBounds.TopPlane;
-        return colliderTopPlane.GetVertices().Length > 0 && IsRectWithinBounds(colliderTopPlane, bounds);
+        return colliderTopPlane.Vertices.Length > 0 && IsRectWithinBounds(colliderTopPlane, bounds);
     }
 
     private static bool IsRectWithinBounds(ZeroPolygon rectangle, Vector3[] bounds)
     {
         for (int i = 0; i < 4; i++)
-            if (!IsPointInsideBounds(rectangle.GetVertices()[i], bounds))
+            if (!IsPointInsideBounds(rectangle.Vertices[i], bounds))
                 return false;
         return true;
     }
