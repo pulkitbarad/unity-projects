@@ -32,14 +32,19 @@ public class ZeroRoadLane
     public void HideAllSegments()
     {
 
-        foreach (ZeroRoadSegment segment in
-            ZeroRoadBuilder.BuiltRoadSegments
-            .Values
-            .Where(e => e.ParentLane.Name.Equals(this.Name)))
+        if (ZeroRoadBuilder.BuiltRoadSegmentsByLane.ContainsKey(this.Name))
         {
-            ZeroObjectManager.ReleaseObjectToPool(
-                segment.SegmentObject,
-                segment.SegmentObjectType);
+            foreach (ZeroRoadSegment segment in
+                ZeroRoadBuilder.BuiltRoadSegmentsByLane[this.Name])
+            {
+                Debug.Log("Hide segment=" + segment.Name);
+                ZeroObjectManager.ReleaseObjectToPool(
+                    segment.SegmentObject,
+                    segment.SegmentObjectType);
+                if (ZeroRoadBuilder.BuiltRoadSegmentsByName.ContainsKey(segment.Name))
+                    ZeroRoadBuilder.BuiltRoadSegmentsByName.Remove(segment.Name);
+            }
+            ZeroRoadBuilder.BuiltRoadSegmentsByLane[this.Name] = new();
         }
     }
 

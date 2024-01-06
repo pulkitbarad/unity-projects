@@ -25,7 +25,8 @@ public class ZeroRoadBuilder
     public static ZeroRoad CurrentActiveRoad;
     public static readonly Dictionary<string, Vector3> InitialStaticLocalScale = new();
     public static readonly Dictionary<string, ZeroRoad> BuiltRoads = new();
-    public static readonly Dictionary<string, ZeroRoadSegment> BuiltRoadSegments = new();
+    public static readonly Dictionary<string, List<ZeroRoadSegment>> BuiltRoadSegmentsByLane = new();
+    public static readonly Dictionary<string, ZeroRoadSegment> BuiltRoadSegmentsByName = new();
     // public static readonly Dictionary<string, CustomRoadTIntersection> BuiltTIntersections = new();
     public static string RoadStartObjectName = "RoadStart";
     public static string RoadControlObjectName = "RoadControl";

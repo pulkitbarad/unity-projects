@@ -25,11 +25,12 @@ public class ZeroObjectPool
         this._maxSize = maxSize;
         this._parentObject = new GameObject(namePrefix);
         this._stack = new();
+        InitialiseStack();
     }
 
     public void InitialiseStack()
     {
-        for (int i = _objectsInUse; i < _objectsInUse + _batchSize; i++)
+        for (int i = 0; i < _objectsInUse + _batchSize; i++)
         {
             GameObject newObject = CreateNewObject();
             newObject.name = _namePrefix + i;
@@ -42,8 +43,8 @@ public class ZeroObjectPool
     public bool ReleaseObject(GameObject gameObject)
     {
         gameObject.SetActive(false);
+        gameObject.transform.SetParent(_parentObject.transform);
         _stack.Push(gameObject);
-        _objectsInUse--;
         return true;
     }
 
@@ -59,7 +60,7 @@ public class ZeroObjectPool
             }
             else
             {
-                //TO-DO: Log to the server that the game has exceeded max debug pool size.
+                //TO-DO: Log to the server that the game has exceeded max pool size.
                 newObject = CreateNewObject();
             }
         }

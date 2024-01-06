@@ -170,7 +170,6 @@ public class ZeroRoadSegment
 
     private void InitSegmentObject()
     {
-        Debug.LogFormat("Creating segment object {0}", this.Name);
         GameObject segmentObject =
             ZeroObjectManager.GetObjectFromPool(this.Name, this.SegmentObjectType);
 
@@ -190,10 +189,19 @@ public class ZeroRoadSegment
             segmentObject.layer = LayerMask.NameToLayer(ZeroRoadBuilder.RoadEdgeLaneMaskName);
 
         this.SegmentObject = segmentObject;
-        ZeroRoadBuilder.BuiltRoadSegments[this.Name] = this;
+        RegisterToLookups();
 
         if (this.SegmentObjectType == ZeroObjectManager.OBJECT_TYPE_ROAD_POLYGON_3D)
             RenderMesh();
+    }
+
+    private void RegisterToLookups()
+    {
+        if (!ZeroRoadBuilder.BuiltRoadSegmentsByLane.ContainsKey(this.ParentLane.Name))
+            ZeroRoadBuilder.BuiltRoadSegmentsByLane[this.ParentLane.Name] = new();
+
+        ZeroRoadBuilder.BuiltRoadSegmentsByLane[this.ParentLane.Name].Add(this);
+        ZeroRoadBuilder.BuiltRoadSegmentsByName[this.Name] = this;
     }
 
     private void RenderMesh()

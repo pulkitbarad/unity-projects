@@ -56,8 +56,8 @@ public class ZeroCollisionMap
         foreach (Collider collider in overlaps)
         {
             string colliderGameObjectName = collider.gameObject.name;
-            if (ZeroRoadBuilder.BuiltRoadSegments.ContainsKey(colliderGameObjectName)
-                && !ZeroRoadBuilder.BuiltRoadSegments[colliderGameObjectName]
+            if (ZeroRoadBuilder.BuiltRoadSegmentsByName.ContainsKey(colliderGameObjectName)
+                && !ZeroRoadBuilder.BuiltRoadSegmentsByName[colliderGameObjectName]
                     .ParentLane.ParentRoad.Name.Equals(this.RoadName)
                 && !IsColliderWithinbounds(collider, segmentTopPlane.Vertices))
             {
@@ -73,7 +73,7 @@ public class ZeroCollisionMap
     {
         foreach (Collider collider in overalppingColliders)
         {
-            ZeroRoadSegment colliderSegment = ZeroRoadBuilder.BuiltRoadSegments[collider.gameObject.name];
+            ZeroRoadSegment colliderSegment = ZeroRoadBuilder.BuiltRoadSegmentsByName[collider.gameObject.name];
             ZeroPolygon primaryTopPlane = primarySegment.SegmentBounds.TopPlane;
 
             if (GetRayHitPointOnSegment(
@@ -309,7 +309,7 @@ public class ZeroCollisionMap
         Collider collider,
         out Vector3? hitPoint)
     {
-        ZeroRoadSegment colliderSegment = ZeroRoadBuilder.BuiltRoadSegments[collider.gameObject.name];
+        ZeroRoadSegment colliderSegment = ZeroRoadBuilder.BuiltRoadSegmentsByName[collider.gameObject.name];
         ZeroPolygon colliderTopPlane = colliderSegment.SegmentBounds.TopPlane;
         Vector3 direction = end - origin;
 
@@ -347,7 +347,7 @@ public class ZeroCollisionMap
 
     private static bool IsColliderWithinbounds(Collider collider, Vector3[] bounds)
     {
-        ZeroPolygon colliderTopPlane = ZeroRoadBuilder.BuiltRoadSegments[collider.gameObject.name].SegmentBounds.TopPlane;
+        ZeroPolygon colliderTopPlane = ZeroRoadBuilder.BuiltRoadSegmentsByName[collider.gameObject.name].SegmentBounds.TopPlane;
         return colliderTopPlane.Vertices.Length > 0 && IsRectWithinBounds(colliderTopPlane, bounds);
     }
 
