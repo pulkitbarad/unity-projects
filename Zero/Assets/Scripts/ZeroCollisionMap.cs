@@ -45,7 +45,7 @@ public class ZeroCollisionMap
 
     private List<Collider> GetPartialOverlaps(ZeroRoadSegment segment)
     {
-        ZeroParallelogram segmentTopPlane = segment.SegmentBounds.TopPlane;
+        ZeroPolygon segmentTopPlane = segment.SegmentBounds.TopPlane;
         Collider[] overlaps = Physics.OverlapBox(
             center: segment.SegmentObject.transform.position,
             halfExtents: segment.SegmentObject.transform.localScale / 2,
@@ -74,7 +74,7 @@ public class ZeroCollisionMap
         foreach (Collider collider in overalppingColliders)
         {
             ZeroRoadSegment colliderSegment = ZeroRoadBuilder.BuiltRoadSegments[collider.gameObject.name];
-            ZeroParallelogram primaryTopPlane = primarySegment.SegmentBounds.TopPlane;
+            ZeroPolygon primaryTopPlane = primarySegment.SegmentBounds.TopPlane;
 
             if (GetRayHitPointOnSegment(
                 origin: primaryTopPlane.LeftStart,
@@ -256,7 +256,7 @@ public class ZeroCollisionMap
                     name: laneIntersectionName,
                     primaryDistance: leftStartCollisions[0].PrimarySegment.RoadLengthSofar,
                     intersectionPoints:
-                        new ZeroParallelogram(
+                        new ZeroPolygon(
                             name: laneIntersectionName + "P",
                             leftStart: leftStartCollisions[0].CollisionPoint,
                             rightStart: rightStartCollisions[0].CollisionPoint,
@@ -281,7 +281,7 @@ public class ZeroCollisionMap
                         name: laneIntersectionName,
                         primaryDistance: leftStartCollisions[1].PrimarySegment.RoadLengthSofar,
                         intersectionPoints:
-                            new ZeroParallelogram(
+                            new ZeroPolygon(
                                 name: laneIntersectionName + "P",
                                 leftStart: leftStartCollisions[1].CollisionPoint,
                                 rightStart: rightStartCollisions[1].CollisionPoint,
@@ -310,7 +310,7 @@ public class ZeroCollisionMap
         out Vector3? hitPoint)
     {
         ZeroRoadSegment colliderSegment = ZeroRoadBuilder.BuiltRoadSegments[collider.gameObject.name];
-        ZeroParallelogram colliderTopPlane = colliderSegment.SegmentBounds.TopPlane;
+        ZeroPolygon colliderTopPlane = colliderSegment.SegmentBounds.TopPlane;
         Vector3 direction = end - origin;
 
         if (collider.Raycast(
@@ -347,11 +347,11 @@ public class ZeroCollisionMap
 
     private static bool IsColliderWithinbounds(Collider collider, Vector3[] bounds)
     {
-        ZeroParallelogram colliderTopPlane = ZeroRoadBuilder.BuiltRoadSegments[collider.gameObject.name].SegmentBounds.TopPlane;
+        ZeroPolygon colliderTopPlane = ZeroRoadBuilder.BuiltRoadSegments[collider.gameObject.name].SegmentBounds.TopPlane;
         return colliderTopPlane.GetVertices().Length > 0 && IsRectWithinBounds(colliderTopPlane, bounds);
     }
 
-    private static bool IsRectWithinBounds(ZeroParallelogram rectangle, Vector3[] bounds)
+    private static bool IsRectWithinBounds(ZeroPolygon rectangle, Vector3[] bounds)
     {
         for (int i = 0; i < 4; i++)
             if (!IsPointInsideBounds(rectangle.GetVertices()[i], bounds))

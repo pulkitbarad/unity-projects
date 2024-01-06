@@ -59,9 +59,7 @@ public class ZeroRoad
         foreach (ZeroRoadLane lane in this.Lanes)
         {
             lane.HideAllSegments();
-            lane.LaneObject.SetActive(false);
         }
-        this.RoadObject.SetActive(false);
     }
 
     public void Build(bool forceBuild, Vector2 touchPosition)

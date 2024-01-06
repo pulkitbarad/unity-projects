@@ -57,13 +57,12 @@ public class ZeroRoadSegment
             end: centerEnd);
 
         ComputeSegmentDimensions();
-
+        (Vector3[] topVertices, Vector3[] bottomVertices) = GetTopAndBottomPlanes();
         this.SegmentBounds =
             new ZeroPolygon3D(
                 name: this.Name,
-                height: this.Height,
-                up: this.Up,
-                centerPlane: this.GetCenterPlane());
+                topVertices,
+                bottomVertices);
         // this.IsPrimitiveShape = ValidatePrimitiveShape();
 
         this.InitSegmentObject();
@@ -71,9 +70,30 @@ public class ZeroRoadSegment
             this.PreviousSibling.NextSibling = this;
     }
 
+    private (Vector3[], Vector3[]) GetTopAndBottomPlanes()
+    {
+        Vector3[] centerPlane = this.GetCenterPlane();
+        Vector3 halfUp = 0.5f * this.Height * this.Up;
+        Vector3 halfDown = -0.5f * this.Height * this.Up;
+        Vector3[] topPlane =
+            new Vector3[] {
+                centerPlane[0] + halfUp,
+                centerPlane[1] + halfUp,
+                centerPlane[2] + halfUp,
+                centerPlane[3] + halfUp};
+
+        Vector3[] bottomPlane =
+            new Vector3[] {
+                centerPlane[0] + halfDown,
+                centerPlane[1] + halfDown,
+                centerPlane[2] + halfDown,
+                centerPlane[3] + halfDown};
+        return (topPlane, bottomPlane);
+    }
+
     private bool ValidatePrimitiveShape()
     {
-        ZeroParallelogram topPlane = this.SegmentBounds.TopPlane;
+        ZeroPolygon topPlane = this.SegmentBounds.TopPlane;
         var topPlaneAngle =
             Math.Round(
                 Vector3.Angle(
@@ -129,7 +149,7 @@ public class ZeroRoadSegment
         }
     }
 
-    private ZeroParallelogram GetCenterPlane()
+    private Vector3[] GetCenterPlane()
     {
         Vector3[] startPoints = GetParallelPoints(
                 originPoint: this.CenterStart,
@@ -139,12 +159,12 @@ public class ZeroRoadSegment
                 originPoint: this.CenterEnd,
                 targetPoint: this.CenterStart,
                 distance: this.Width * 0.5f);
-        return new(
-            name: this.Name + "Center",
-            leftStart: startPoints[0],
-            rightStart: startPoints[1],
-            leftEnd: endPoints[1],
-            rightEnd: endPoints[0]);
+        return
+            new Vector3[] {
+                startPoints[0],
+                startPoints[1],
+                endPoints[1],
+                endPoints[0]};
 
     }
 
@@ -178,27 +198,24 @@ public class ZeroRoadSegment
 
     private void RenderMesh()
     {
-        List<Vector3> allVertices = new();
-        List<int> allTriangles = new();
-
-        allVertices.AddRange(this.SegmentBounds.TopPlane.GetMeshVertices(this.SegmentObject));
-        allVertices.AddRange(this.SegmentBounds.BottomPlane.GetMeshVertices(this.SegmentObject));
-        allTriangles.AddRange(this.SegmentBounds.TopPlane.GetMeshTriangles(this.SegmentObject));
-        allTriangles.AddRange(this.SegmentBounds.BottomPlane.GetMeshTriangles(this.SegmentObject));
-        allTriangles.AddRange(this.SegmentBounds.LeftPlane.GetMeshTriangles(this.SegmentObject));
-        allTriangles.AddRange(this.SegmentBounds.RightPlane.GetMeshTriangles(this.SegmentObject));
-
+        List<int> sidesToRender = new();
         if (this.Index == 0)
-            allTriangles.AddRange(this.SegmentBounds.BackPlane.GetMeshTriangles(this.SegmentObject));
-        else if (this.Index == this.ParentLane.ParentRoad.NumberOfSegmentsPerLane)
-            allTriangles.AddRange(this.SegmentBounds.FrontPlane.GetMeshTriangles(this.SegmentObject));
+            sidesToRender.Add(ZeroPolygon3D.BackSideIndex);
+        else if (this.Index == this.ParentLane.ParentRoad.NumberOfSegmentsPerLane - 1)
+            sidesToRender.Add(ZeroPolygon3D.FrontSideIndex);
+        else if (this.Index == this.ParentLane.ParentRoad.LeftSidewalkIndex)
+            sidesToRender.Add(ZeroPolygon3D.LeftSideIndex);
+        else if (this.Index == this.ParentLane.ParentRoad.RightSidewalkIndex)
+            sidesToRender.Add(ZeroPolygon3D.RightSideIndex);
 
         Mesh mesh = new() { name = this.Name + "Mesh" };
         this.SegmentObject.AddComponent<MeshRenderer>();
-        mesh.vertices = allVertices.ToArray();
+        mesh.vertices = this.SegmentBounds.GetMeshVertices(this.SegmentObject);
+        mesh.triangles = this.SegmentBounds.GetMeshTriangles(true, false, sidesToRender.ToArray());
         this.SegmentObject.AddComponent<MeshFilter>().mesh = mesh;
         mesh.RecalculateBounds();
     }
+
     private static Vector3 GetUpVector(
         Vector3 start,
         Vector3 end)
@@ -220,6 +237,4 @@ public class ZeroRoadSegment
         var rightPoint = originPoint - (leftVector * distance);
         return new Vector3[] { leftPoint, rightPoint };
     }
-
-
 }

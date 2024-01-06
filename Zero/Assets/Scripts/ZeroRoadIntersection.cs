@@ -6,10 +6,10 @@ public class ZeroRoadIntersection
 {
 
     public string Name;
-    public ZeroParallelogram BackCrosswalk;
-    public ZeroParallelogram FrontCrosswalk;
-    public ZeroParallelogram LeftCrosswalk;
-    public ZeroParallelogram RightCrosswalk;
+    public ZeroPolygon BackCrosswalk;
+    public ZeroPolygon FrontCrosswalk;
+    public ZeroPolygon LeftCrosswalk;
+    public ZeroPolygon RightCrosswalk;
     public ZeroPolygon3D LeftStartCorner;
     public ZeroPolygon3D RightStartCorner;
     public ZeroPolygon3D LeftEndCorner;
@@ -161,7 +161,7 @@ public class ZeroRoadIntersection
     private void GetCrosswalks()
     {
         this.LeftCrosswalk =
-            new ZeroParallelogram(
+            new ZeroPolygon(
                 name: this.Name + "LCW",
                 leftStart: this._grid.LELS,
                 rightStart: this._grid.LSLE,
@@ -169,7 +169,7 @@ public class ZeroRoadIntersection
                 rightEnd: this._grid.LSRE
             );
         this.RightCrosswalk =
-            new ZeroParallelogram(
+            new ZeroPolygon(
                 name: this.Name + "RCW",
                 leftStart: this._grid.RSRE,
                 rightStart: this._grid.RERS,
@@ -177,7 +177,7 @@ public class ZeroRoadIntersection
                 rightEnd: this._grid.RELS
             );
         this.FrontCrosswalk =
-            new ZeroParallelogram(
+            new ZeroPolygon(
                 name: this.Name + "FCW",
                 leftStart: this._grid.RELE,
                 rightStart: this._grid.LERE,
@@ -185,7 +185,7 @@ public class ZeroRoadIntersection
                 rightEnd: this._grid.LERS
             );
         this.BackCrosswalk =
-            new ZeroParallelogram(
+            new ZeroPolygon(
                 name: this.Name + "BCW",
                 leftStart: this._grid.LSRS,
                 rightStart: this._grid.RSLS,

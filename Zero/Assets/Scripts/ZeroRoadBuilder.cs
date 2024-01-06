@@ -74,7 +74,7 @@ public class ZeroRoadBuilder
         UnityEngine.Color? color)
     {
 
-        GameObject gameObject = ZeroObjectManager.FindGameObject(objectName, true);
+        GameObject gameObject = ZeroObjectManager.GetNewObject(objectName, ZeroObjectManager.PoolType.STATIC_CYLINDER);
 
         if (gameObject == null)
         {
