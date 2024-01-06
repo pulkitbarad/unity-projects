@@ -106,8 +106,8 @@ public class ZeroPolygon3D
         for (int i = 0; i < vertexCount; i++)
         {
             this._sideVertexPositions[i][0] = i;
-            this._sideVertexPositions[i][1] = vertexCount;
-            this._sideVertexPositions[i][2] = vertexCount + 1;
+            this._sideVertexPositions[i][1] = i + vertexCount;
+            this._sideVertexPositions[i][2] = i + vertexCount + 1;
             this._sideVertexPositions[i][2] = i + 1;
         }
         this._topVertexPositions =
