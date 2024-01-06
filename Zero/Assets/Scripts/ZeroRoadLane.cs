@@ -37,8 +37,8 @@ public class ZeroRoadLane
             .Values
             .Where(e => e.ParentLane.Name.Equals(this.Name)))
         {
-            ZeroObjectManager.ReleaseObject(
-                segment.SegmentObject.name,
+            ZeroObjectManager.ReleaseObjectToPool(
+                segment.SegmentObject,
                 segment.SegmentObjectType);
         }
     }

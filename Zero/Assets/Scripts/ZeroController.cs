@@ -7,20 +7,6 @@ using System.Collections.Generic;
 
 public class ZeroController : MonoBehaviour
 {
-    [SerializeField] public float MainCameraMoveSpeed;
-    [SerializeField] public float MainCameraSmoothing;
-    [SerializeField] public float MainCameraZoomSpeed;
-    [SerializeField] public float MainCameraRotationSpeed;
-    [SerializeField] public float MainCameraTiltSpeed;
-    [SerializeField] public float MainCameraTiltAngleThreshold;
-    [SerializeField] public float RoadMaxChangeInAngle;
-    [SerializeField] public int RoadMaxVertexCount;
-    [SerializeField] public int RoadMinVertexCount;
-    [SerializeField] public float RoadSegmentMinLength;
-    [SerializeField] public float RoadLaneHeight;
-    [SerializeField] public float RoadLaneWidth;
-    [SerializeField] public float RoadSideWalkHeight;
-
     [SerializeField] public GameObject MainCameraRoot;
     [SerializeField] public GameObject MainCameraAnchor;
     [SerializeField] public GameObject MainCameraHolder;

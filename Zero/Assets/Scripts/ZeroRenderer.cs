@@ -51,7 +51,7 @@ public class ZeroRenderer
         UnityEngine.Color? color = null)
     {
 
-        GameObject sphere = ZeroObjectManager.GetNewObject(sphereName, ZeroObjectManager.ObjectType.DEBUG_SPHERE);
+        GameObject sphere = ZeroObjectManager.GetObjectFromPool(sphereName, ZeroObjectManager.OBJECT_TYPE_DEBUG_SPHERE);
 
         sphere.transform.localScale = new Vector3(size, size, size);
         sphere.transform.position = position;
@@ -65,21 +65,4 @@ public class ZeroRenderer
 
         return sphere;
     }
-
-    public static GameObject RenderCylinder(
-        string objectName,
-        Vector3 position,
-        float size = 1f,
-        UnityEngine.Color? color = null)
-    {
-        GameObject cylinder = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-        if (objectName.Length > 0)
-            cylinder.name = objectName;
-        cylinder.transform.localScale = new Vector3(size, 0.5f, size);
-        cylinder.transform.position = position;
-        var sphereRenderer = cylinder.GetComponent<Renderer>();
-        sphereRenderer.material.color = color ?? UnityEngine.Color.yellow;
-        return cylinder;
-    }
-
 }

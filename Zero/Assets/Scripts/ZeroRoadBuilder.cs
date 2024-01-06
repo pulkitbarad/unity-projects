@@ -83,21 +83,16 @@ public class ZeroRoadBuilder
         float size,
         UnityEngine.Color? color)
     {
+        GameObject cylinderObject = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+        cylinderObject.name = objectName;
+        cylinderObject.transform.localScale = new Vector3(size, 0.5f, size);
+        cylinderObject.transform.position = Vector3.zero;
+        var renderer = cylinderObject.GetComponent<Renderer>();
+        renderer.material.color = color ?? UnityEngine.Color.yellow;
 
-        GameObject gameObject = ZeroObjectManager.GetNewObject(objectName, ZeroObjectManager.ObjectType.STATIC_CYLINDER);
-
-        if (gameObject == null)
-        {
-            gameObject =
-            ZeroRenderer.RenderCylinder(
-                objectName: objectName,
-                position: Vector3.zero,
-                size: size,
-                color: color);
-            gameObject.transform.SetParent(RoadControlsParent.transform);
-            InitialStaticLocalScale.Add(gameObject.name, gameObject.transform.localScale);
-        }
-        return gameObject;
+        cylinderObject.transform.SetParent(RoadControlsParent.transform);
+        InitialStaticLocalScale.Add(cylinderObject.name, cylinderObject.transform.localScale);
+        return cylinderObject;
     }
 
     private static Vector3 InitCurveControlPosition(bool isCurved)

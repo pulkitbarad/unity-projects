@@ -20,7 +20,7 @@ public class ZeroRoadSegment
     public float Length;
     public float RoadLengthSofar;
     public float OldLength;
-    public int SegmentObjectType = ZeroObjectManager.ObjectType.ROAD_CUBE;
+    public int SegmentObjectType = ZeroObjectManager.OBJECT_TYPE_ROAD_CUBE;
     public Vector3 CenterStart;
     public Vector3 CenterEnd;
     public Vector3 NextCenterEnd;
@@ -170,12 +170,15 @@ public class ZeroRoadSegment
 
     private void InitSegmentObject()
     {
+        Debug.LogFormat("Creating segment object {0}", this.Name);
         GameObject segmentObject =
-            ZeroObjectManager.GetNewObject(this.Name, this.SegmentObjectType);
+            ZeroObjectManager.GetObjectFromPool(this.Name, this.SegmentObjectType);
+
+        segmentObject.name = this.Name;
 
         segmentObject.transform.position = this.Center;
-        segmentObject.transform.rotation = Quaternion.LookRotation(this.Forward);
         segmentObject.transform.localScale = new Vector3(this.Width, this.Height, this.Length);
+        segmentObject.transform.rotation = Quaternion.LookRotation(this.Forward);
         segmentObject.transform.SetParent(ZeroRoadBuilder.BuiltRoadSegmentsParent.transform);
 
         ZeroRoadLane parentLane = this.ParentLane;
@@ -189,7 +192,7 @@ public class ZeroRoadSegment
         this.SegmentObject = segmentObject;
         ZeroRoadBuilder.BuiltRoadSegments[this.Name] = this;
 
-        if (this.SegmentObjectType == ZeroObjectManager.ObjectType.ROAD_POLYGON_3D)
+        if (this.SegmentObjectType == ZeroObjectManager.OBJECT_TYPE_ROAD_POLYGON_3D)
             RenderMesh();
     }
 
