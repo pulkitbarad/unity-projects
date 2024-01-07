@@ -13,6 +13,11 @@ public class ZeroRenderer
     private static Material _baseLineMaterial;
     public static bool IsDebugEnabled = false;
 
+    public static void Initialise()
+    {
+        _baseLineMaterial = Resources.Load("Material/LineMaterial", typeof(Material)) as Material;
+        DebuggingParent = new GameObject("DebuggingParent");
+    }
 
     // public static GameObject GetSphereObject(
     //     string name,
@@ -50,8 +55,10 @@ public class ZeroRenderer
         Transform parentTransform = null,
         UnityEngine.Color? color = null)
     {
-
-        GameObject sphere = ZeroObjectManager.GetObjectFromPool(sphereName, ZeroObjectManager.OBJECT_TYPE_DEBUG_SPHERE);
+        GameObject sphere =
+            ZeroObjectManager.GetObjectFromPool(
+                name: sphereName,
+                objectType: ZeroObjectManager.OBJECT_TYPE_DEBUG_SPHERE);
 
         sphere.transform.localScale = new Vector3(size, size, size);
         sphere.transform.position = position;
@@ -59,7 +66,10 @@ public class ZeroRenderer
         sphereRenderer.material.color = color ?? UnityEngine.Color.yellow;
 
         if (parentTransform != null)
+        {
             sphere.transform.SetParent(parentTransform);
+            parentTransform.transform.SetParent(DebuggingParent.transform);
+        }
         else
             sphere.transform.SetParent(DebuggingParent.transform);
 

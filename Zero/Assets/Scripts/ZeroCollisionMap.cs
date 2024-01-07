@@ -52,6 +52,7 @@ public class ZeroCollisionMap
             orientation: segment.SegmentObject.transform.rotation,
             layerMask: LayerMask.GetMask(this.LayerMaskName));
         List<Collider> partialOverlaps = new();
+        if (partialOverlaps.Count() > 0)
 
         foreach (Collider collider in overlaps)
         {

@@ -59,9 +59,17 @@ public class ZeroPolygon
 
     public void RenderVertices(Color? color = null)
     {
+        GameObject parent = ZeroObjectManager.FindOrCreateGameObject(this.Name);
+        foreach (Transform child in parent.transform)
+            ZeroObjectManager.ReleaseObjectToPool(child.gameObject, ZeroObjectManager.OBJECT_TYPE_DEBUG_SPHERE);
+
         int i = 0;
         foreach (var point in this.Vertices)
-            ZeroRenderer.RenderSphere(point, this.Name + i++.ToString(), color: color ?? Color.yellow);
+            ZeroRenderer.RenderSphere(
+                position: point,
+                sphereName: this.Name + i++.ToString(),
+                parentTransform: parent.transform,
+                color: color ?? Color.yellow);
     }
 
     //
@@ -89,15 +97,15 @@ public class ZeroPolygon
 
     public static int[] GetMeshTriangles(int[] vertexPositions)
     {
-        int vertexCount = vertexPositions.Length;
-        int numOfTriangleVertices = (vertexCount - 2) * 3;
+        int numOfTriangles = vertexPositions.Length - 2;
+        int[] triangles = new int[numOfTriangles * 3];
 
-        int[] triangles = new int[numOfTriangleVertices];
-        for (int i = 0; i < numOfTriangleVertices; i++)
+        int triangleVertexIndex = 0;
+        for (int triangleIndex = 0; triangleIndex < numOfTriangles; triangleIndex++)
         {
-            triangles[i] = vertexPositions[0];
-            triangles[i] = vertexPositions[i + 1];
-            triangles[i] = vertexPositions[i + 2];
+            triangles[triangleVertexIndex++] = vertexPositions[0];
+            triangles[triangleVertexIndex++] = vertexPositions[triangleIndex + 1];
+            triangles[triangleVertexIndex++] = vertexPositions[triangleIndex + 2];
         }
         return triangles;
     }

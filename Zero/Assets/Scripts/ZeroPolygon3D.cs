@@ -99,10 +99,10 @@ public class ZeroPolygon3D
             this._sideVertexPositions[i][3] = i == topVertexCount - 1 ? 0 : i + 1;
         }
         this._topVertexPositions =
-            Enumerable.Range(0, topVertexCount - 1)
+            Enumerable.Range(0, topVertexCount)
             .ToArray();
         this._bottomVertexPositions =
-            Enumerable.Range(0, topVertexCount - 1)
+            Enumerable.Range(0, topVertexCount)
             .Select(i => i + topVertexCount)
             .ToArray();
     }

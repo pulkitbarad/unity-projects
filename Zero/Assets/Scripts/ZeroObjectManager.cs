@@ -56,9 +56,9 @@ public class ZeroObjectManager
             return PoolRoadPolygon3D.ReleaseObject(gameObject);
     }
 
-    private static GameObject FindOrCreateGameObject(string objectName, bool findDisabled)
+    public static GameObject FindOrCreateGameObject(string objectName)
     {
-        GameObject gameObject = FindGameObject(objectName, findDisabled) ?? new GameObject(objectName);
+        GameObject gameObject = FindGameObject(objectName, true) ?? new GameObject(objectName);
         gameObject.SetActive(true);
         return gameObject;
     }

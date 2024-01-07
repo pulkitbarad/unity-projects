@@ -26,6 +26,7 @@ public class ZeroController : MonoBehaviour
         ZeroRoadBuilder.Initialise();
         ZeroCameraMovement.Initialise();
         ZeroUIHandler.Initialise();
+        ZeroRenderer.Initialise();
     }
 
     void Update()

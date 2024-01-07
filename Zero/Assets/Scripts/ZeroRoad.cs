@@ -92,6 +92,8 @@ public class ZeroRoad
             this.IntersectionsByRoadName = GetRoadIntersections();
 
             int i = 0;
+            if (IntersectionsByRoadName.Count() > 0)
+
             foreach (var entry in this.IntersectionsByRoadName)
             {
                 foreach (ZeroRoadIntersection intersection in entry.Value)
@@ -182,24 +184,23 @@ public class ZeroRoad
     {
         Vector3[] leftLine = new Vector3[vertices.Length];
         Vector3[] rightLine = new Vector3[vertices.Length];
-        Vector3[] parallelPoints = new Vector3[2];
         for (int i = 1; i < vertices.Length; i++)
         {
-            parallelPoints = ZeroRoadSegment.GetParallelPoints(
-                originPoint: vertices[i - 1],
-                targetPoint: vertices[i],
-                distance: distance);
+            ZeroRoadSegment.GetParallelPoints(
+               originPoint: vertices[i - 1],
+               targetPoint: vertices[i],
+               distance: distance,
+               out leftLine[i - 1],
+               out rightLine[i - 1]);
 
-            leftLine[i - 1] = parallelPoints[0];
-            rightLine[i - 1] = parallelPoints[1];
             if (i == vertices.Length - 1)
             {
-                parallelPoints = ZeroRoadSegment.GetParallelPoints(
+                ZeroRoadSegment.GetParallelPoints(
                     originPoint: vertices[i],
                     targetPoint: vertices[i - 1],
-                    distance: distance);
-                leftLine[i] = parallelPoints[1];
-                rightLine[i] = parallelPoints[0];
+                    distance: distance,
+                    out rightLine[i],
+                    out leftLine[i]);
             }
         }
         return new Vector3[][] { leftLine, rightLine };
@@ -242,7 +243,6 @@ public class ZeroRoad
                         primaryLane: this.Lanes[this.RightSidewalkIndex],
                         layerMaskName: ZeroRoadBuilder.RoadSidewalkMaskName)
                      .GetLaneIntersectionsByRoadName();
-
 
         if (leftIntersectionsByRoadName.Count() == rightIntersectionsByRoadName.Count())
         {

@@ -37,7 +37,6 @@ public class ZeroRoadLane
             foreach (ZeroRoadSegment segment in
                 ZeroRoadBuilder.BuiltRoadSegmentsByLane[this.Name])
             {
-                Debug.Log("Hide segment=" + segment.Name);
                 ZeroObjectManager.ReleaseObjectToPool(
                     segment.SegmentObject,
                     segment.SegmentObjectType);
