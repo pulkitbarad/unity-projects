@@ -20,44 +20,53 @@ public class ZeroRoadIntersection
     private readonly ZeroLaneIntersection _leftEndIntersection;
     private readonly ZeroLaneIntersection _rightEndIntersection;
 
-    public class ZeroCrossRoadGrid
+    private class ZeroCrossRoadGrid
     {
-        public Vector3 LSLS;
-        public Vector3 LSLE;
-        public Vector3 LSRS;
-        public Vector3 LSRE;
-        //
-        public Vector3 LELS;
-        public Vector3 LELE;
-        public Vector3 LERS;
-        public Vector3 LERE;
-        //
-        public Vector3 RSLS;
-        public Vector3 RSLE;
-        public Vector3 RSRS;
-        public Vector3 RSRE;
-        //
-        public Vector3 RELS;
-        public Vector3 RELE;
-        public Vector3 RERS;
-        public Vector3 RERE;
+        public Vector3 PL2R;
+        public Vector3 PS2E;
+        public Vector3 IL2R;
+        public Vector3 IS2E;
+        public Vector3 PR2L;
+        public Vector3 PE2S;
+        public Vector3 IR2L;
+        public Vector3 IE2S;
+        public float IRW;
+        public float PRW;
+        public float CWL;
+        public float SWW;
 
-        //Midpoints for the sidewalk corner shapes
+        // LSLS = Left Start lane intersection-> Left Start point
+        public Vector3 LSLS, LSLE, LSRS, LSRE;
         //
-        public Vector3 LSEM;
-        public Vector3 LSRM;
-        public Vector3 RSLM;
-        public Vector3 RSEM;
+        public Vector3 LELS, LELE, LERS, LERE;
         //
-        public Vector3 RESM;
-        public Vector3 RELM;
-        public Vector3 LESM;
-        public Vector3 LERM;
+        public Vector3 RSLS, RSLE, RSRS, RSRE;
+        //
+        public Vector3 RELS, RELE, RERS, RERE;
 
+        // LLLS = Left crosswalk-> Left sidewalk-> Left Start point
+        public Vector3 LLLS, LLLE, LLRS, LLRE;
+        //
+        public Vector3 LRLS, LRLE, LRRS, LRRE;
+        //
+        public Vector3 RLLS, RLLE, RLRS, RLRE;
+        //
+        public Vector3 RRLS, RRLE, RRRS, RRRE;
+        //
+        public Vector3 BLLS, BLLE, BLRS, BLRE;
+        //
+        public Vector3 BRLS, BRLE, BRRS, BRRE;
+        //
+        public Vector3 FLLS, FLLE, FLRS, FLRE;
+        //
+        public Vector3 FRLS, FRLE, FRRS, FRRE;
     }
+
 
     public ZeroRoadIntersection(
         string name,
+        float primaryRoadWidth,
+        float intersectingRoadWidth,
         ZeroLaneIntersection leftStartIntersection,
         ZeroLaneIntersection rightStartIntersection,
         ZeroLaneIntersection leftEndIntersection,
@@ -68,12 +77,26 @@ public class ZeroRoadIntersection
         this._rightStartIntersection = rightStartIntersection;
         this._leftEndIntersection = leftEndIntersection;
         this._rightEndIntersection = rightEndIntersection;
+        this._grid.PS2E = (this._grid.LSLE - this._grid.LSLS).normalized;
+        this._grid.IS2E = (this._grid.LSRS - this._grid.LSLS).normalized;
+        this._grid.PL2R = Vector3.Cross(this._grid.PS2E, Vector3.down);
+        this._grid.IL2R = Vector3.Cross(this._grid.IS2E, Vector3.down);
+        this._grid.PRW = primaryRoadWidth;
+        this._grid.IRW = intersectingRoadWidth;
+        this._grid.CWL = ZeroRoadBuilder.RoadCrossWalkLength;
+        this._grid.SWW = ZeroRoadBuilder.RoadLaneWidth;
+
         GetGridBounds();
         GetCrosswalks();
         GetSidewalkCorners();
     }
 
     private void GetGridBounds()
+    {
+        GetLaneIntersectionGrid();
+    }
+
+    private void GetLaneIntersectionGrid()
     {
         this._grid.LSLS = this._leftStartIntersection.IntersectionPoints.LeftStart;
         this._grid.LSLE = this._leftStartIntersection.IntersectionPoints.LeftEnd;
@@ -94,22 +117,54 @@ public class ZeroRoadIntersection
         this._grid.RELE = this._rightEndIntersection.IntersectionPoints.LeftEnd;
         this._grid.RERS = this._rightEndIntersection.IntersectionPoints.RightStart;
         this._grid.RERE = this._rightEndIntersection.IntersectionPoints.RightEnd;
+
+    }
+
+    private void GetNormalSidewalkGrid()
+    {
+        this._grid.BLLE = this._grid.LSLS;
+        this._grid.BLLS = this._grid.LSLS + this._grid.PE2S * this._grid.CWL;
+        this._grid.BLRE = this._grid.BLLE + this._grid.PL2R * this._grid.SWW;
+        this._grid.BLRS = this._grid.BLLS + this._grid.PL2R * this._grid.SWW;
+        //
+        this._grid.BRRE = this._grid.RSRS;
+        this._grid.BRLS = this._grid.BLRS + this._grid.PL2R * this._grid.PRW;
+        this._grid.BRRS = this._grid.BRLS + this._grid.PL2R * this._grid.SWW;
+        this._grid.BRLE = this._grid.BRRE + this._grid.PR2L * this._grid.SWW;
         //
         //
-        this._grid.LSEM = this._grid.LSRE + 0.5f * (this._grid.LSLE - this._grid.LSRE);
-        this._grid.LSRM = this._grid.LSRS + 0.5f * (this._grid.LSRE - this._grid.LSRS);
+        this._grid.LRRE = this._grid.LSLS;
+        this._grid.LRRS = this._grid.LRRE + this._grid.IE2S * this._grid.CWL;
+        this._grid.LRLE = this._grid.LRRE + this._grid.IR2L * this._grid.SWW;
+        this._grid.LRLS = this._grid.LRRS + this._grid.IR2L * this._grid.SWW;
         //
-        this._grid.LSEM = this._grid.LSRE + 0.5f * (this._grid.LSLE - this._grid.LSRE);
-        this._grid.LSRM = this._grid.LSRS + 0.5f * (this._grid.LSRE - this._grid.LSRS);
+        this._grid.LLLE = this._grid.LELE;
+        this._grid.LLRS = this._grid.LRLS + this._grid.IR2L * this._grid.IRW;
+        this._grid.LLRE = this._grid.LLLE + this._grid.IL2R * this._grid.SWW;
+        this._grid.LLLS = this._grid.LLRS + this._grid.IR2L * this._grid.SWW;
         //
-        this._grid.RSLM = this._grid.RSLS + 0.5f * (this._grid.RSLE - this._grid.RSLS);
-        this._grid.RSEM = this._grid.RSRE + 0.5f * (this._grid.RSLE - this._grid.RSRE);
         //
-        this._grid.RELM = this._grid.RELS + 0.5f * (this._grid.RELE - this._grid.RELS);
-        this._grid.RESM = this._grid.RERS + 0.5f * (this._grid.RELS - this._grid.RERS);
+        this._grid.FLLE = this._grid.RERE;
+        this._grid.FLLS = this._grid.FLLE + this._grid.PS2E * this._grid.CWL;
+        this._grid.FLRE = this._grid.FLLE + this._grid.PR2L * this._grid.SWW;
+        this._grid.FLRS = this._grid.FLLS + this._grid.PR2L * this._grid.SWW;
         //
-        this._grid.LESM = this._grid.LELS + 0.5f * (this._grid.LERS - this._grid.LELS);
-        this._grid.LERM = this._grid.LERS + 0.5f * (this._grid.LERE - this._grid.LERS);
+        this._grid.FRRE = this._grid.LELE;
+        this._grid.FRLE = this._grid.FRRE + this._grid.PL2R * this._grid.SWW;
+        this._grid.FRLS = this._grid.FLRS + this._grid.PR2L * this._grid.PRW;
+        this._grid.FRRS = this._grid.FRLS + this._grid.PR2L * this._grid.SWW;
+        //
+        //
+        this._grid.RRRE = this._grid.RERE;
+        this._grid.RRRS = this._grid.RRRE + this._grid.IS2E * this._grid.CWL;
+        this._grid.RRLE = this._grid.RRRE + this._grid.IL2R * this._grid.SWW;
+        this._grid.RRLS = this._grid.RRRS + this._grid.IL2R * this._grid.SWW;
+        //
+        this._grid.RLLE = this._grid.RSRS;
+        this._grid.RLRS = this._grid.RRLS + this._grid.IL2R * this._grid.IRW;
+        this._grid.RLRE = this._grid.RLLE + this._grid.IR2L * this._grid.SWW;
+        this._grid.RLLS = this._grid.RLRS + this._grid.IL2R * this._grid.SWW;
+
     }
 
     private void GetSidewalkCorners()

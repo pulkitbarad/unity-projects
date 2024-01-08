@@ -15,6 +15,7 @@ public class ZeroRoadBuilder
     public static float RoadLaneHeight = 1f;
     public static float RoadLaneWidth = 3f;
     public static float RoadSideWalkHeight = 1.5f;
+    public static float RoadCrossWalkLength = 6f;
     public static GameObject RoadControlsParent;
     public static GameObject BuiltRoadsParent;
     public static GameObject BuiltRoadSegmentsParent;
