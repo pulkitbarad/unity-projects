@@ -6,10 +6,8 @@ public class ZeroRoadIntersection
 {
 
     public string Name;
-    public ZeroPolygon BackCrosswalk;
-    public ZeroPolygon FrontCrosswalk;
-    public ZeroPolygon LeftCrosswalk;
-    public ZeroPolygon RightCrosswalk;
+    public ZeroPolygon[] NormalSidewalks;
+    public ZeroPolygon[] CrossWalks;
     public ZeroPolygon3D LeftStartCorner;
     public ZeroPolygon3D RightStartCorner;
     public ZeroPolygon3D LeftEndCorner;
@@ -30,8 +28,8 @@ public class ZeroRoadIntersection
         public Vector3 PE2S;
         public Vector3 IR2L;
         public Vector3 IE2S;
-        public float IRW;
-        public float PRW;
+        public float IntersectingRoadWidth;
+        public float PrimaryRoadWidth;
         public float CWL;
         public float SWW;
 
@@ -77,17 +75,12 @@ public class ZeroRoadIntersection
         this._rightStartIntersection = rightStartIntersection;
         this._leftEndIntersection = leftEndIntersection;
         this._rightEndIntersection = rightEndIntersection;
-        this._grid.PS2E = (this._grid.LSLE - this._grid.LSLS).normalized;
-        this._grid.IS2E = (this._grid.LSRS - this._grid.LSLS).normalized;
-        this._grid.PL2R = Vector3.Cross(this._grid.PS2E, Vector3.down);
-        this._grid.IL2R = Vector3.Cross(this._grid.IS2E, Vector3.down);
-        this._grid.PRW = primaryRoadWidth;
-        this._grid.IRW = intersectingRoadWidth;
-        this._grid.CWL = ZeroRoadBuilder.RoadCrossWalkLength;
-        this._grid.SWW = ZeroRoadBuilder.RoadLaneWidth;
+        this._grid.PrimaryRoadWidth = primaryRoadWidth;
+        this._grid.IntersectingRoadWidth = intersectingRoadWidth;
 
         GetGridBounds();
         GetCrosswalks();
+        GetNormalSidewalks();
         GetSidewalkCorners();
     }
 
@@ -120,51 +113,141 @@ public class ZeroRoadIntersection
 
     }
 
+    private void GetNormalSidewalk()
+    {
+
+    }
     private void GetNormalSidewalkGrid()
     {
-        this._grid.BLLE = this._grid.LSLS;
-        this._grid.BLLS = this._grid.LSLS + this._grid.PE2S * this._grid.CWL;
-        this._grid.BLRE = this._grid.BLLE + this._grid.PL2R * this._grid.SWW;
-        this._grid.BLRS = this._grid.BLLS + this._grid.PL2R * this._grid.SWW;
-        //
-        this._grid.BRRE = this._grid.RSRS;
-        this._grid.BRLS = this._grid.BLRS + this._grid.PL2R * this._grid.PRW;
-        this._grid.BRRS = this._grid.BRLS + this._grid.PL2R * this._grid.SWW;
-        this._grid.BRLE = this._grid.BRRE + this._grid.PR2L * this._grid.SWW;
-        //
-        //
-        this._grid.LRRE = this._grid.LSLS;
-        this._grid.LRRS = this._grid.LRRE + this._grid.IE2S * this._grid.CWL;
-        this._grid.LRLE = this._grid.LRRE + this._grid.IR2L * this._grid.SWW;
-        this._grid.LRLS = this._grid.LRRS + this._grid.IR2L * this._grid.SWW;
-        //
-        this._grid.LLLE = this._grid.LELE;
-        this._grid.LLRS = this._grid.LRLS + this._grid.IR2L * this._grid.IRW;
-        this._grid.LLRE = this._grid.LLLE + this._grid.IL2R * this._grid.SWW;
-        this._grid.LLLS = this._grid.LLRS + this._grid.IR2L * this._grid.SWW;
-        //
-        //
-        this._grid.FLLE = this._grid.RERE;
-        this._grid.FLLS = this._grid.FLLE + this._grid.PS2E * this._grid.CWL;
-        this._grid.FLRE = this._grid.FLLE + this._grid.PR2L * this._grid.SWW;
-        this._grid.FLRS = this._grid.FLLS + this._grid.PR2L * this._grid.SWW;
-        //
-        this._grid.FRRE = this._grid.LELE;
-        this._grid.FRLE = this._grid.FRRE + this._grid.PL2R * this._grid.SWW;
-        this._grid.FRLS = this._grid.FLRS + this._grid.PR2L * this._grid.PRW;
-        this._grid.FRRS = this._grid.FRLS + this._grid.PR2L * this._grid.SWW;
-        //
-        //
-        this._grid.RRRE = this._grid.RERE;
-        this._grid.RRRS = this._grid.RRRE + this._grid.IS2E * this._grid.CWL;
-        this._grid.RRLE = this._grid.RRRE + this._grid.IL2R * this._grid.SWW;
-        this._grid.RRLS = this._grid.RRRS + this._grid.IL2R * this._grid.SWW;
-        //
-        this._grid.RLLE = this._grid.RSRS;
-        this._grid.RLRS = this._grid.RRLS + this._grid.IL2R * this._grid.IRW;
-        this._grid.RLRE = this._grid.RLLE + this._grid.IR2L * this._grid.SWW;
-        this._grid.RLLS = this._grid.RLRS + this._grid.IL2R * this._grid.SWW;
+        this._grid.PS2E = (this._grid.LSLE - this._grid.LSLS).normalized;
+        this._grid.IS2E = (this._grid.LSRS - this._grid.LSLS).normalized;
+        this._grid.PL2R = Vector3.Cross(this._grid.PS2E, Vector3.down);
+        this._grid.IL2R = Vector3.Cross(this._grid.IS2E, Vector3.down);
 
+        var primaryForwardAngleWithLeft =
+            Vector3.Angle(
+                this._grid.LSLS - this._grid.LSRS,
+                this._grid.LSRE - this._grid.LSRS);
+        if (primaryForwardAngleWithLeft == 90)
+        {
+
+        }
+        else if (primaryForwardAngleWithLeft > 90)
+        {
+            Vector3[] BLSW =
+                GetNormalSidewalkVertices(
+                    knownPoint: this._grid.LSLS,
+                    referencePoint: Vector3.zero,
+                    knownPointIndex: 1,
+                    left: this._grid.PL2R,
+                    endToStart: this._grid.PE2S);
+
+            Vector3[] BRSW =
+                GetNormalSidewalkVertices(
+                    knownPoint: this._grid.RSRS,
+                    referencePoint: BLSW[3],
+                    knownPointIndex: 2,
+                    left: this._grid.PL2R,
+                    endToStart: this._grid.PE2S);
+
+            Vector3[] LRSW =
+                GetNormalSidewalkVertices(
+                    knownPoint: this._grid.LSLS,
+                    referencePoint: Vector3.zero,
+                    knownPointIndex: 2,
+                    left: this._grid.IL2R,
+                    endToStart: this._grid.IE2S);
+
+            Vector3[] LLSW =
+                GetNormalSidewalkVertices(
+                    knownPoint: this._grid.LELE,
+                    referencePoint: LRSW[0],
+                    knownPointIndex: 1,
+                    left: this._grid.IL2R,
+                    endToStart: this._grid.IE2S);
+
+            Vector3[] FLSW =
+                GetNormalSidewalkVertices(
+                    knownPoint: this._grid.LSLS,
+                    referencePoint: Vector3.zero,
+                    knownPointIndex: 1,
+                    left: this._grid.PR2L,
+                    endToStart: this._grid.PS2E);
+
+            Vector3[] FRSW =
+                GetNormalSidewalkVertices(
+                    knownPoint: this._grid.LELE,
+                    referencePoint: FLSW[3],
+                    knownPointIndex: 2,
+                    left: this._grid.PR2L,
+                    endToStart: this._grid.PS2E);
+
+            Vector3[] RRSW =
+                GetNormalSidewalkVertices(
+                    knownPoint: this._grid.RERE,
+                    referencePoint: Vector3.zero,
+                    knownPointIndex: 2,
+                    left: this._grid.IR2L,
+                    endToStart: this._grid.IS2E);
+
+            Vector3[] RLSW =
+                GetNormalSidewalkVertices(
+                    knownPoint: this._grid.RSRS,
+                    referencePoint: RRSW[0],
+                    knownPointIndex: 1,
+                    left: this._grid.IR2L,
+                    endToStart: this._grid.IS2E);
+        }
+        else
+        {
+
+        }
+
+    }
+
+    private Vector3[] GetNormalSidewalkVertices(
+        Vector3 leftEdgePoint,
+        Vector3 rightEdgePoint,
+        int knownPointIndex,
+        Vector3 left,
+        Vector3 endToStart,
+        float roadWidth = 0)
+    {
+        Vector3[] leftVertices = new Vector3[4];
+        Vector3[] rightVertices = new Vector3[4];
+        float CWL = ZeroRoadBuilder.RoadCrossWalkLength;
+        float SWW = ZeroRoadBuilder.RoadLaneWidth;
+
+        if (referencePoint.Equals(Vector3.zero) && knownPointIndex == 1)
+        {
+            leftVertices[1] = leftEdgePoint;
+
+            leftVertices[2] = leftVertices[1] + left * SWW;
+            leftVertices[0] = leftVertices[1] + endToStart * CWL;
+            leftVertices[3] = leftVertices[0] + left * SWW;
+
+            rightVertices[0] = leftVertices[3] + left * roadWidth;
+            rightVertices[2] = rightEdgePoint;
+
+            rightVertices[1] = rightVertices[2] - left * SWW;
+            rightVertices[3] = rightVertices[0] + left * SWW;
+
+        }
+        else if (referencePoint.Equals(Vector3.zero) && knownPointIndex == 2)
+        { 
+            leftVertices[2] = leftEdgePoint;
+
+            leftVertices[1] = leftVertices[2] - left * SWW;
+            leftVertices[0] = leftVertices[1] + endToStart * CWL;
+            leftVertices[3] = leftVertices[0] + left * SWW;
+
+            rightVertices[3] = leftVertices[0] - left * roadWidth;
+            rightVertices[1] = rightEdgePoint;
+
+            rightVertices[2] = rightVertices[1] + left * SWW;
+            rightVertices[0] = rightVertices[3] - left * SWW;
+        } 
+        return vertices;
     }
 
     private void GetSidewalkCorners()
