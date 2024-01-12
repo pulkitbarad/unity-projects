@@ -15,7 +15,7 @@ public class ZeroCurvedLine
         return FindBazierLinePoints(vertexCount, controlPoints);
     }
 
-    private static Vector3[] FindBazierLinePoints(
+    public static Vector3[] FindBazierLinePoints(
       int vertexCount,
       params Vector3[] controlPoints)
     {

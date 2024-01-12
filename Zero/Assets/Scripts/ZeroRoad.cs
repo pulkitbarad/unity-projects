@@ -31,7 +31,7 @@ public class ZeroRoad
         float height,
         float sidewalkHeight)
     {
-        this.Name = "R" + ZeroRoadBuilder.BuiltRoads.Count();
+        this.Name = "R" + ZeroRoadBuilder.BuiltRoadsByName.Count();
         this.IsCurved = isCurved;
         this.NumberOfLanes = numberOfLanes;
         this.LeftSidewalkIndex = numberOfLanes;
@@ -51,7 +51,7 @@ public class ZeroRoad
 
     private void InitRoadObject()
     {
-        ZeroRoadBuilder.BuiltRoads[this.Name] = this;
+        ZeroRoadBuilder.BuiltRoadsByName[this.Name] = this;
     }
 
     public void Hide()
@@ -94,15 +94,15 @@ public class ZeroRoad
             int i = 0;
             if (IntersectionsByRoadName.Count() > 0)
 
-            foreach (var entry in this.IntersectionsByRoadName)
-            {
-                foreach (ZeroRoadIntersection intersection in entry.Value)
+                foreach (var entry in this.IntersectionsByRoadName)
                 {
-                    // intersection.RenderCornerVertices();
-                    intersection.RenderCrosswalkVertices();
-                    i++;
+                    foreach (ZeroRoadIntersection intersection in entry.Value)
+                    {
+                        // intersection.RenderCornerVertices();
+                        intersection.RenderCrosswalkVertices();
+                        i++;
+                    }
                 }
-            }
         }
     }
 
@@ -250,6 +250,8 @@ public class ZeroRoad
             foreach (var intersectingRoadName in listOfRoads)
             {
 
+                ZeroRoad intersectingRoad = ZeroRoadBuilder.BuiltRoadsByName[intersectingRoadName];
+
                 ZeroLaneIntersection[] leftIntersections =
                    leftIntersectionsByRoadName[intersectingRoadName]
                    .OrderBy(e => e.PrimaryDistance)
@@ -273,6 +275,9 @@ public class ZeroRoad
 
                     intersectionsByRoadName[intersectingRoadName].Add(new ZeroRoadIntersection(
                         name: this.Name + intersectingRoadName + "I" + intersectionsByRoadName[intersectingRoadName].Count(),
+                        height: Mathf.Max(this.Height, intersectingRoad.Height),
+                        primaryRoadWidth: this.Width,
+                        intersectingRoadWidth: intersectingRoad.Width,
                         leftStartIntersection: leftIntersections[0],
                         rightStartIntersection: rightIntersections[0],
                         leftEndIntersection: leftIntersections[1],
@@ -288,6 +293,9 @@ public class ZeroRoad
                     {
                         intersectionsByRoadName[intersectingRoadName].Add(new ZeroRoadIntersection(
                             name: this.Name + intersectingRoadName + "I" + intersectionsByRoadName[intersectingRoadName].Count(),
+                            height: Mathf.Max(this.Height, intersectingRoad.Height),
+                            primaryRoadWidth: this.Width,
+                            intersectingRoadWidth: intersectingRoad.Width,
                             leftStartIntersection: leftIntersections[2],
                             rightStartIntersection: rightIntersections[2],
                             leftEndIntersection: leftIntersections[3],
