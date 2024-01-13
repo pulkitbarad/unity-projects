@@ -95,15 +95,13 @@ public class ZeroRoadIntersection
 
         float CWL = ZeroRoadBuilder.RoadCrossWalkLength;
         float SWW = ZeroRoadBuilder.RoadLaneWidth;
+        float CWLMinusSWW = CWL - SWW;
         Vector3 PE2S = (this._laneIntersections[0][0] - this._laneIntersections[0][1]).normalized;
         Vector3 IE2S = (this._laneIntersections[0][0] - this._laneIntersections[0][3]).normalized;
         Vector3 PL2R = Vector3.Cross(PE2S, Vector3.up);
         Vector3 IL2R = Vector3.Cross(IE2S, Vector3.up);
 
-        var angleForwardWithRightToLeft =
-            Vector3.Angle(
-                this._laneIntersections[0][0] - this._laneIntersections[0][3],
-                this._laneIntersections[0][2] - this._laneIntersections[0][3]);
+        var angleForwardWithRightToLeft = GetAngleForwardWithRightToLeft();
 
         int sidewalkIndex = 0;
         for (int intersectionIndex = 0; intersectionIndex < 4; intersectionIndex++)
@@ -113,10 +111,26 @@ public class ZeroRoadIntersection
             this.CrossWalks[intersectionIndex] = new Vector3[4];
             curvedSideWalks[intersectionIndex] = new Vector3[4];
 
+            //Point LSLS
             Vector3 leftEdgePoint =
-                this._laneIntersections[intersectionIndex][intersectionIndex];
+                this._laneIntersections
+                    [intersectionIndex]
+                    [intersectionIndex];
+            //Point RSRE
             Vector3 rightEdgePoint =
-                 this._laneIntersections[intersectionIndex == 0 ? 3 : intersectionIndex - 1][intersectionIndex == 0 ? 3 : intersectionIndex - 1];
+                 this._laneIntersections
+                    [intersectionIndex == 0 ? 3 : intersectionIndex - 1]
+                    [intersectionIndex == 0 ? 3 : intersectionIndex - 1];
+            //Point LSRE
+            Vector3 leftInsidePoint =
+                this._laneIntersections
+                    [intersectionIndex]
+                    [intersectionIndex > 1 ? intersectionIndex - 2 : intersectionIndex + 2];
+            //Point RSLE
+            Vector3 rightInsidePoint =
+                 this._laneIntersections
+                    [intersectionIndex == 0 ? 3 : intersectionIndex - 1]
+                    [intersectionIndex == 3 ? 0 : intersectionIndex + 1];
             if (intersectionIndex % 2 == 0)
             {
                 endToStart = PE2S;
@@ -143,7 +157,7 @@ public class ZeroRoadIntersection
                 side1Vertices[1] = leftEdgePoint;
                 //
                 side1Vertices[2] = side1Vertices[1] + leftToRight * SWW;
-                side1Vertices[0] = side1Vertices[1] + endToStart * CWL;
+                side1Vertices[0] = side1Vertices[1] + endToStart * CWLMinusSWW;
                 side1Vertices[3] = side1Vertices[0] + leftToRight * SWW;
                 //
                 //
@@ -152,19 +166,13 @@ public class ZeroRoadIntersection
                 //
                 side2Vertices[1] = side2Vertices[2] + rightToLeft * SWW;
                 side2Vertices[3] = side2Vertices[0] + leftToRight * SWW;
-                //
-                //
-                this.CrossWalks[intersectionIndex][0] = side1Vertices[3];
-                this.CrossWalks[intersectionIndex][1] = side1Vertices[2];
-                this.CrossWalks[intersectionIndex][2] = this.CrossWalks[intersectionIndex][1] + leftToRight * roadWidth;
-                this.CrossWalks[intersectionIndex][3] = this.CrossWalks[intersectionIndex][0] + leftToRight * roadWidth;
             }
             else
             {
                 side2Vertices[2] = rightEdgePoint;
                 //
                 side2Vertices[1] = side2Vertices[2] + rightToLeft * SWW;
-                side2Vertices[0] = side2Vertices[1] + endToStart * CWL;
+                side2Vertices[0] = side2Vertices[1] + endToStart * CWLMinusSWW;
                 side2Vertices[3] = side2Vertices[0] + leftToRight * SWW;
                 //
                 //
@@ -173,13 +181,15 @@ public class ZeroRoadIntersection
                 //
                 side1Vertices[2] = side1Vertices[1] + leftToRight * SWW;
                 side1Vertices[0] = side1Vertices[3] + rightToLeft * SWW;
-                //
-                //
-                this.CrossWalks[intersectionIndex][3] = side2Vertices[0];
-                this.CrossWalks[intersectionIndex][2] = side2Vertices[1];
-                this.CrossWalks[intersectionIndex][1] = this.CrossWalks[intersectionIndex][2] + rightToLeft * roadWidth;
-                this.CrossWalks[intersectionIndex][0] = this.CrossWalks[intersectionIndex][3] + rightToLeft * roadWidth;
             }
+            //
+            //
+            this.CrossWalks[intersectionIndex][1] = leftInsidePoint;
+            this.CrossWalks[intersectionIndex][2] = rightInsidePoint;
+            this.CrossWalks[intersectionIndex][0] = this.CrossWalks[intersectionIndex][1] + endToStart * CWL;
+            this.CrossWalks[intersectionIndex][3] = this.CrossWalks[intersectionIndex][2] + endToStart * CWL;
+            //
+            //
             this.Sidewalks[sidewalkIndex++] = side2Vertices;
             this.Sidewalks[sidewalkIndex++] = side1Vertices;
         }
@@ -201,27 +211,37 @@ public class ZeroRoadIntersection
 
             List<Vector3> sidewalkCorner = new()
             {
-                currentSidewalk[1],
-                nextSidewalk[1]
+                currentSidewalk[1]
             };
 
             if (sidewalkCornerIndex < 2)
                 controlPointIndex = sidewalkCornerIndex + 2;
-            else if (sidewalkCornerIndex == 2)
-                controlPointIndex = 0;
-            else if (sidewalkCornerIndex == 3)
-                controlPointIndex = 1;
+            else
+                controlPointIndex = sidewalkCornerIndex - 2;
 
+            var angleForwardWithRightToLeft = GetAngleForwardWithRightToLeft();
+            int vertexCount = 4;
+            if (
+                (angleForwardWithRightToLeft > 90 && sidewalkCornerIndex % 2 == 0)
+                || (angleForwardWithRightToLeft <= 90 && sidewalkCornerIndex % 2 > 0))
+                vertexCount = 8;
             Vector3[] curvePoints = ZeroCurvedLine.FindBazierLinePoints(
-                vertexCount: 6,
+                vertexCount: vertexCount,
                 nextSidewalk[1],
                 this._laneIntersections[sidewalkCornerIndex][controlPointIndex],
                 currentSidewalk[2]);
 
             sidewalkCorner.AddRange(curvePoints);
-            sidewalkCorner.Add(currentSidewalk[2]);
             this.SidewalkCorners[sidewalkCornerIndex] = sidewalkCorner.ToArray();
         }
+    }
+
+    private float GetAngleForwardWithRightToLeft()
+    {
+        return
+            Vector3.Angle(
+                this._laneIntersections[0][0] - this._laneIntersections[0][3],
+                this._laneIntersections[0][2] - this._laneIntersections[0][3]);
     }
 
     private void GetMainSquare()

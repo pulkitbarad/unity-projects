@@ -99,7 +99,7 @@ public class ZeroRoad
                     foreach (ZeroRoadIntersection intersection in entry.Value)
                     {
                         intersection.RenderSidewalkCorners();
-                        intersection.RenderCrosswalks();
+                        // intersection.RenderCrosswalks();
                         // intersection.RenderLaneIntersections();
                         // intersection.RenderSidewalks();
                         i++;
