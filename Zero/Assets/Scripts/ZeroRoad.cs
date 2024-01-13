@@ -53,7 +53,6 @@ public class ZeroRoad
         if (!this.IsCurved)
             VertexCount = 4;
 
-        Debug.LogFormat("control points={0}", controlPoints.ToCommaSeparatedString());
         this.Build(controlPoints);
     }
 
@@ -82,10 +81,8 @@ public class ZeroRoad
                centerVertices: centerVertices);
         this.IntersectionsByRoadName = GetRoadIntersections();
 
-        int i = 0;
         if (IntersectionsByRoadName.Count() > 0)
         {
-
             foreach (var entry in this.IntersectionsByRoadName)
             {
                 foreach (ZeroRoadIntersection intersection in entry.Value)
@@ -94,7 +91,14 @@ public class ZeroRoad
                     intersection.RenderCrosswalks();
                     intersection.RenderLaneIntersections();
                     intersection.RenderSidewalks();
-                    i++;
+                    ZeroController.AppendToLog(
+                        intersection.CrosswalksLogPairs());
+                    ZeroController.AppendToLog(
+                        intersection.SidewalksLogPairs());
+                    ZeroController.AppendToLog(
+                        intersection.SidewalkCornersLogPairs());
+                    ZeroController.AppendToLog(
+                        intersection.LaneIntersectionsLogPairs());
                 }
             }
         }
@@ -106,7 +110,7 @@ public class ZeroRoad
         ZeroController.AppendToLog(
             this.ControlPoints
             .Select(e =>
-                GetVectorString(this.Name + "Control" + i++.ToString(), e)).ToArray()
+                (this.Name + "Control" + i++.ToString(), e.ToString())).ToArray()
             );
     }
 
@@ -231,7 +235,6 @@ public class ZeroRoad
                         primaryLane: this.Lanes[this.RightSidewalkIndex],
                         layerMaskName: ZeroRoadBuilder.RoadSidewalkMaskName)
                      .GetLaneIntersectionsByRoadName();
-
 
         if (leftIntersectionsByRoadName.Count() == rightIntersectionsByRoadName.Count())
         {

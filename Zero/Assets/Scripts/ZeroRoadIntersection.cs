@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -258,7 +259,7 @@ public class ZeroRoadIntersection
     public void RenderSidewalkCorners(Color? color = null)
     {
         RenderVertices(this.SidewalkCorners,
-          this.Name + "CR",
+          this.Name + "SWCR",
          color: color);
     }
 
@@ -273,6 +274,26 @@ public class ZeroRoadIntersection
         RenderVertices(this.CrossWalks,
           this.Name + "CW",
          color: color);
+    }
+
+    public (string, string)[] LaneIntersectionsLogPairs()
+    {
+        return GetVertexLogPairs(this._laneIntersections, this.Name + "LI");
+    }
+
+    public (string, string)[] SidewalkCornersLogPairs()
+    {
+        return GetVertexLogPairs(this.SidewalkCorners, this.Name + "SWCR");
+    }
+
+    public (string, string)[] CrosswalksLogPairs()
+    {
+        return GetVertexLogPairs(this.CrossWalks, this.Name + "CW");
+    }
+
+    public (string, string)[] SidewalksLogPairs()
+    {
+        return GetVertexLogPairs(this.Sidewalks, this.Name + "SW");
     }
 
     private void RenderVertices(Vector3[][] vertices, string prefix, Color? color = null)
@@ -294,6 +315,18 @@ public class ZeroRoadIntersection
                     position: vertices[i][j],
                     sphereName: prefix + i.ToString() + j.ToString(),
                     color: color ?? colors[i > colors.Length ? i - colors.Length : i]);
+    }
+
+    private (string, string)[] GetVertexLogPairs(Vector3[][] vertices, string prefix)
+    {
+        List<(string, string)> vertexStrings = new();
+        for (int i = 0; i < vertices.Length; i++)
+            for (int j = 0; j < vertices[i].Length; j++)
+                vertexStrings.Add(
+                    (String.Format("{0}[{1}][{2}]", prefix, i, j),
+                    String.Format(vertices[i][j].ToString()))
+                );
+        return vertexStrings.ToArray();
     }
 
 }

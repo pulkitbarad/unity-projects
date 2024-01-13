@@ -131,9 +131,9 @@ public class ZeroRoadBuilder
 
     public static void ConfirmBuilding()
     {
+        CurrentActiveRoad.LogRoadPositions();
         HideControlObjects();
         CurrentActiveRoad = null;
-        CurrentActiveRoad.LogRoadPositions();
 
     }
 
@@ -173,13 +173,6 @@ public class ZeroRoadBuilder
         EndObject.transform.position = endPosition;
         EndObject.SetActive(true);
         controlPoints.Add(endPosition);
-
-        Debug.LogFormat("screen point=" + GetScreenCenterPoint());
-        Debug.LogFormat("screen hit point=" +
-            ZeroCameraMovement
-                .GetTerrainHitPoint(GetScreenCenterPoint()));
-        Debug.LogFormat("startPosition=" + startPosition);
-        Debug.LogFormat("endPosition=" + endPosition);
 
         return controlPoints.ToArray();
     }

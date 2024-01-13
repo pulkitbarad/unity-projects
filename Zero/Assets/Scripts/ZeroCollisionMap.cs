@@ -384,4 +384,5 @@ public class ZeroCollisionMap
         }
         return point.x > minX && point.x < maxX && point.y > minY && point.y < maxY;
     }
+    
 }
