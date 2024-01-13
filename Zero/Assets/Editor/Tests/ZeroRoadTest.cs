@@ -14,9 +14,34 @@ public class ZeroRoadTest
         ZeroObjectManager.Initialise();
         ZeroRoadBuilder.Initialise();
     }
-    
+
     [Test]
-    public void ZeroRoadTestStraightRoadTwoLane()
+    public void ZeroRoadTestCurvedTwoLane()
+    {
+        ZeroControllerSetup();
+        Vector3[] controlPoints = new Vector3[]{
+            new(-123.298584f,0,-39.1640625f),
+            new(-68.0500488f,0,-58.3859863f),
+            new(-57.7009277f,0,2.87182617f)
+        };
+        Vector3 R0L3S5Postion = new(-73.8933716f, 0.150000006f, -39.2758675f);
+        Vector3 R0L3S5Scale = new(3, 0.300000012f, 9.17414474f);
+
+        ZeroRoad actualRoad =
+            new(
+                isCurved: false,
+                hasBusLane: true,
+                numberOfLanes: 2,
+                height: ZeroRoadBuilder.RoadLaneHeight,
+                sidewalkHeight: ZeroRoadBuilder.RoadSideWalkHeight,
+                controlPoints: controlPoints);
+        Transform testSegmentTransform = actualRoad.Lanes[3].Segments[5].SegmentObject.transform;
+        AssertVectors(testSegmentTransform.position, R0L3S5Postion);
+        AssertVectors(testSegmentTransform.localScale, R0L3S5Scale);
+    }
+
+    [Test]
+    public void ZeroRoadTestStraightTwoLane()
     {
         ZeroControllerSetup();
         Vector3[] controlPoints = new Vector3[]{
@@ -45,6 +70,12 @@ public class ZeroRoadTest
                 height: ZeroRoadBuilder.RoadLaneHeight,
                 sidewalkHeight: ZeroRoadBuilder.RoadSideWalkHeight,
                 controlPoints: controlPoints);
+        AssertRoads(expectedRoad, actualRoad);
+
+    }
+
+    private void AssertRoads(ZeroRoad expectedRoad, ZeroRoad actualRoad)
+    {
         Assert.AreEqual(expectedRoad.Lanes.Length, actualRoad.Lanes.Length);
         for (int laneIndex = 0; laneIndex < actualRoad.Lanes.Length; laneIndex++)
         {
@@ -57,10 +88,10 @@ public class ZeroRoadTest
                 Transform expectedSegment = expectedLane.Segments[segmentIndex].SegmentObject.transform;
                 Transform actualSegment = actualLane.Segments[segmentIndex].SegmentObject.transform;
                 Assert.AreEqual(
-                    AreVectorsEqual(expectedSegment.position, actualSegment.position),
+                    AssertVectors(expectedSegment.position, actualSegment.position),
                     true);
                 Assert.AreEqual(
-                    AreVectorsEqual(expectedSegment.localScale, actualSegment.localScale),
+                    AssertVectors(expectedSegment.localScale, actualSegment.localScale),
                     true);
             }
         }
@@ -98,7 +129,7 @@ public class ZeroRoadTest
            };
     }
 
-    private bool AreVectorsEqual(Vector3 vector1, Vector3 vector2)
+    private bool AssertVectors(Vector3 vector1, Vector3 vector2)
     {
         return
             RoundCordinates(vector1)
