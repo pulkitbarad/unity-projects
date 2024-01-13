@@ -29,6 +29,11 @@ public class ZeroRoadSegment
     public ZeroRoadSegment NextSibling;
     public ZeroRoadLane ParentLane;
 
+    public ZeroRoadSegment()
+    {
+
+    }
+
     public ZeroRoadSegment(
          int index,
          float width,

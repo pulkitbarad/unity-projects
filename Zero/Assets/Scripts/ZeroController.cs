@@ -11,9 +11,11 @@ public class ZeroController : MonoBehaviour
     [SerializeField] public GameObject MainCameraAnchor;
     [SerializeField] public GameObject MainCameraHolder;
     [SerializeField] public Camera MainCamera;
+    public static bool IsPlayMode = false;
 
     void Awake()
     {
+        IsPlayMode = true;
         ZeroCameraMovement.MainCamera = MainCamera;
         ZeroCameraMovement.MainCameraHolder = MainCameraHolder;
         ZeroCameraMovement.MainCameraRoot = MainCameraRoot;

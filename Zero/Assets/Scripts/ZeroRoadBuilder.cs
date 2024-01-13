@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UIElements;
 
 public class ZeroRoadBuilder
@@ -48,8 +49,8 @@ public class ZeroRoadBuilder
         BuiltRoadsParent = new GameObject(BuiltRoadsObjectName);
         BuiltRoadSegmentsParent = new GameObject(BuiltRoadSegmentsObjectName);
         BuiltIntersectionsParent = new GameObject(BuiltIntersectionsObjectName);
-        InitControlObjects(true);
-        HideControlObjects();
+        if (ZeroController.IsPlayMode)
+            InitControlObjects(true);
     }
     private static void InitialiseConfig()
     {
@@ -77,7 +78,7 @@ public class ZeroRoadBuilder
             objectName: RoadEndObjectName,
             size: 2,
             color: new UnityEngine.Color(0.70f, 0.45f, 0f));
-
+        HideControlObjects();
     }
 
     public static GameObject InitStaticObject(
@@ -109,13 +110,28 @@ public class ZeroRoadBuilder
             return startPosition + midPointVector;
     }
 
-    public static void ShowControlObjects(bool isCurved)
+    public static void StartBuilding(bool isCurved)
     {
-        //Make control objects visible            
-        StartObject.SetActive(true);
-        EndObject.SetActive(true);
-        if (isCurved)
-            ControlObject.SetActive(true);
+        CurrentActiveRoad = new ZeroRoad(
+            isCurved: isCurved,
+            hasBusLane: true,
+            numberOfLanes: 2,
+            height: ZeroRoadBuilder.RoadLaneHeight,
+            sidewalkHeight: ZeroRoadBuilder.RoadSideWalkHeight,
+            controlPoints: ZeroRoadBuilder.ResetControlObjects(isCurved));
+    }
+
+
+    public static void CancelBuilding()
+    {
+        ConfirmBuilding();
+        CurrentActiveRoad?.Hide();
+    }
+
+    public static void ConfirmBuilding()
+    {
+        HideControlObjects();
+        CurrentActiveRoad = null;
     }
 
     public static void HideControlObjects()
@@ -125,46 +141,69 @@ public class ZeroRoadBuilder
         EndObject.SetActive(false);
     }
 
-    public static void StartBuilding(bool isCurved)
-    {
-        HideControlObjects();
-        CurrentActiveRoad?.Hide();
-        CurrentActiveRoad = new ZeroRoad(
-            isCurved: isCurved,
-            hasBusLane: true,
-            numberOfLanes: 2,
-            height: ZeroRoadBuilder.RoadLaneHeight,
-            sidewalkHeight: ZeroRoadBuilder.RoadSideWalkHeight);
-        ShowControlObjects(isCurved);
-    }
 
-    public static void ConfirmBuilding()
+    public static Vector3[] ResetControlObjects(bool isCurved)
     {
-        HideControlObjects();
-        CurrentActiveRoad = null;
-    }
-    public static void CancelBuilding()
-    {
-        CurrentActiveRoad.Hide();
-        CurrentActiveRoad = null;
-        HideControlObjects();
-    }
+        List<Vector3> controlPoints = new();
 
-    public static void RepositionControlObjects(bool isCurved)
-    {
         Vector3 startPosition =
             ZeroCameraMovement
             .GetTerrainHitPoint(GetScreenCenterPoint());
-
+        startPosition.y = 0;
         StartObject.transform.position = startPosition;
-        EndObject.transform.position =
-            startPosition + 20f * ZeroCameraMovement.MainCameraRoot.transform.right;
+        StartObject.SetActive(true);
+        controlPoints.Add(startPosition);
+
         if (isCurved)
         {
-            ControlObject.transform.position = InitCurveControlPosition(isCurved);
+            Vector3 curveControlPosition = InitCurveControlPosition(isCurved);
+            ControlObject.transform.position = curveControlPosition;
+            controlPoints.Add(curveControlPosition);
+            ControlObject.SetActive(true);
         }
+        else
+            ControlObject.SetActive(false);
+
+        Vector3 endPosition =
+            startPosition + 20f * ZeroCameraMovement.MainCameraRoot.transform.right;
+        EndObject.transform.position = endPosition;
+        EndObject.SetActive(true);
+        controlPoints.Add(endPosition);
+
+        return controlPoints.ToArray();
     }
 
+
+    public static void HandleControlDrag(bool isCurved, Vector2 touchPosition)
+    {
+        List<Vector3> controlPoints = new();
+
+        if (!EventSystem.current.IsPointerOverGameObject())
+        {
+            var roadStartChanged =
+                !ZeroRoadBuilder.StartObject.transform.position.Equals(Vector3.zero)
+                && ZeroUIHandler.HandleGameObjectDrag(ZeroRoadBuilder.StartObject, touchPosition);
+
+            var roadControlChanged =
+                isCurved
+                && !ZeroRoadBuilder.ControlObject.transform.position.Equals(Vector3.zero)
+                && ZeroUIHandler.HandleGameObjectDrag(ZeroRoadBuilder.ControlObject, touchPosition);
+
+            var roadEndChanged =
+                !ZeroRoadBuilder.EndObject.transform.position.Equals(Vector3.zero)
+                && ZeroUIHandler.HandleGameObjectDrag(ZeroRoadBuilder.EndObject, touchPosition);
+
+            controlPoints.Add(ZeroRoadBuilder.StartObject.transform.position);
+
+            if (isCurved)
+                controlPoints.Add(ZeroRoadBuilder.ControlObject.transform.position);
+            controlPoints.Add(ZeroRoadBuilder.EndObject.transform.position);
+
+
+            if (roadStartChanged || roadControlChanged || roadEndChanged)
+                ZeroRoadBuilder.CurrentActiveRoad.Build(controlPoints.ToArray());
+        }
+    }
 
     // public class CustomRoadTIntersection
     // {

@@ -81,7 +81,9 @@ public class ZeroUIHandler
         {
             Vector2 currentTouch0 = _touch0Action.ReadValue<Vector2>();
             if (_isRoadMenuActive)
-                ZeroRoadBuilder.CurrentActiveRoad.Build(false, currentTouch0);
+                ZeroRoadBuilder.HandleControlDrag(
+                    isCurved: ZeroRoadBuilder.CurrentActiveRoad.IsCurved,
+                    touchPosition: currentTouch0);
         }
 
         // if (_doubleTouchAction.phase == InputActionPhase.Performed)
@@ -199,6 +201,7 @@ public class ZeroUIHandler
             {
                 Vector3 oldPosition = gameObject.transform.position;
                 Vector3 newPosition = ZeroCameraMovement.GetTerrainHitPoint(touchPosition);
+                newPosition.y=0;
                 gameObject.transform.position = newPosition;
                 if (followerObject != null)
                 {

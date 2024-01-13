@@ -20,16 +20,23 @@ public class ZeroRoad
     public int RightSidewalkIndex;
     public bool IsCurved = true;
     public bool HasBusLane = false;
+    public Vector3[] ControlPoints;
     public ZeroRoadLane[] Lanes;
     public ZeroRoadLane[] Sidewalks;
     public Dictionary<string, List<ZeroRoadIntersection>> IntersectionsByRoadName = new();
 
+    //Default constructor to generate test data
+    public ZeroRoad()
+    {
+
+    }
     public ZeroRoad(
         bool isCurved,
         bool hasBusLane,
         int numberOfLanes,
         float height,
-        float sidewalkHeight)
+        float sidewalkHeight,
+        Vector3[] controlPoints)
     {
         this.Name = "R" + ZeroRoadBuilder.BuiltRoadsByName.Count();
         this.IsCurved = isCurved;
@@ -40,13 +47,13 @@ public class ZeroRoad
         this.Height = height;
         this.SidewalkHeight = sidewalkHeight;
         this.HasBusLane = hasBusLane && numberOfLanes > 1;
+        this.ControlPoints = controlPoints;
         InitRoadObject();
 
         if (!this.IsCurved)
             VertexCount = 4;
 
-        ZeroRoadBuilder.RepositionControlObjects(isCurved);
-        this.Build(true, Vector3.zero);
+        this.Build(controlPoints);
     }
 
     private void InitRoadObject()
@@ -62,50 +69,35 @@ public class ZeroRoad
         }
     }
 
-    public void Build(bool forceBuild, Vector2 touchPosition)
+    public void Build(Vector3[] controlPoints)
     {
-        if (forceBuild || this.HandleControlsDrag(touchPosition))
-        {
-            Vector3[] controlPoints;
-            if (this.IsCurved)
+
+        Vector3[] centerVertices =
+               ZeroCurvedLine.FindBazierLinePoints(
+                   controlPoints);
+        this.NumberOfSegmentsPerLane = centerVertices.Length;
+
+        Debug.LogFormat("road={0}, controlPoints={1}", this.Name, controlPoints.ToCommaSeparatedString());
+        Debug.LogFormat("road={0}, centerVertices={1}", this.Name, centerVertices.ToCommaSeparatedString());
+        this.Lanes =
+           GetLanes(
+               centerVertices: centerVertices);
+        this.IntersectionsByRoadName = GetRoadIntersections();
+
+        int i = 0;
+        if (IntersectionsByRoadName.Count() > 0)
+
+            foreach (var entry in this.IntersectionsByRoadName)
             {
-                controlPoints = new Vector3[3];
-                controlPoints[0] = ZeroRoadBuilder.StartObject.transform.position;
-                controlPoints[1] = ZeroRoadBuilder.ControlObject.transform.position;
-                controlPoints[2] = ZeroRoadBuilder.EndObject.transform.position;
-            }
-            else
-            {
-                controlPoints = new Vector3[2];
-                controlPoints[0] = ZeroRoadBuilder.StartObject.transform.position;
-                controlPoints[1] = ZeroRoadBuilder.EndObject.transform.position;
-            }
-
-            Vector3[] centerVertices =
-                   ZeroCurvedLine.FindBazierLinePoints(
-                       controlPoints);
-            this.NumberOfSegmentsPerLane = centerVertices.Length;
-
-            this.Lanes =
-               GetLanes(
-                   centerVertices: centerVertices);
-            this.IntersectionsByRoadName = GetRoadIntersections();
-
-            int i = 0;
-            if (IntersectionsByRoadName.Count() > 0)
-
-                foreach (var entry in this.IntersectionsByRoadName)
+                foreach (ZeroRoadIntersection intersection in entry.Value)
                 {
-                    foreach (ZeroRoadIntersection intersection in entry.Value)
-                    {
-                        intersection.RenderSidewalkCorners();
-                        // intersection.RenderCrosswalks();
-                        // intersection.RenderLaneIntersections();
-                        // intersection.RenderSidewalks();
-                        i++;
-                    }
+                    intersection.RenderSidewalkCorners();
+                    // intersection.RenderCrosswalks();
+                    // intersection.RenderLaneIntersections();
+                    // intersection.RenderSidewalks();
+                    i++;
                 }
-        }
+            }
     }
 
     private ZeroRoadLane[] GetLanes(Vector3[] centerVertices)
@@ -115,6 +107,9 @@ public class ZeroRoad
                 vertices: centerVertices,
                 distance: 0.5f * this.Width);
         ZeroRoadLane[] lanes = new ZeroRoadLane[this.NumberOfLanes + 2];
+
+        Debug.LogFormat("road={0}, leftMostVertices={1}", this.Name, leftMostVertices.ToCommaSeparatedString());
+
         int laneIndex = 0;
         for (; laneIndex < this.NumberOfLanes; laneIndex++)
         {
@@ -206,28 +201,6 @@ public class ZeroRoad
             }
         }
         return new Vector3[][] { leftLine, rightLine };
-    }
-
-    private bool HandleControlsDrag(Vector2 touchPosition)
-    {
-        if (!EventSystem.current.IsPointerOverGameObject())
-        {
-            var roadStartChanged =
-                !ZeroRoadBuilder.StartObject.transform.position.Equals(Vector3.zero)
-                && ZeroUIHandler.HandleGameObjectDrag(ZeroRoadBuilder.StartObject, touchPosition);
-
-            var roadControlChanged =
-                this.IsCurved
-                && !ZeroRoadBuilder.ControlObject.transform.position.Equals(Vector3.zero)
-                && ZeroUIHandler.HandleGameObjectDrag(ZeroRoadBuilder.ControlObject, touchPosition);
-
-            var roadEndChanged =
-                !ZeroRoadBuilder.EndObject.transform.position.Equals(Vector3.zero)
-                && ZeroUIHandler.HandleGameObjectDrag(ZeroRoadBuilder.EndObject, touchPosition);
-
-            return roadStartChanged || roadControlChanged || roadEndChanged;
-        }
-        else return false;
     }
 
     public Dictionary<string, List<ZeroRoadIntersection>> GetRoadIntersections()
