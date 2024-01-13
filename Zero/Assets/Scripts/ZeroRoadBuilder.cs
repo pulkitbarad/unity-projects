@@ -49,6 +49,7 @@ public class ZeroRoadBuilder
         BuiltRoadsParent = new GameObject(BuiltRoadsObjectName);
         BuiltRoadSegmentsParent = new GameObject(BuiltRoadSegmentsObjectName);
         BuiltIntersectionsParent = new GameObject(BuiltIntersectionsObjectName);
+        Debug.LogFormat("playmode={0}", ZeroController.IsPlayMode);
         if (ZeroController.IsPlayMode)
             InitControlObjects(true);
     }
@@ -132,6 +133,8 @@ public class ZeroRoadBuilder
     {
         HideControlObjects();
         CurrentActiveRoad = null;
+        CurrentActiveRoad.LogRoadPositions();
+
     }
 
     public static void HideControlObjects()
@@ -145,6 +148,7 @@ public class ZeroRoadBuilder
     public static Vector3[] ResetControlObjects(bool isCurved)
     {
         List<Vector3> controlPoints = new();
+
 
         Vector3 startPosition =
             ZeroCameraMovement
@@ -169,6 +173,13 @@ public class ZeroRoadBuilder
         EndObject.transform.position = endPosition;
         EndObject.SetActive(true);
         controlPoints.Add(endPosition);
+
+        Debug.LogFormat("screen point=" + GetScreenCenterPoint());
+        Debug.LogFormat("screen hit point=" +
+            ZeroCameraMovement
+                .GetTerrainHitPoint(GetScreenCenterPoint()));
+        Debug.LogFormat("startPosition=" + startPosition);
+        Debug.LogFormat("endPosition=" + endPosition);
 
         return controlPoints.ToArray();
     }

@@ -53,6 +53,7 @@ public class ZeroRoad
         if (!this.IsCurved)
             VertexCount = 4;
 
+        Debug.LogFormat("control points={0}", controlPoints.ToCommaSeparatedString());
         this.Build(controlPoints);
     }
 
@@ -97,16 +98,15 @@ public class ZeroRoad
                 }
             }
         }
-        LogRoadPositions();
     }
 
-    private void LogRoadPositions()
+    public void LogRoadPositions()
     {
         int i = 0;
         ZeroController.AppendToLog(
             this.ControlPoints
             .Select(e =>
-                GetVectorString(this.Name + "Control" + (i++).ToString(), e)).ToArray()
+                GetVectorString(this.Name + "Control" + i++.ToString(), e)).ToArray()
             );
     }
 

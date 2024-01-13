@@ -12,6 +12,7 @@ public class ZeroRoadTest
 
     private static void ZeroControllerSetup()
     {
+        ZeroController.IsPlayMode = false;
         ZeroObjectManager.Initialise();
         ZeroRoadBuilder.Initialise();
     }

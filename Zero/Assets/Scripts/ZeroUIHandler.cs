@@ -10,7 +10,7 @@ using UnityEngine.InputSystem.Controls;
 public class ZeroUIHandler
 {
 
-    public static MainActions _mainActions;
+    public static ZeroActions _zeroActions;
     public static InputAction _zoomInAction;
     public static InputAction _zoomOutAction;
     public static InputAction _moveAction;
@@ -23,6 +23,7 @@ public class ZeroUIHandler
     public static InputAction _straightRoadAction;
     public static InputAction _confirmAction;
     public static InputAction _cancelAction;
+    public static InputAction _writeLogsAction;
     public static bool _isRoadMenuActive = false;
     public static Vector2 _startTouch0 = Vector2.zero;
     public static Vector2 _startTouch1 = Vector2.zero;
@@ -31,19 +32,20 @@ public class ZeroUIHandler
 
     public static void Initialise()
     {
-        _mainActions = new MainActions();
-        _moveAction = _mainActions.Player.Move;
-        _lookAction = _mainActions.Player.Look;
-        _zoomOutAction = _mainActions.Player.ZoomOut;
-        _zoomInAction = _mainActions.Player.ZoomIn;
-        _touch0Action = _mainActions.Player.Touch0Position;
-        _touch1Action = _mainActions.Player.Touch1Position;
-        _singleTouchAction = _mainActions.Player.SingleTouchContact;
-        _doubleTouchAction = _mainActions.Player.DoubleTouchContact;
-        _curvedRoadAction = _mainActions.Player.CurvedRoad;
-        _straightRoadAction = _mainActions.Player.StraightRoad;
-        _confirmAction = _mainActions.Player.Confirm;
-        _cancelAction = _mainActions.Player.Cancel;
+        _zeroActions = new ZeroActions();
+        _moveAction = _zeroActions.Player.Move;
+        _lookAction = _zeroActions.Player.Look;
+        _zoomOutAction = _zeroActions.Player.ZoomOut;
+        _zoomInAction = _zeroActions.Player.ZoomIn;
+        _touch0Action = _zeroActions.Player.Touch0Position;
+        _touch1Action = _zeroActions.Player.Touch1Position;
+        _singleTouchAction = _zeroActions.Player.SingleTouchContact;
+        _doubleTouchAction = _zeroActions.Player.DoubleTouchContact;
+        _curvedRoadAction = _zeroActions.Player.CurvedRoad;
+        _straightRoadAction = _zeroActions.Player.StraightRoad;
+        _confirmAction = _zeroActions.Player.Confirm;
+        _cancelAction = _zeroActions.Player.Cancel;
+        _writeLogsAction = _zeroActions.Player.WriteLogs;
         _doubleTouchAction.started += OnTouch0Start;
         _doubleTouchAction.started += OnTouch1Start;
         _doubleTouchAction.canceled += OnTouch0End;
@@ -54,6 +56,7 @@ public class ZeroUIHandler
         _straightRoadAction.performed += OnStraightRoadPerformed;
         _confirmAction.performed += OnConfirmPerformed;
         _cancelAction.performed += OnCancelPerformed;
+        _writeLogsAction.performed += OnWriteLogsPerformed;
 
 
         _zoomOutAction.Enable();
@@ -68,6 +71,7 @@ public class ZeroUIHandler
         _straightRoadAction.Enable();
         _confirmAction.Enable();
         _cancelAction.Enable();
+        _writeLogsAction.Enable();
     }
 
     public static void HandleInputChanges()
@@ -145,6 +149,11 @@ public class ZeroUIHandler
         ZeroRoadBuilder.CancelBuilding();
     }
 
+    public static void OnWriteLogsPerformed(InputAction.CallbackContext context)
+    {
+        ZeroController.WriteLogFile();
+    }
+
 
     public static void OnTouch0Start(InputAction.CallbackContext context)
     {
@@ -201,7 +210,7 @@ public class ZeroUIHandler
             {
                 Vector3 oldPosition = gameObject.transform.position;
                 Vector3 newPosition = ZeroCameraMovement.GetTerrainHitPoint(touchPosition);
-                newPosition.y=0;
+                newPosition.y = 0;
                 gameObject.transform.position = newPosition;
                 if (followerObject != null)
                 {

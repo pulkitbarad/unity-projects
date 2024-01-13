@@ -1,5 +1,5 @@
 {
-    "name": "MainActions",
+    "name": "ZeroActions",
     "maps": [
         {
             "name": "Player",
@@ -108,6 +108,15 @@
                     "name": "Cancel",
                     "type": "Button",
                     "id": "41d0fc0f-a369-429b-b08e-e5ed96fbaa39",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "WriteLogs",
+                    "type": "Button",
+                    "id": "4624773e-646a-43de-b17b-447fe284648b",
                     "expectedControlType": "Button",
                     "processors": "",
                     "interactions": "",
@@ -409,6 +418,17 @@
                     "processors": "",
                     "groups": "",
                     "action": "StraightRoad",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "bad6c0a5-49d4-4c87-a8c1-47efbe198265",
+                    "path": "<Keyboard>/#(L)",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "WriteLogs",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }
