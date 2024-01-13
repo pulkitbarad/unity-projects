@@ -38,8 +38,8 @@ public class ZeroRoadLane
                 ZeroRoadBuilder.BuiltRoadSegmentsByLane[this.Name])
             {
                 ZeroObjectManager.ReleaseObjectToPool(
-                    segment.SegmentObject,
-                    segment.SegmentObjectType);
+                    objectName: segment.Name,
+                    objectType: segment.SegmentObjectType);
                 if (ZeroRoadBuilder.BuiltRoadSegmentsByName.ContainsKey(segment.Name))
                     ZeroRoadBuilder.BuiltRoadSegmentsByName.Remove(segment.Name);
             }

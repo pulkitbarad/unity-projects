@@ -52,17 +52,18 @@ public class ZeroCollisionMap
             orientation: segment.SegmentObject.transform.rotation,
             layerMask: LayerMask.GetMask(this.LayerMaskName));
         List<Collider> partialOverlaps = new();
-        if (partialOverlaps.Count() > 0)
-
-        foreach (Collider collider in overlaps)
+        if (overlaps.Length > 0)
         {
-            string colliderGameObjectName = collider.gameObject.name;
-            if (ZeroRoadBuilder.BuiltRoadSegmentsByName.ContainsKey(colliderGameObjectName)
-                && !ZeroRoadBuilder.BuiltRoadSegmentsByName[colliderGameObjectName]
-                    .ParentLane.ParentRoad.Name.Equals(this.RoadName)
-                && !IsColliderWithinbounds(collider, segmentTopPlane.Vertices))
+            foreach (Collider collider in overlaps)
             {
-                partialOverlaps.Add(collider);
+                string colliderGameObjectName = collider.gameObject.name;
+                if (ZeroRoadBuilder.BuiltRoadSegmentsByName.ContainsKey(colliderGameObjectName)
+                    && !ZeroRoadBuilder.BuiltRoadSegmentsByName[colliderGameObjectName]
+                        .ParentLane.ParentRoad.Name.Equals(this.RoadName)
+                    && !IsColliderWithinbounds(collider, segmentTopPlane.Vertices))
+                {
+                    partialOverlaps.Add(collider);
+                }
             }
         }
         return partialOverlaps;
@@ -190,6 +191,7 @@ public class ZeroCollisionMap
     public Dictionary<string, List<ZeroLaneIntersection>> GetLaneIntersectionsByRoadName()
     {
         Dictionary<string, List<ZeroLaneIntersection>> intersectionsByRoadName = new();
+
         foreach (var entry in this.CollisionsByCollidingLane)
         {
             string collidingLaneName = entry.Key;

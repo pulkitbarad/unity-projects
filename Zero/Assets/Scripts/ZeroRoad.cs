@@ -98,8 +98,10 @@ public class ZeroRoad
                 {
                     foreach (ZeroRoadIntersection intersection in entry.Value)
                     {
-                        // intersection.RenderCornerVertices();
-                        intersection.RenderCrosswalkVertices();
+                        intersection.RenderSidewalkCorners();
+                        intersection.RenderCrosswalks();
+                        // intersection.RenderLaneIntersections();
+                        // intersection.RenderSidewalks();
                         i++;
                     }
                 }
@@ -243,6 +245,7 @@ public class ZeroRoad
                         primaryLane: this.Lanes[this.RightSidewalkIndex],
                         layerMaskName: ZeroRoadBuilder.RoadSidewalkMaskName)
                      .GetLaneIntersectionsByRoadName();
+
 
         if (leftIntersectionsByRoadName.Count() == rightIntersectionsByRoadName.Count())
         {

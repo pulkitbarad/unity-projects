@@ -179,6 +179,7 @@ public class ZeroRoadSegment
 
     private void InitSegmentObject()
     {
+        ZeroObjectManager.ReleaseObjectToPool(Name, SegmentObjectType);
         GameObject segmentObject =
             ZeroObjectManager.GetObjectFromPool(Name, SegmentObjectType);
 

@@ -55,6 +55,10 @@ public class ZeroRenderer
         Transform parentTransform = null,
         UnityEngine.Color? color = null)
     {
+        ZeroObjectManager.ReleaseObjectToPool(
+            objectName: sphereName,
+            objectType: ZeroObjectManager.OBJECT_TYPE_DEBUG_SPHERE);
+
         GameObject sphere =
             ZeroObjectManager.GetObjectFromPool(
                 name: sphereName,

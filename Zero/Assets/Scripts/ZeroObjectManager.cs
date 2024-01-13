@@ -46,14 +46,20 @@ public class ZeroObjectManager
             return PoolRoadPolygon3D.GetObject(name);
     }
 
-    public static bool ReleaseObjectToPool(GameObject gameObject, int objectType)
+    public static bool ReleaseObjectToPool(string objectName, int objectType)
     {
-        if (objectType == OBJECT_TYPE_DEBUG_SPHERE)
-            return PoolDebugSphere.ReleaseObject(gameObject);
-        else if (objectType == OBJECT_TYPE_ROAD_CUBE)
-            return PoolRoadCube.ReleaseObject(gameObject);
-        else
-            return PoolRoadPolygon3D.ReleaseObject(gameObject);
+        GameObject gameObject = FindGameObject(objectName, false);
+        if (gameObject != null)
+        {
+
+            if (objectType == OBJECT_TYPE_DEBUG_SPHERE)
+                return PoolDebugSphere.ReleaseObject(gameObject);
+            else if (objectType == OBJECT_TYPE_ROAD_CUBE)
+                return PoolRoadCube.ReleaseObject(gameObject);
+            else
+                return PoolRoadPolygon3D.ReleaseObject(gameObject);
+        }
+        else return false;
     }
 
     public static GameObject FindOrCreateGameObject(string objectName)

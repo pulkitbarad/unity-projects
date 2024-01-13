@@ -60,8 +60,6 @@ public class ZeroPolygon
     public void RenderVertices(Color? color = null)
     {
         GameObject parent = ZeroObjectManager.FindOrCreateGameObject(this.Name);
-        foreach (Transform child in parent.transform)
-            ZeroObjectManager.ReleaseObjectToPool(child.gameObject, ZeroObjectManager.OBJECT_TYPE_DEBUG_SPHERE);
 
         int i = 0;
         foreach (var point in this.Vertices)
