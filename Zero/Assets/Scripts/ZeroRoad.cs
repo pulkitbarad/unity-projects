@@ -71,14 +71,11 @@ public class ZeroRoad
 
     public void Build(Vector3[] controlPoints)
     {
-
         Vector3[] centerVertices =
                ZeroCurvedLine.FindBazierLinePoints(
                    controlPoints);
         this.NumberOfSegmentsPerLane = centerVertices.Length;
 
-        Debug.LogFormat("road={0}, controlPoints={1}", this.Name, controlPoints.ToCommaSeparatedString());
-        Debug.LogFormat("road={0}, centerVertices={1}", this.Name, centerVertices.ToCommaSeparatedString());
         this.Lanes =
            GetLanes(
                centerVertices: centerVertices);
@@ -86,18 +83,36 @@ public class ZeroRoad
 
         int i = 0;
         if (IntersectionsByRoadName.Count() > 0)
+        {
 
             foreach (var entry in this.IntersectionsByRoadName)
             {
                 foreach (ZeroRoadIntersection intersection in entry.Value)
                 {
                     intersection.RenderSidewalkCorners();
-                    // intersection.RenderCrosswalks();
-                    // intersection.RenderLaneIntersections();
-                    // intersection.RenderSidewalks();
+                    intersection.RenderCrosswalks();
+                    intersection.RenderLaneIntersections();
+                    intersection.RenderSidewalks();
                     i++;
                 }
             }
+        }
+        LogRoadPositions();
+    }
+
+    private void LogRoadPositions()
+    {
+        int i = 0;
+        ZeroController.AppendToLog(
+            this.ControlPoints
+            .Select(e =>
+                GetVectorString(this.Name + "Control" + (i++).ToString(), e)).ToArray()
+            );
+    }
+
+    private string GetVectorString(string name, Vector3 vector)
+    {
+        return String.Format("{0}={1},{2},{3}", name, vector.x, vector.y, vector.z);
     }
 
     private ZeroRoadLane[] GetLanes(Vector3[] centerVertices)
@@ -107,8 +122,6 @@ public class ZeroRoad
                 vertices: centerVertices,
                 distance: 0.5f * this.Width);
         ZeroRoadLane[] lanes = new ZeroRoadLane[this.NumberOfLanes + 2];
-
-        Debug.LogFormat("road={0}, leftMostVertices={1}", this.Name, leftMostVertices.ToCommaSeparatedString());
 
         int laneIndex = 0;
         for (; laneIndex < this.NumberOfLanes; laneIndex++)

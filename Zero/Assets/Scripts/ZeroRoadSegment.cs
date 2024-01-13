@@ -31,7 +31,6 @@ public class ZeroRoadSegment
 
     public ZeroRoadSegment()
     {
-
     }
 
     public ZeroRoadSegment(

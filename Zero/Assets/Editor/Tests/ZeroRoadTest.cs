@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -13,6 +14,42 @@ public class ZeroRoadTest
     {
         ZeroObjectManager.Initialise();
         ZeroRoadBuilder.Initialise();
+    }
+
+    [Test]
+    public void ZeroRoadTestIntersection()
+    {
+        ZeroControllerSetup();
+        Vector3[] controlPoints1 = new Vector3[]{
+            new(-123.298584f,0,-39.1640625f),
+            new(-68.0500488f,0,-58.3859863f),
+            new(-57.7009277f,0,2.87182617f)
+        };
+
+
+        Vector3[] controlPoints2 = new Vector3[]{
+            new(-123.298584f,0,-39.1640625f),
+            new(-68.0500488f,0,-58.3859863f),
+            new(-57.7009277f,0,2.87182617f)
+        };
+
+        ZeroRoad actualRoad1 =
+            new(
+                isCurved: false,
+                hasBusLane: true,
+                numberOfLanes: 2,
+                height: ZeroRoadBuilder.RoadLaneHeight,
+                sidewalkHeight: ZeroRoadBuilder.RoadSideWalkHeight,
+                controlPoints: controlPoints1);
+
+        ZeroRoad actualRoad2 =
+            new(
+                isCurved: false,
+                hasBusLane: true,
+                numberOfLanes: 2,
+                height: ZeroRoadBuilder.RoadLaneHeight,
+                sidewalkHeight: ZeroRoadBuilder.RoadSideWalkHeight,
+                controlPoints: controlPoints2);
     }
 
     [Test]

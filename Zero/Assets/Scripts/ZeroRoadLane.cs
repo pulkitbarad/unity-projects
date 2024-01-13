@@ -15,7 +15,6 @@ public class ZeroRoadLane
 
     public ZeroRoadLane()
     {
-
     }
 
     public ZeroRoadLane(
@@ -30,7 +29,6 @@ public class ZeroRoadLane
         this.Width = width;
         this.Height = height;
         this.Name = this.ParentRoad.Name + "L" + laneIndex;
-        Debug.LogFormat("lane={0}, centerVertices={1}", this.Name, centerVertices.ToCommaSeparatedString());
         this.Segments = GetRoadSegments(
             centerVertices: centerVertices); ;
     }
