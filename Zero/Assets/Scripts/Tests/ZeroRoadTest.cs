@@ -39,8 +39,8 @@ public class ZeroRoadTest
         _pointPositions["R1Control1"]
         };
 
-        Debug.LogFormat("controlpoints1 = {0}" + controlPoints1);
-        Debug.LogFormat("controlpoints2 = {0}" + controlPoints2);
+        Debug.LogFormat("controlpoints1 = {0}", controlPoints1.ToCommaSeparatedString());
+        Debug.LogFormat("controlpoints2 = {0}", controlPoints2.ToCommaSeparatedString());
         ZeroRoad actualRoad1 =
             new(
                 isCurved: false,

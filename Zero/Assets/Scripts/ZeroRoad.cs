@@ -87,10 +87,10 @@ public class ZeroRoad
             {
                 foreach (ZeroRoadIntersection intersection in entry.Value)
                 {
-                    intersection.RenderSidewalkCorners();
+                    // intersection.RenderSidewalkCorners();
                     intersection.RenderCrosswalks();
                     intersection.RenderLaneIntersections();
-                    intersection.RenderSidewalks();
+                    // intersection.RenderSidewalks();
                     ZeroController.AppendToDebugLog(
                         intersection.CrosswalksLogPairs());
                     ZeroController.AppendToDebugLog(
@@ -121,28 +121,42 @@ public class ZeroRoad
 
     private ZeroRoadLane[] GetLanes(Vector3[] centerVertices)
     {
-        Vector3[] leftMostVertices =
-            GetLeftParallelLine(
-                vertices: centerVertices,
-                distance: 0.5f * this.Width);
+        Vector3[][] allLaneVertices = new Vector3[this.NumberOfLanes * 2 + 1][];
+        // 6
+        // 0 5 7
+        // 1 4 8
+        // 2 3 9
+        // 3 2 10
+        // 4 1 11
+        // 5 0 12
+        allLaneVertices[this.NumberOfLanes] = centerVertices;
+        for (
+            int leftIndex = this.NumberOfLanes - 1, rightIndex = this.NumberOfLanes + 1, distMultiplier = 1;
+            leftIndex >= 0;
+            leftIndex--, rightIndex++, distMultiplier++)
+        {
+            Vector3[][] parallelLines = GetParallelLines(
+                 vertices: centerVertices,
+                 distance: distMultiplier * 0.5f * ZeroRoadBuilder.RoadLaneWidth);
+
+            allLaneVertices[leftIndex] = parallelLines[0];
+            allLaneVertices[rightIndex] = parallelLines[1];
+        }
+
         ZeroRoadLane[] lanes = new ZeroRoadLane[this.NumberOfLanes + 2];
 
         int laneIndex = 0;
         for (; laneIndex < this.NumberOfLanes; laneIndex++)
         {
-            float distanceFromLeftMostLane =
-                (2 * laneIndex + 1) / 2f * ZeroRoadBuilder.RoadLaneWidth;
-
             ZeroRoadLane newLane =
                 new(
                     laneIndex: laneIndex,
-                    parentRoad: this,
                     width: ZeroRoadBuilder.RoadLaneWidth,
                     height: ZeroRoadBuilder.RoadLaneHeight,
-                    centerVertices:
-                        GetRightParallelLine(
-                            vertices: leftMostVertices,
-                            distance: distanceFromLeftMostLane));
+                    leftVertices: allLaneVertices[laneIndex * 2],
+                    centerVertices: allLaneVertices[laneIndex * 2 + 1],
+                    rightVertices: allLaneVertices[laneIndex * 2 + 2],
+                    parentRoad: this);
             lanes[laneIndex] = newLane;
         }
         ZeroRoadLane[] sidewalks = this.GetSideWalks(centerVertices);
@@ -163,33 +177,32 @@ public class ZeroRoad
                 vertices: centerVertices,
                 distance: distanceToSideWalkCenter);
 
+        Vector3[][] sideWalk1Edges =
+            GetParallelLines(
+                vertices: sideWalkCenterVertices[0],
+                distance: 0.5f * ZeroRoadBuilder.RoadLaneWidth);
+        Vector3[][] sideWalk2Edges =
+            GetParallelLines(
+                vertices: sideWalkCenterVertices[1],
+                distance: 0.5f * ZeroRoadBuilder.RoadLaneWidth);
+
         lanes[0] = new(
             laneIndex: this.LeftSidewalkIndex,
-            parentRoad: this,
             width: ZeroRoadBuilder.RoadLaneWidth,
             height: this.SidewalkHeight,
-            centerVertices: sideWalkCenterVertices[0]);
+            leftVertices: sideWalk1Edges[0],
+            centerVertices: sideWalkCenterVertices[0],
+            rightVertices: sideWalk1Edges[1],
+            parentRoad: this);
         lanes[1] = new(
             laneIndex: this.RightSidewalkIndex,
-            parentRoad: this,
             width: ZeroRoadBuilder.RoadLaneWidth,
             height: this.SidewalkHeight,
-            centerVertices: sideWalkCenterVertices[1]);
+            leftVertices: sideWalk2Edges[0],
+            centerVertices: sideWalkCenterVertices[1],
+            rightVertices: sideWalk2Edges[1],
+            parentRoad: this);
         return lanes;
-    }
-
-    private static Vector3[] GetLeftParallelLine(
-        Vector3[] vertices,
-        float distance)
-    {
-        return GetParallelLines(vertices, distance)[0];
-    }
-
-    private static Vector3[] GetRightParallelLine(
-        Vector3[] vertices,
-        float distance)
-    {
-        return GetParallelLines(vertices, distance)[1];
     }
 
     private static Vector3[][] GetParallelLines(
@@ -200,7 +213,7 @@ public class ZeroRoad
         Vector3[] rightLine = new Vector3[vertices.Length];
         for (int i = 1; i < vertices.Length; i++)
         {
-            ZeroRoadSegment.GetParallelPoints(
+            GetParallelPoints(
                originPoint: vertices[i - 1],
                targetPoint: vertices[i],
                distance: distance,
@@ -209,7 +222,7 @@ public class ZeroRoad
 
             if (i == vertices.Length - 1)
             {
-                ZeroRoadSegment.GetParallelPoints(
+                GetParallelPoints(
                     originPoint: vertices[i],
                     targetPoint: vertices[i - 1],
                     distance: distance,
@@ -218,6 +231,23 @@ public class ZeroRoad
             }
         }
         return new Vector3[][] { leftLine, rightLine };
+    }
+
+    private static void GetParallelPoints(
+        Vector3 originPoint,
+        Vector3 targetPoint,
+        float distance,
+        out Vector3 leftPoint,
+        out Vector3 rightPoint)
+    {
+        Vector3 updTargetPoint = new(targetPoint.x, originPoint.y, targetPoint.z);
+        Vector3 forward = targetPoint - originPoint;
+        Vector3 forwardFlat = updTargetPoint - originPoint;
+        Vector3 leftVector = Vector3.Cross(
+                forwardFlat,
+                forward).normalized;
+        leftPoint = originPoint + (leftVector * distance);
+        rightPoint = originPoint - (leftVector * distance);
     }
 
     public Dictionary<string, List<ZeroRoadIntersection>> GetRoadIntersections()
@@ -247,13 +277,13 @@ public class ZeroRoad
                 ZeroLaneIntersection[] leftIntersections =
                    leftIntersectionsByRoadName[intersectingRoadName]
                    .OrderBy(e => e.PrimaryDistance)
-                   .ThenBy(e => (e.IntersectionPoints.LeftStart - e.PrimaryLane.Segments[0].SegmentBounds.TopPlane.LeftStart).magnitude)
+                   .ThenBy(e => (e.IntersectionPoints[0] - e.PrimaryLane.Segments[0].SegmentPolygon.TopPlane[0]).magnitude)
                    .ToArray();
 
                 ZeroLaneIntersection[] rightIntersections =
                     rightIntersectionsByRoadName[intersectingRoadName]
                     .OrderBy(e => e.PrimaryDistance)
-                    .ThenBy(e => (e.IntersectionPoints.LeftStart - e.PrimaryLane.Segments[0].SegmentBounds.TopPlane.LeftStart).magnitude)
+                    .ThenBy(e => (e.IntersectionPoints[0] - e.PrimaryLane.Segments[0].SegmentPolygon.TopPlane[0]).magnitude)
                     .ToArray();
 
                 List<ZeroRoadIntersection> roadIntersections = new();
