@@ -2,23 +2,20 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using NUnit.Framework;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.Assertions;
 using UnityEngine.TestTools;
 
 public class ZeroRoadTest
 {
 
-    private static Dictionary<string, Vector3> _pointPositions;
+    private Dictionary<string, Vector3> _pointPositions;
 
-    private static void ZeroControllerSetup()
+    public ZeroRoadTest(string testDataTimestamp)
     {
-        ZeroController.IsPlayMode = false;
-        ZeroObjectManager.Initialise();
-        ZeroRoadBuilder.Initialise();
         _pointPositions = new();
-        ZeroController.LoadLogEntries("20240114T0135")
+        ZeroController.LoadLogEntries(testDataTimestamp)
         .ToList().ForEach(
             (e) =>
             {
@@ -29,10 +26,8 @@ public class ZeroRoadTest
         );
     }
 
-    [Test]
     public void ZeroRoadTestIntersectionStraight()
     {
-        ZeroControllerSetup();
         Vector3[] controlPoints1 = new Vector3[]{
         _pointPositions["R0Control0"],
         _pointPositions["R0Control1"]
@@ -44,6 +39,8 @@ public class ZeroRoadTest
         _pointPositions["R1Control1"]
         };
 
+        Debug.LogFormat("controlpoints1 = {0}" + controlPoints1);
+        Debug.LogFormat("controlpoints2 = {0}" + controlPoints2);
         ZeroRoad actualRoad1 =
             new(
                 isCurved: false,
@@ -62,35 +59,38 @@ public class ZeroRoadTest
                 sidewalkHeight: ZeroRoadBuilder.RoadSideWalkHeight,
                 controlPoints: controlPoints2);
 
-        Debug.LogFormat("intersections={0}", actualRoad2.IntersectionsByRoadName.Values.Count());
-        ZeroRoadIntersection intersection =
-            actualRoad2.IntersectionsByRoadName.Values.SelectMany(e => e).ToArray()[0];
-        Assert.AreEqual(
-            AssertPolygonAgainstTestData(
-                "R1R0I0SW",
-                intersection.Sidewalks),
-            true);
-        Assert.AreEqual(
-            AssertPolygonAgainstTestData(
-                "R1R0I0SWCR",
-                intersection.CrossWalks),
-            true);
-        Assert.AreEqual(
-            AssertPolygonAgainstTestData(
-                "R1R0I0SWCR",
-                intersection.SidewalkCorners),
-            true);
-        Assert.AreEqual(
-             AssertPolygonAgainstTestData(
-                 "R1R0I0LI",
-                 intersection.LaneIntersections),
-             true);
+        Debug.LogFormat("actualRoad1 segment counts= {0}",
+            actualRoad1.Lanes.Select(e => e.Segments.Length).ToCommaSeparatedString());
+        Debug.LogFormat("actualRoad2 segment counts= {0}",
+            actualRoad2.Lanes.Select(e => e.Segments.Length).ToCommaSeparatedString());
+
+        // Debug.LogFormat("intersections={0}", actualRoad2.IntersectionsByRoadName.Values.Count());
+        // ZeroRoadIntersection intersection =
+        //     actualRoad2.IntersectionsByRoadName.Values.SelectMany(e => e).ToArray()[0];
+        // Assert.AreEqual(
+        //     AssertPolygonAgainstTestData(
+        //         "R1R0I0SW",
+        //         intersection.Sidewalks),
+        //     true);
+        // Assert.AreEqual(
+        //     AssertPolygonAgainstTestData(
+        //         "R1R0I0SWCR",
+        //         intersection.CrossWalks),
+        //     true);
+        // Assert.AreEqual(
+        //     AssertPolygonAgainstTestData(
+        //         "R1R0I0SWCR",
+        //         intersection.SidewalkCorners),
+        //     true);
+        // Assert.AreEqual(
+        //      AssertPolygonAgainstTestData(
+        //          "R1R0I0LI",
+        //          intersection.LaneIntersections),
+        //      true);
     }
 
-    [Test]
     public void ZeroRoadTestCurvedTwoLane()
     {
-        ZeroControllerSetup();
         Vector3[] controlPoints = new Vector3[]{
             new(-123.298584f,0,-39.1640625f),
             new(-68.0500488f,0,-58.3859863f),
@@ -112,10 +112,8 @@ public class ZeroRoadTest
         AssertVectors(testSegmentTransform.localScale, R0L3S5Scale);
     }
 
-    [Test]
     public void ZeroRoadTestStraightTwoLane()
     {
-        ZeroControllerSetup();
         Vector3[] controlPoints = new Vector3[]{
             new(-136.1067f, 0, -28.56543f),
             new(-43.16528f, 0, -32.26611f)

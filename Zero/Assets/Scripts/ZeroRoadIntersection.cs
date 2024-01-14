@@ -12,7 +12,7 @@ public class ZeroRoadIntersection
     public Vector3[][] Sidewalks;
     public Vector3[][] CrossWalks;
     public Vector3[][] SidewalkCorners;
-    private Vector3[][] _laneIntersections;
+    public Vector3[][] LaneIntersections;
     private readonly ZeroLaneIntersection _leftStartIntersection;
     private readonly ZeroLaneIntersection _rightStartIntersection;
     private readonly ZeroLaneIntersection _leftEndIntersection;
@@ -58,31 +58,31 @@ public class ZeroRoadIntersection
 
     private void GetLaneIntersectionGrid()
     {
-        this._laneIntersections = new Vector3[4][];
-        this._laneIntersections[0] = new Vector3[4];
-        this._laneIntersections[1] = new Vector3[4];
-        this._laneIntersections[2] = new Vector3[4];
-        this._laneIntersections[3] = new Vector3[4];
+        this.LaneIntersections = new Vector3[4][];
+        this.LaneIntersections[0] = new Vector3[4];
+        this.LaneIntersections[1] = new Vector3[4];
+        this.LaneIntersections[2] = new Vector3[4];
+        this.LaneIntersections[3] = new Vector3[4];
 
-        this._laneIntersections[0][0] = this._leftStartIntersection.IntersectionPoints.LeftStart;
-        this._laneIntersections[0][1] = this._leftStartIntersection.IntersectionPoints.LeftEnd;
-        this._laneIntersections[0][2] = this._leftStartIntersection.IntersectionPoints.RightEnd;
-        this._laneIntersections[0][3] = this._leftStartIntersection.IntersectionPoints.RightStart;
+        this.LaneIntersections[0][0] = this._leftStartIntersection.IntersectionPoints.LeftStart;
+        this.LaneIntersections[0][1] = this._leftStartIntersection.IntersectionPoints.LeftEnd;
+        this.LaneIntersections[0][2] = this._leftStartIntersection.IntersectionPoints.RightEnd;
+        this.LaneIntersections[0][3] = this._leftStartIntersection.IntersectionPoints.RightStart;
         //
-        this._laneIntersections[1][0] = this._leftEndIntersection.IntersectionPoints.LeftStart;
-        this._laneIntersections[1][1] = this._leftEndIntersection.IntersectionPoints.LeftEnd;
-        this._laneIntersections[1][2] = this._leftEndIntersection.IntersectionPoints.RightEnd;
-        this._laneIntersections[1][3] = this._leftEndIntersection.IntersectionPoints.RightStart;
+        this.LaneIntersections[1][0] = this._leftEndIntersection.IntersectionPoints.LeftStart;
+        this.LaneIntersections[1][1] = this._leftEndIntersection.IntersectionPoints.LeftEnd;
+        this.LaneIntersections[1][2] = this._leftEndIntersection.IntersectionPoints.RightEnd;
+        this.LaneIntersections[1][3] = this._leftEndIntersection.IntersectionPoints.RightStart;
         //
-        this._laneIntersections[2][0] = this._rightEndIntersection.IntersectionPoints.LeftStart;
-        this._laneIntersections[2][1] = this._rightEndIntersection.IntersectionPoints.LeftEnd;
-        this._laneIntersections[2][2] = this._rightEndIntersection.IntersectionPoints.RightEnd;
-        this._laneIntersections[2][3] = this._rightEndIntersection.IntersectionPoints.RightStart;
+        this.LaneIntersections[2][0] = this._rightEndIntersection.IntersectionPoints.LeftStart;
+        this.LaneIntersections[2][1] = this._rightEndIntersection.IntersectionPoints.LeftEnd;
+        this.LaneIntersections[2][2] = this._rightEndIntersection.IntersectionPoints.RightEnd;
+        this.LaneIntersections[2][3] = this._rightEndIntersection.IntersectionPoints.RightStart;
         //
-        this._laneIntersections[3][0] = this._rightStartIntersection.IntersectionPoints.LeftStart;
-        this._laneIntersections[3][1] = this._rightStartIntersection.IntersectionPoints.LeftEnd;
-        this._laneIntersections[3][2] = this._rightStartIntersection.IntersectionPoints.RightEnd;
-        this._laneIntersections[3][3] = this._rightStartIntersection.IntersectionPoints.RightStart;
+        this.LaneIntersections[3][0] = this._rightStartIntersection.IntersectionPoints.LeftStart;
+        this.LaneIntersections[3][1] = this._rightStartIntersection.IntersectionPoints.LeftEnd;
+        this.LaneIntersections[3][2] = this._rightStartIntersection.IntersectionPoints.RightEnd;
+        this.LaneIntersections[3][3] = this._rightStartIntersection.IntersectionPoints.RightStart;
     }
 
     private void GetSidewalkAndCrosswalks()
@@ -97,8 +97,8 @@ public class ZeroRoadIntersection
         float CWL = ZeroRoadBuilder.RoadCrossWalkLength;
         float SWW = ZeroRoadBuilder.RoadLaneWidth;
         float CWLMinusSWW = CWL - SWW;
-        Vector3 PE2S = (this._laneIntersections[0][0] - this._laneIntersections[0][1]).normalized;
-        Vector3 IE2S = (this._laneIntersections[0][0] - this._laneIntersections[0][3]).normalized;
+        Vector3 PE2S = (this.LaneIntersections[0][0] - this.LaneIntersections[0][1]).normalized;
+        Vector3 IE2S = (this.LaneIntersections[0][0] - this.LaneIntersections[0][3]).normalized;
         Vector3 PL2R = Vector3.Cross(PE2S, Vector3.up);
         Vector3 IL2R = Vector3.Cross(IE2S, Vector3.up);
 
@@ -114,22 +114,22 @@ public class ZeroRoadIntersection
 
             //Point LSLS
             Vector3 leftEdgePoint =
-                this._laneIntersections
+                this.LaneIntersections
                     [intersectionIndex]
                     [intersectionIndex];
             //Point RSRE
             Vector3 rightEdgePoint =
-                 this._laneIntersections
+                 this.LaneIntersections
                     [intersectionIndex == 0 ? 3 : intersectionIndex - 1]
                     [intersectionIndex == 0 ? 3 : intersectionIndex - 1];
             //Point LSRE
             Vector3 leftInsidePoint =
-                this._laneIntersections
+                this.LaneIntersections
                     [intersectionIndex]
                     [intersectionIndex > 1 ? intersectionIndex - 2 : intersectionIndex + 2];
             //Point RSLE
             Vector3 rightInsidePoint =
-                 this._laneIntersections
+                 this.LaneIntersections
                     [intersectionIndex == 0 ? 3 : intersectionIndex - 1]
                     [intersectionIndex == 3 ? 0 : intersectionIndex + 1];
             if (intersectionIndex % 2 == 0)
@@ -229,7 +229,7 @@ public class ZeroRoadIntersection
             Vector3[] curvePoints = ZeroCurvedLine.FindBazierLinePoints(
                 vertexCount: vertexCount,
                 nextSidewalk[1],
-                this._laneIntersections[sidewalkCornerIndex][controlPointIndex],
+                this.LaneIntersections[sidewalkCornerIndex][controlPointIndex],
                 currentSidewalk[2]);
 
             sidewalkCorner.AddRange(curvePoints);
@@ -241,8 +241,8 @@ public class ZeroRoadIntersection
     {
         return
             Vector3.Angle(
-                this._laneIntersections[0][0] - this._laneIntersections[0][3],
-                this._laneIntersections[0][2] - this._laneIntersections[0][3]);
+                this.LaneIntersections[0][0] - this.LaneIntersections[0][3],
+                this.LaneIntersections[0][2] - this.LaneIntersections[0][3]);
     }
 
     private void GetMainSquare()
@@ -251,7 +251,7 @@ public class ZeroRoadIntersection
 
     public void RenderLaneIntersections(Color? color = null)
     {
-        RenderVertices(this._laneIntersections,
+        RenderVertices(this.LaneIntersections,
           this.Name + "LI",
          color: color);
     }
@@ -278,7 +278,7 @@ public class ZeroRoadIntersection
 
     public (string, string)[] LaneIntersectionsLogPairs()
     {
-        return GetVertexLogPairs(this._laneIntersections, this.Name + "LI");
+        return GetVertexLogPairs(this.LaneIntersections, this.Name + "LI");
     }
 
     public (string, string)[] SidewalkCornersLogPairs()
@@ -323,7 +323,7 @@ public class ZeroRoadIntersection
         for (int i = 0; i < vertices.Length; i++)
             for (int j = 0; j < vertices[i].Length; j++)
                 vertexStrings.Add(
-                    (String.Format("{0}[{1}][{2}]", prefix, i, j),
+                    (String.Format("{0}{1}{2}", prefix, i, j),
                     String.Format(vertices[i][j].ToString()))
                 );
         return vertexStrings.ToArray();

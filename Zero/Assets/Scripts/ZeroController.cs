@@ -32,6 +32,8 @@ public class ZeroController : MonoBehaviour
         ZeroCameraMovement.Initialise();
         ZeroUIHandler.Initialise();
         ZeroRenderer.Initialise();
+        ZeroRoadTest roadTest = new ZeroRoadTest("20240114T0135");
+        roadTest.ZeroRoadTestIntersectionStraight();
     }
 
     void Update()
@@ -39,25 +41,45 @@ public class ZeroController : MonoBehaviour
         ZeroUIHandler.HandleInputChanges();
     }
 
-    public static void AppendToLog((string, string)[] pairs)
+    public static void AppendToDebugLog((string, string)[] pairs)
     {
         for (int i = 0; i < pairs.Length; i++)
         {
             _logEntries[pairs[i].Item1] = pairs[i].Item2;
         }
-        Debug.LogFormat("Log line count={0}", _logEntries.Count());
     }
 
-    public static void WriteLogFile()
+    public static void WriteDebugFile()
     {
-        Debug.LogFormat("Before writing Log line count={0}", _logEntries.Count());
         if (_logEntries.Count() > 0)
         {
-            _logFile = @"C:\Users\pulki\Desktop\logFile.txt";
+            string timestamp = DateTime.Now.ToString("yyyyMMddTHHmm");
+            _logFile = @"C:\Users\pulki\Desktop\logFile" + timestamp;
             File.WriteAllLines(_logFile, _logEntries.Select(e => String.Format("{0}={1}", e.Key, e.Value)));
             _logEntries.Clear();
-            Debug.LogFormat("After writing Log line count={0}", _logEntries.Count());
         }
+    }
+
+    public static Dictionary<string, string> LoadLogEntries(string timeStamp)
+    {
+        _logEntries = new();
+        _logFile = @"C:\Users\pulki\Desktop\logFile" + timeStamp;
+
+        File.ReadAllLines(_logFile)
+        .Select(
+            (e) =>
+            {
+                var pair = e.Split("=");
+                return (pair[0], pair[1].Substring(1, pair[1].Length - 2));
+            }
+        ).ToList()
+        .ForEach(
+            (e) =>
+            {
+                _logEntries[e.Item1] = e.Item2;
+            }
+        );
+        return _logEntries;
     }
 
     // public static string GetPositionHexCode(params Vector3[] positions)

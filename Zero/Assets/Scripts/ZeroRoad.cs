@@ -91,13 +91,13 @@ public class ZeroRoad
                     intersection.RenderCrosswalks();
                     intersection.RenderLaneIntersections();
                     intersection.RenderSidewalks();
-                    ZeroController.AppendToLog(
+                    ZeroController.AppendToDebugLog(
                         intersection.CrosswalksLogPairs());
-                    ZeroController.AppendToLog(
+                    ZeroController.AppendToDebugLog(
                         intersection.SidewalksLogPairs());
-                    ZeroController.AppendToLog(
+                    ZeroController.AppendToDebugLog(
                         intersection.SidewalkCornersLogPairs());
-                    ZeroController.AppendToLog(
+                    ZeroController.AppendToDebugLog(
                         intersection.LaneIntersectionsLogPairs());
                 }
             }
@@ -107,7 +107,7 @@ public class ZeroRoad
     public void LogRoadPositions()
     {
         int i = 0;
-        ZeroController.AppendToLog(
+        ZeroController.AppendToDebugLog(
             this.ControlPoints
             .Select(e =>
                 (this.Name + "Control" + i++.ToString(), e.ToString())).ToArray()

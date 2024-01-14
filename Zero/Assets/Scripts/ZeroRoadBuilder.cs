@@ -49,7 +49,6 @@ public class ZeroRoadBuilder
         BuiltRoadsParent = new GameObject(BuiltRoadsObjectName);
         BuiltRoadSegmentsParent = new GameObject(BuiltRoadSegmentsObjectName);
         BuiltIntersectionsParent = new GameObject(BuiltIntersectionsObjectName);
-        Debug.LogFormat("playmode={0}", ZeroController.IsPlayMode);
         if (ZeroController.IsPlayMode)
             InitControlObjects(true);
     }
@@ -125,8 +124,9 @@ public class ZeroRoadBuilder
 
     public static void CancelBuilding()
     {
-        ConfirmBuilding();
+        HideControlObjects();
         CurrentActiveRoad?.Hide();
+        CurrentActiveRoad = null;
     }
 
     public static void ConfirmBuilding()

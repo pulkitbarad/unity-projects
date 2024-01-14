@@ -151,7 +151,7 @@ public class ZeroUIHandler
 
     public static void OnWriteLogsPerformed(InputAction.CallbackContext context)
     {
-        ZeroController.WriteLogFile();
+        ZeroController.WriteDebugFile();
     }
 
 
