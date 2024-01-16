@@ -38,6 +38,7 @@ public class ZeroRoadSegment
          float width,
          float height,
          float roadLengthSoFar,
+         Vector3[] centerVertices,
          Vector3 centerStart,
          Vector3 centerEnd,
          Vector3 nextCenterEnd,
@@ -56,17 +57,15 @@ public class ZeroRoadSegment
         NextCenterEnd = nextCenterEnd;
         RoadLengthSofar = roadLengthSoFar;
 
-        Up = GetUpVector(
-            start: centerStart,
-            end: centerEnd);
+        Up = GetUpVector(centerVertices);
 
         ComputeSegmentDimensions();
-        (Vector3[] topVertices, Vector3[] bottomVertices) = GetTopAndBottomPlanes();
         SegmentBounds =
             new ZeroPolygon3D(
                 name: Name,
-                topVertices,
-                bottomVertices);
+                Height,
+                Up,
+                centerVertices);
         //Mesh collision is not as responsive. Fix object type to cube.
         SegmentObjectType = ZeroObjectManager.OBJECT_TYPE_ROAD_CUBE;
         // SegmentObjectType = GetSegmentObjectType();
@@ -74,41 +73,6 @@ public class ZeroRoadSegment
         InitSegmentObject();
         if (Index > 0)
             PreviousSibling.NextSibling = this;
-    }
-
-    private (Vector3[], Vector3[]) GetTopAndBottomPlanes()
-    {
-        Vector3[] centerPlane = GetCenterPlane();
-        Vector3 halfUp = 0.5f * Height * Up;
-        Vector3 halfDown = -0.5f * Height * Up;
-        Vector3[] topPlane =
-            new Vector3[] {
-                centerPlane[0] + halfUp,
-                centerPlane[1] + halfUp,
-                centerPlane[2] + halfUp,
-                centerPlane[3] + halfUp};
-
-        Vector3[] bottomPlane =
-            new Vector3[] {
-                centerPlane[0] + halfDown,
-                centerPlane[1] + halfDown,
-                centerPlane[2] + halfDown,
-                centerPlane[3] + halfDown};
-        return (topPlane, bottomPlane);
-    }
-
-    private int GetSegmentObjectType()
-    {
-        ZeroPolygon topPlane = SegmentBounds.TopPlane;
-        var topPlaneAngle =
-            Math.Round(
-                Vector3.Angle(
-                    topPlane.RightStart - topPlane.LeftStart,
-                    topPlane.LeftEnd - topPlane.LeftStart));
-        if (topPlaneAngle == 90 || topPlaneAngle == 270)
-            return SegmentObjectType = ZeroObjectManager.OBJECT_TYPE_ROAD_CUBE;
-        else
-            return SegmentObjectType = ZeroObjectManager.OBJECT_TYPE_ROAD_POLYGON_3D;
     }
 
     private void ComputeSegmentDimensions()
@@ -156,29 +120,6 @@ public class ZeroRoadSegment
                     MathF.Sin(
                         angleBetweenSegments * MathF.PI / 180f));
         }
-    }
-
-    private Vector3[] GetCenterPlane()
-    {
-        GetParallelPoints(
-                originPoint: CenterStart,
-                targetPoint: CenterEnd,
-                distance: Width * 0.5f,
-                out Vector3 leftStart,
-                out Vector3 rightStart);
-        GetParallelPoints(
-              originPoint: CenterEnd,
-              targetPoint: CenterStart,
-              distance: Width * 0.5f,
-              out Vector3 rightEnd,
-              out Vector3 leftEnd);
-        return
-            new Vector3[] {
-                leftStart,
-                leftEnd,
-                rightEnd,
-                rightStart};
-
     }
 
     private void InitSegmentObject()
@@ -261,25 +202,10 @@ public class ZeroRoadSegment
     }
 
     private static Vector3 GetUpVector(
-        Vector3 start,
-        Vector3 end)
+        Vector3[] centerVertices)
     {
-        Vector3 forward = start - end;
-        Vector3 right = Vector3.Cross(Vector3.up, forward).normalized;
-        return Vector3.Cross(forward, right).normalized;
-    }
-
-    public static void GetParallelPoints(
-        Vector3 originPoint,
-        Vector3 targetPoint,
-        float distance,
-        out Vector3 leftPoint,
-        out Vector3 rightPoint)
-    {
-        Vector3 forwardVector = targetPoint - originPoint;
-        Vector3 upVector = GetUpVector(originPoint, targetPoint);
-        Vector3 leftVector = Vector3.Cross(forwardVector, upVector).normalized;
-        leftPoint = originPoint + (leftVector * distance);
-        rightPoint = originPoint - (leftVector * distance);
+        return Vector3.Cross(
+                centerVertices[1] - centerVertices[0],
+                centerVertices[3] - centerVertices[0]).normalized;
     }
 }

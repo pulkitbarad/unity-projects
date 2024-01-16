@@ -9,6 +9,7 @@ using UnityEngine.UIElements;
 
 public class ZeroRoadBuilder
 {
+    public static Material RoadSegmentMaterial;
     public static float RoadMaxChangeInAngle;
     public static int RoadMaxVertexCount;
     public static int RoadMinVertexCount;

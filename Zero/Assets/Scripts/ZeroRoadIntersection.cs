@@ -64,25 +64,25 @@ public class ZeroRoadIntersection
         this.LaneIntersections[2] = new Vector3[4];
         this.LaneIntersections[3] = new Vector3[4];
 
-        this.LaneIntersections[0][0] = this._leftStartIntersection.IntersectionPoints.LeftStart;
-        this.LaneIntersections[0][1] = this._leftStartIntersection.IntersectionPoints.LeftEnd;
-        this.LaneIntersections[0][2] = this._leftStartIntersection.IntersectionPoints.RightEnd;
-        this.LaneIntersections[0][3] = this._leftStartIntersection.IntersectionPoints.RightStart;
+        this.LaneIntersections[0][0] = this._leftStartIntersection.IntersectionPoints[0];
+        this.LaneIntersections[0][1] = this._leftStartIntersection.IntersectionPoints[1];
+        this.LaneIntersections[0][2] = this._leftStartIntersection.IntersectionPoints[2];
+        this.LaneIntersections[0][3] = this._leftStartIntersection.IntersectionPoints[3];
         //
-        this.LaneIntersections[1][0] = this._leftEndIntersection.IntersectionPoints.LeftStart;
-        this.LaneIntersections[1][1] = this._leftEndIntersection.IntersectionPoints.LeftEnd;
-        this.LaneIntersections[1][2] = this._leftEndIntersection.IntersectionPoints.RightEnd;
-        this.LaneIntersections[1][3] = this._leftEndIntersection.IntersectionPoints.RightStart;
+        this.LaneIntersections[1][0] = this._leftEndIntersection.IntersectionPoints[0];
+        this.LaneIntersections[1][1] = this._leftEndIntersection.IntersectionPoints[1];
+        this.LaneIntersections[1][2] = this._leftEndIntersection.IntersectionPoints[2];
+        this.LaneIntersections[1][3] = this._leftEndIntersection.IntersectionPoints[3];
         //
-        this.LaneIntersections[2][0] = this._rightEndIntersection.IntersectionPoints.LeftStart;
-        this.LaneIntersections[2][1] = this._rightEndIntersection.IntersectionPoints.LeftEnd;
-        this.LaneIntersections[2][2] = this._rightEndIntersection.IntersectionPoints.RightEnd;
-        this.LaneIntersections[2][3] = this._rightEndIntersection.IntersectionPoints.RightStart;
+        this.LaneIntersections[2][0] = this._rightEndIntersection.IntersectionPoints[0];
+        this.LaneIntersections[2][1] = this._rightEndIntersection.IntersectionPoints[1];
+        this.LaneIntersections[2][2] = this._rightEndIntersection.IntersectionPoints[2];
+        this.LaneIntersections[2][3] = this._rightEndIntersection.IntersectionPoints[3];
         //
-        this.LaneIntersections[3][0] = this._rightStartIntersection.IntersectionPoints.LeftStart;
-        this.LaneIntersections[3][1] = this._rightStartIntersection.IntersectionPoints.LeftEnd;
-        this.LaneIntersections[3][2] = this._rightStartIntersection.IntersectionPoints.RightEnd;
-        this.LaneIntersections[3][3] = this._rightStartIntersection.IntersectionPoints.RightStart;
+        this.LaneIntersections[3][0] = this._rightStartIntersection.IntersectionPoints[0];
+        this.LaneIntersections[3][1] = this._rightStartIntersection.IntersectionPoints[1];
+        this.LaneIntersections[3][2] = this._rightStartIntersection.IntersectionPoints[2];
+        this.LaneIntersections[3][3] = this._rightStartIntersection.IntersectionPoints[3];
     }
 
     private void GetSidewalkAndCrosswalks()

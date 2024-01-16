@@ -11,24 +11,24 @@ using UnityEngine;
 public class ZeroPolygon3D
 {
     public string Name;
-    public ZeroPolygon TopPlane;
-    public ZeroPolygon BottomPlane;
+    public Vector3[] TopPlane;
+    public Vector3[] BottomPlane;
     //
     // Summary:
     //     The first side and left side if the polygon was a cube.
-    public ZeroPolygon LeftPlane;
+    public Vector3[] LeftPlane;
     //
     // Summary:
     //     The second side and left side if the polygon was a cube
-    public ZeroPolygon FrontPlane;
+    public Vector3[] FrontPlane;
     //
     // Summary:
     //     The third side and left side if the polygon was a cube
-    public ZeroPolygon RightPlane;
+    public Vector3[] RightPlane;
     //
     // Summary:
     //     The fourth side and left side if the polygon was a cube
-    public ZeroPolygon BackPlane;
+    public Vector3[] BackPlane;
     //
     // Summary:
     //     positions of bounds of each side in clockwise position in the vertices array
@@ -51,38 +51,39 @@ public class ZeroPolygon3D
         Vector3[] topVertices,
         Vector3[] bottomVertices)
     {
+        this.TopPlane = topVertices;
+        this.BottomPlane = bottomVertices;
         this.Name = name;
-        Initialise(topVertices, bottomVertices);
+        Initialise();
     }
 
     public ZeroPolygon3D(
         string name,
         float height,
-        Vector3[] topVertices)
+        Vector3 up,
+        Vector3[] centerVertices)
     {
-        Vector3 heightAndDirection = Vector3.Cross(topVertices[0], topVertices[1]).normalized * height;
         this.Name = name;
-        Vector3[] bottomVertices = topVertices.Select(e => heightAndDirection + e).ToArray();
-        Initialise(topVertices, bottomVertices);
+        Vector3 halfUp = 0.5f * height * up;
+        Vector3 halfDown = -0.5f * height * up;
+        this.TopPlane = centerVertices.Select(e => halfUp + e).ToArray();
+        this.BottomPlane = centerVertices.Select(e => halfDown + e).ToArray();
+        Initialise();
     }
 
-    private void Initialise(
-        Vector3[] topVertices,
-        Vector3[] bottomVertices)
+    private void Initialise()
     {
-        InitialiseVerticesWorld(topVertices, bottomVertices);
+        InitialiseVerticesWorld();
         InitialiseVertexPositions();
-        InitialiseStandardPlanes(topVertices, bottomVertices);
+        InitialiseOtherPlanes();
 
     }
 
-    private void InitialiseVerticesWorld(
-        Vector3[] topVertices,
-        Vector3[] bottomVertices)
+    private void InitialiseVerticesWorld()
     {
         List<Vector3> verticesList = new();
-        verticesList.AddRange(topVertices);
-        verticesList.AddRange(bottomVertices);
+        verticesList.AddRange(this.TopPlane);
+        verticesList.AddRange(this.BottomPlane);
         this._verticesWorld = verticesList.ToArray();
     }
 
@@ -107,41 +108,37 @@ public class ZeroPolygon3D
             .ToArray();
     }
 
-    private void InitialiseStandardPlanes(
-        Vector3[] topVertices,
-        Vector3[] bottomVertices
-    )
+    private void InitialiseOtherPlanes()
     {
-        this.TopPlane = new ZeroPolygon(
-            name: this.Name + "T",
-            clockwiseVertices: topVertices
-        );
-        this.BottomPlane = new ZeroPolygon(
-            name: this.Name + "B",
-            clockwiseVertices: bottomVertices
-        );
-        this.LeftPlane = new ZeroPolygon(
-            name: this.Name + "L",
-            clockwiseVertices: this._sideVertexPositions[LeftSideIndex].Select(i => this._verticesWorld[i]).ToArray()
-        );
-        this.FrontPlane = new ZeroPolygon(
-            name: this.Name + "F",
-            clockwiseVertices: this._sideVertexPositions[FrontSideIndex].Select(i => this._verticesWorld[i]).ToArray()
-        );
-        this.RightPlane = new ZeroPolygon(
-            name: this.Name + "R",
-            clockwiseVertices: this._sideVertexPositions[RightSideIndex].Select(i => this._verticesWorld[i]).ToArray()
-        );
-        this.BackPlane = new ZeroPolygon(
-            name: this.Name + "K",
-            clockwiseVertices: this._sideVertexPositions[BackSideIndex].Select(i => this._verticesWorld[i]).ToArray()
-        );
-
+        this.LeftPlane = this._sideVertexPositions[LeftSideIndex].Select(i => this._verticesWorld[i]).ToArray();
+        this.FrontPlane = this._sideVertexPositions[FrontSideIndex].Select(i => this._verticesWorld[i]).ToArray();
+        this.RightPlane = this._sideVertexPositions[RightSideIndex].Select(i => this._verticesWorld[i]).ToArray();
+        this.BackPlane = this._sideVertexPositions[BackSideIndex].Select(i => this._verticesWorld[i]).ToArray();
     }
 
+
+    //
+    // Summary:
+    //     param gameObject:Gameobject with a position vector assigned
+    //     param verticesWorld: all vertice of the polygon in world positions
+    // 
     public Vector3[] GetMeshVertices(GameObject gameObject)
     {
-        return ZeroPolygon.GetMeshVertices(gameObject, this._verticesWorld);
+        return
+            this._verticesWorld
+            .Select(
+                (point) =>
+                {
+                    //round the vector's floating numbers to two decimals
+                    Vector3 localPoint = gameObject.transform.InverseTransformPoint(point);
+                    Vector3 newPoint =
+                        new(
+                            (float)Math.Round(localPoint.x, 2),
+                            (float)Math.Round(localPoint.y, 2),
+                            (float)Math.Round(localPoint.z, 2));
+                    return newPoint;
+                }
+                ).ToArray();
     }
 
     public int[] GetMeshTriangles(
@@ -152,29 +149,41 @@ public class ZeroPolygon3D
         List<int> triangles = new();
         if (renderTopPlane)
             triangles.AddRange(
-                ZeroPolygon.GetMeshTriangles(
+                GetMeshTrianglesFromVertexPositions(
                     vertexPositions:
                         this._topVertexPositions));
         if (renderBottomPlane)
             triangles.AddRange(
-                ZeroPolygon.GetMeshTriangles(
+                GetMeshTrianglesFromVertexPositions(
                     vertexPositions:
                         this._bottomVertexPositions));
 
         foreach (int sideIndex in sidesToRender)
         {
             triangles.AddRange(
-                ZeroPolygon.GetMeshTriangles(
+                GetMeshTrianglesFromVertexPositions(
                     vertexPositions: this._sideVertexPositions[sideIndex]));
         }
         return triangles.ToArray();
     }
+    private static int[] GetMeshTrianglesFromVertexPositions(int[] vertexPositions)
+    {
+        int numOfTriangles = vertexPositions.Length - 2;
+        int[] triangles = new int[numOfTriangles * 3];
 
+        int triangleVertexIndex = 0;
+        for (int triangleIndex = 0; triangleIndex < numOfTriangles; triangleIndex++)
+        {
+            triangles[triangleVertexIndex++] = vertexPositions[0];
+            triangles[triangleVertexIndex++] = vertexPositions[triangleIndex + 1];
+            triangles[triangleVertexIndex++] = vertexPositions[triangleIndex + 2];
+        }
+        return triangles;
+    }
     public void RenderVertices(Color? color = null)
     {
         int i = 0;
         foreach (var point in this._verticesWorld)
             ZeroRenderer.RenderSphere(point, this.Name + i++.ToString(), color: color ?? Color.yellow);
     }
-
 }

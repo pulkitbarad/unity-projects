@@ -7,14 +7,14 @@ public class ZeroLaneIntersection
 
     public string Name;
     public float PrimaryDistance;
-    public ZeroPolygon IntersectionPoints;
+    public Vector3[] IntersectionPoints;
     public ZeroRoadLane PrimaryLane;
     public ZeroRoadLane IntersectingLane;
 
     public ZeroLaneIntersection(
         string name,
         float primaryDistance,
-        ZeroPolygon intersectionPoints,
+        Vector3[] intersectionPoints,
         ZeroRoadLane primaryLane,
         ZeroRoadLane intersectingLane)
     {

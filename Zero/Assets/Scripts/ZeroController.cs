@@ -14,6 +14,7 @@ public class ZeroController : MonoBehaviour
     [SerializeField] public GameObject MainCameraAnchor;
     [SerializeField] public GameObject MainCameraHolder;
     [SerializeField] public Camera MainCamera;
+    [SerializeField] public Material RoadSegmentMaterial;
     public static bool IsPlayMode = false;
 
     void Awake()
@@ -22,6 +23,7 @@ public class ZeroController : MonoBehaviour
         ZeroCameraMovement.MainCameraHolder = MainCameraHolder;
         ZeroCameraMovement.MainCameraRoot = MainCameraRoot;
         ZeroCameraMovement.MainCameraAnchor = MainCameraAnchor;
+        ZeroRoadBuilder.RoadSegmentMaterial = RoadSegmentMaterial;
     }
 
     void Start()
@@ -32,8 +34,8 @@ public class ZeroController : MonoBehaviour
         ZeroCameraMovement.Initialise();
         ZeroUIHandler.Initialise();
         ZeroRenderer.Initialise();
-        ZeroRoadTest roadTest = new ZeroRoadTest("20240114T0135");
-        roadTest.ZeroRoadTestIntersectionStraight();
+        // ZeroRoadTest roadTest = new ZeroRoadTest("20240114T0135");
+        // // roadTest.ZeroRoadTestIntersectionStraight();
     }
 
     void Update()
