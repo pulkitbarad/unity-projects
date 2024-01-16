@@ -8,7 +8,7 @@ using UnityEngine;
 //
 // Summary:
 //     Convex Polygon with mesh vertices and triangles 
-public class ZeroPolygonX
+public class ZeroPolygon
 {
     public string Name;
     //
@@ -35,7 +35,7 @@ public class ZeroPolygonX
 
     public int VertexCount;
 
-    public ZeroPolygonX(
+    public ZeroPolygon(
         string name,
         params Vector3[] clockwiseVertices
         )

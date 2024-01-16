@@ -45,7 +45,7 @@ public class ZeroCollisionMap
 
     private List<Collider> GetPartialOverlaps(ZeroRoadSegment segment)
     {
-        Vector3[] segmentTopPlane = segment.SegmentPolygon.TopPlane;
+        ZeroPolygon segmentTopPlane = segment.SegmentBounds.TopPlane;
         Collider[] overlaps = Physics.OverlapBox(
             center: segment.SegmentObject.transform.position,
             halfExtents: segment.SegmentObject.transform.localScale / 2,
@@ -60,7 +60,7 @@ public class ZeroCollisionMap
                 if (ZeroRoadBuilder.BuiltRoadSegmentsByName.ContainsKey(colliderGameObjectName)
                     && !ZeroRoadBuilder.BuiltRoadSegmentsByName[colliderGameObjectName]
                         .ParentLane.ParentRoad.Name.Equals(this.RoadName)
-                    && !IsColliderWithinbounds(collider, segmentTopPlane))
+                    && !IsColliderWithinbounds(collider, segmentTopPlane.Vertices))
                 {
                     partialOverlaps.Add(collider);
                 }
@@ -76,15 +76,12 @@ public class ZeroCollisionMap
         foreach (Collider collider in overalppingColliders)
         {
             ZeroRoadSegment colliderSegment = ZeroRoadBuilder.BuiltRoadSegmentsByName[collider.gameObject.name];
-            Vector3[] primaryTopPlane = primarySegment.SegmentPolygon.TopPlane;
-
-            float lengthP0to1 = (primaryTopPlane[1] - primaryTopPlane[0]).magnitude;
-            float lengthP2to3 = (primaryTopPlane[3] - primaryTopPlane[2]).magnitude;
+            ZeroPolygon primaryTopPlane = primarySegment.SegmentBounds.TopPlane;
 
             if (GetRayHitPointOnSegment(
-                origin: primaryTopPlane[0],
-                end: primaryTopPlane[1],
-                maxDistance: lengthP0to1,
+                origin: primaryTopPlane.LeftStart,
+                end: primaryTopPlane.LeftEnd,
+                maxDistance: primarySegment.OldLength,
                 collider: collider,
                 hitPoint: out Vector3? hitPoint))
             {
@@ -94,13 +91,13 @@ public class ZeroCollisionMap
                     collidingSegment: colliderSegment,
                     collisionPoint: collisionPoint,
                     collisionOriginType: ZeroCollisionMap.COLLISION_ORIGIN_LEFT_START,
-                    distanceFromOrigin: (collisionPoint - primaryTopPlane[0]).magnitude);
+                    distanceFromOrigin: (collisionPoint - primaryTopPlane.LeftStart).magnitude);
             }
 
             if (GetRayHitPointOnSegment(
-                origin: primaryTopPlane[3],
-                end: primaryTopPlane[2],
-                maxDistance: lengthP2to3,
+                origin: primaryTopPlane.RightStart,
+                end: primaryTopPlane.RightEnd,
+                maxDistance: primarySegment.OldLength,
                 collider: collider,
                 hitPoint: out Vector3? hitPoint2))
             {
@@ -110,13 +107,13 @@ public class ZeroCollisionMap
                     collidingSegment: colliderSegment,
                     collisionPoint: collisionPoint,
                     collisionOriginType: ZeroCollisionMap.COLLISION_ORIGIN_RIGHT_START,
-                    distanceFromOrigin: (collisionPoint - primaryTopPlane[3]).magnitude);
+                    distanceFromOrigin: (collisionPoint - primaryTopPlane.RightStart).magnitude);
             }
 
             if (GetRayHitPointOnSegment(
-                origin: primaryTopPlane[1],
-                end: primaryTopPlane[0],
-                maxDistance: lengthP0to1,
+                origin: primaryTopPlane.LeftEnd,
+                end: primaryTopPlane.LeftStart,
+                maxDistance: primarySegment.OldLength,
                 collider: collider,
                 hitPoint: out Vector3? hitPoint3))
             {
@@ -126,13 +123,13 @@ public class ZeroCollisionMap
                     collidingSegment: colliderSegment,
                     collisionPoint: collisionPoint,
                     collisionOriginType: ZeroCollisionMap.COLLISION_ORIGIN_LEFT_END,
-                    distanceFromOrigin: (collisionPoint - primaryTopPlane[1]).magnitude);
+                    distanceFromOrigin: (collisionPoint - primaryTopPlane.LeftEnd).magnitude);
             }
 
             if (GetRayHitPointOnSegment(
-                origin: primaryTopPlane[2],
-                end: primaryTopPlane[3],
-                maxDistance: lengthP2to3,
+                origin: primaryTopPlane.RightEnd,
+                end: primaryTopPlane.RightStart,
+                maxDistance: primarySegment.OldLength,
                 collider: collider,
                 hitPoint: out Vector3? hitPoint4))
             {
@@ -142,7 +139,7 @@ public class ZeroCollisionMap
                     collidingSegment: colliderSegment,
                     collisionPoint: collisionPoint,
                     collisionOriginType: ZeroCollisionMap.COLLISION_ORIGIN_RIGHT_END,
-                    distanceFromOrigin: (collisionPoint - primaryTopPlane[2]).magnitude);
+                    distanceFromOrigin: (collisionPoint - primaryTopPlane.RightEnd).magnitude);
             }
         }
     }
@@ -262,17 +259,18 @@ public class ZeroCollisionMap
                     name: laneIntersectionName,
                     primaryDistance: leftStartCollisions[0].PrimarySegment.RoadLengthSofar,
                     intersectionPoints:
-                        new Vector3[]{
+                        new ZeroPolygon(
+                            name: laneIntersectionName + "P",
                              leftStartCollisions[0].CollisionPoint,
                              leftEndCollisions[0].CollisionPoint,
                              rightEndCollisions[0].CollisionPoint,
-                             rightStartCollisions[0].CollisionPoint},
+                             rightStartCollisions[0].CollisionPoint),
                     primaryLane: this.PrimaryLane,
                     intersectingLane: leftStartCollisions[0].CollidingSegment.ParentLane));
-                ZeroRenderer.RenderSphere(leftStartCollisions[0].CollisionPoint, sphereName: laneIntersectionName + "LS", color: Color.white);
-                ZeroRenderer.RenderSphere(rightStartCollisions[0].CollisionPoint, sphereName: laneIntersectionName + "RS", color: Color.black);
-                ZeroRenderer.RenderSphere(leftEndCollisions[0].CollisionPoint, sphereName: laneIntersectionName + "LE", color: Color.gray);
-                ZeroRenderer.RenderSphere(rightEndCollisions[0].CollisionPoint, sphereName: laneIntersectionName + "RE", color: Color.cyan);
+                // ZeroRenderer.RenderSphere(leftStartCollisions[0].CollisionPoint, sphereName: laneIntersectionName + "LS", color: Color.white);
+                // ZeroRenderer.RenderSphere(rightStartCollisions[0].CollisionPoint, sphereName: laneIntersectionName + "RS", color: Color.black);
+                // ZeroRenderer.RenderSphere(leftEndCollisions[0].CollisionPoint, sphereName: laneIntersectionName + "LE", color: Color.gray);
+                // ZeroRenderer.RenderSphere(rightEndCollisions[0].CollisionPoint, sphereName: laneIntersectionName + "RE", color: Color.cyan);
 
                 //If primary lane is intersecting twice with another lane,
                 // intersection closest to the primary lane start will have 
@@ -286,17 +284,18 @@ public class ZeroCollisionMap
                         name: laneIntersectionName,
                         primaryDistance: leftStartCollisions[1].PrimarySegment.RoadLengthSofar,
                         intersectionPoints:
-                            new Vector3[]{
+                            new ZeroPolygon(
+                                name: laneIntersectionName + "P",
                              leftStartCollisions[1].CollisionPoint,
                              leftEndCollisions[1].CollisionPoint,
                              rightEndCollisions[1].CollisionPoint,
-                             rightStartCollisions[1].CollisionPoint},
+                             rightStartCollisions[1].CollisionPoint),
                         primaryLane: this.PrimaryLane,
                         intersectingLane: leftStartCollisions[1].CollidingSegment.ParentLane));
-                    ZeroRenderer.RenderSphere(leftStartCollisions[1].CollisionPoint, sphereName: laneIntersectionName + "LS2", color: Color.green);
-                    ZeroRenderer.RenderSphere(rightStartCollisions[1].CollisionPoint, sphereName: laneIntersectionName + "RS2", color: Color.red);
-                    ZeroRenderer.RenderSphere(leftEndCollisions[1].CollisionPoint, sphereName: laneIntersectionName + "LE2", color: Color.blue);
-                    ZeroRenderer.RenderSphere(rightEndCollisions[1].CollisionPoint, sphereName: laneIntersectionName + "RE2", color: Color.yellow);
+                    // ZeroRenderer.RenderSphere(leftStartCollisions[1].CollisionPoint, sphereName: laneIntersectionName + "LS2", color: Color.green);
+                    // ZeroRenderer.RenderSphere(rightStartCollisions[1].CollisionPoint, sphereName: laneIntersectionName + "RS2", color: Color.red);
+                    // ZeroRenderer.RenderSphere(leftEndCollisions[1].CollisionPoint, sphereName: laneIntersectionName + "LE2", color: Color.blue);
+                    // ZeroRenderer.RenderSphere(rightEndCollisions[1].CollisionPoint, sphereName: laneIntersectionName + "RE2", color: Color.yellow);
                 }
                 this.IsValid = true;
             }
@@ -314,21 +313,33 @@ public class ZeroCollisionMap
         out Vector3? hitPoint)
     {
         ZeroRoadSegment colliderSegment = ZeroRoadBuilder.BuiltRoadSegmentsByName[collider.gameObject.name];
-        Vector3[] colliderTopPlane = colliderSegment.SegmentPolygon.TopPlane;
+        ZeroPolygon colliderTopPlane = colliderSegment.SegmentBounds.TopPlane;
         Vector3 direction = end - origin;
 
         if (collider.Raycast(
                 ray: new Ray(origin, direction),
                 hitInfo: out RaycastHit rayHitInfo,
                 maxDistance: maxDistance)
+            && (
+                colliderSegment.PreviousSibling == null
+                || !IsPointInsideBounds(
+                    rayHitInfo.point,
+                    colliderSegment.PreviousSibling.SegmentBounds.TopPlane.Vertices
+                ))
+            && (
+                colliderSegment.NextSibling == null
+                || !IsPointInsideBounds(
+                    rayHitInfo.point,
+                    colliderSegment.NextSibling.SegmentBounds.TopPlane.Vertices
+                ))
             && !IsPointOnLineSegment(
                     rayHitInfo.point,
-                    colliderTopPlane[0],
-                    colliderTopPlane[3])
+                    colliderTopPlane.LeftStart,
+                    colliderTopPlane.RightStart)
             && !IsPointOnLineSegment(
                     rayHitInfo.point,
-                    colliderTopPlane[1],
-                    colliderTopPlane[2]))
+                    colliderTopPlane.LeftEnd,
+                    colliderTopPlane.RightEnd))
         {
             hitPoint = rayHitInfo.point;
             return true;
@@ -339,14 +350,14 @@ public class ZeroCollisionMap
 
     private static bool IsColliderWithinbounds(Collider collider, Vector3[] bounds)
     {
-        Vector3[] colliderTopPlane = ZeroRoadBuilder.BuiltRoadSegmentsByName[collider.gameObject.name].SegmentPolygon.TopPlane;
-        return colliderTopPlane.Length > 0 && IsRectWithinBounds(colliderTopPlane, bounds);
+        ZeroPolygon colliderTopPlane = ZeroRoadBuilder.BuiltRoadSegmentsByName[collider.gameObject.name].SegmentBounds.TopPlane;
+        return colliderTopPlane.Vertices.Length > 0 && IsRectWithinBounds(colliderTopPlane, bounds);
     }
 
-    private static bool IsRectWithinBounds(Vector3[] rectangle, Vector3[] bounds)
+    private static bool IsRectWithinBounds(ZeroPolygon rectangle, Vector3[] bounds)
     {
         for (int i = 0; i < 4; i++)
-            if (!IsPointInsideBounds(rectangle[i], bounds))
+            if (!IsPointInsideBounds(rectangle.Vertices[i], bounds))
                 return false;
         return true;
     }
@@ -373,5 +384,5 @@ public class ZeroCollisionMap
         }
         return point.x > minX && point.x < maxX && point.y > minY && point.y < maxY;
     }
-
+    
 }
