@@ -122,6 +122,13 @@ public class ZeroRoad
     private ZeroRoadLane[] GetLanes(Vector3[] centerVertices)
     {
         Vector3[][] allLaneVertices = new Vector3[this.NumberOfLanes * 2 + 1][];
+        // 6
+        // 0 5 7
+        // 1 4 8
+        // 2 3 9
+        // 3 2 10
+        // 4 1 11
+        // 5 0 12
         allLaneVertices[this.NumberOfLanes] = centerVertices;
         for (
             int leftIndex = this.NumberOfLanes - 1, rightIndex = this.NumberOfLanes + 1, distMultiplier = 1;
@@ -134,18 +141,6 @@ public class ZeroRoad
 
             allLaneVertices[leftIndex] = parallelLines[0];
             allLaneVertices[rightIndex] = parallelLines[1];
-            Debug.LogFormat(
-               "leftIndex={0} allLaneVertices[{0}]={1}",
-               leftIndex,
-               allLaneVertices[leftIndex].Select(e => e.ToString()).ToCommaSeparatedString());
-            Debug.LogFormat(
-                "distance={0} centerVertices={1}",
-                distMultiplier * 0.5f * ZeroRoadBuilder.RoadLaneWidth,
-                centerVertices.Select(e => e.ToString()).ToCommaSeparatedString());
-            Debug.LogFormat(
-               "rightIndex={0} allLaneVertices[{0}]={1}",
-               rightIndex,
-               allLaneVertices[rightIndex].Select(e => e.ToString()).ToCommaSeparatedString());
         }
 
         ZeroRoadLane[] lanes = new ZeroRoadLane[this.NumberOfLanes + 2];
@@ -245,18 +240,12 @@ public class ZeroRoad
         out Vector3 leftPoint,
         out Vector3 rightPoint)
     {
+        Vector3 updTargetPoint = new(targetPoint.x, originPoint.y, targetPoint.z);
         Vector3 forward = targetPoint - originPoint;
-        Vector3 leftVector;
-        if (originPoint.y == targetPoint.y)
-            leftVector = Vector3.Cross(forward, Vector3.up).normalized;
-        else
-        {
-            Vector3 updTargetPoint = new(targetPoint.x, originPoint.y, targetPoint.z);
-            Vector3 forwardFlat = updTargetPoint - originPoint;
-            leftVector = Vector3.Cross(
-                    forwardFlat,
-                    forward).normalized;
-        }
+        Vector3 forwardFlat = updTargetPoint - originPoint;
+        Vector3 leftVector = Vector3.Cross(
+                forwardFlat,
+                forward).normalized;
         leftPoint = originPoint + (leftVector * distance);
         rightPoint = originPoint - (leftVector * distance);
     }

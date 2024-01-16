@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public class ZeroRoadSegment
@@ -131,6 +130,7 @@ public class ZeroRoadSegment
         else
             meshFilter.mesh.Clear();
         meshFilter.mesh.vertices = SegmentPolygon.GetMeshVertices(SegmentObject);
+        // mesh.triangles = this.SegmentBounds.GetMeshTriangles(true, false, sidesToRender.ToArray());
         meshFilter.mesh.triangles = SegmentPolygon.GetMeshTriangles(true, true, sidesToRender.ToArray());
         meshFilter.mesh.RecalculateBounds();
 

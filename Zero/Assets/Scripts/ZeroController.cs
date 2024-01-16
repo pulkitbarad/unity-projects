@@ -32,8 +32,8 @@ public class ZeroController : MonoBehaviour
         ZeroCameraMovement.Initialise();
         ZeroUIHandler.Initialise();
         ZeroRenderer.Initialise();
-        // ZeroRoadTest roadTest = new ZeroRoadTest("20240114T0135");
-        // // roadTest.ZeroRoadTestIntersectionStraight();
+        ZeroRoadTest roadTest = new ZeroRoadTest("20240114T0135");
+        roadTest.ZeroRoadTestIntersectionStraight();
     }
 
     void Update()
