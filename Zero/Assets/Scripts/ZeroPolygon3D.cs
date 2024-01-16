@@ -124,23 +124,6 @@ public class ZeroPolygon3D
     // 
     public Vector3[] GetMeshVertices(GameObject gameObject)
     {
-        Debug.LogFormat(
-            "world={0} local={1}",
-            this._verticesWorld.Select(e => e.ToString()).ToCommaSeparatedString(),
-            this._verticesWorld
-            .Select(
-                (point) =>
-                {
-                    //round the vector's floating numbers to two decimals
-                    Vector3 localPoint = gameObject.transform.InverseTransformPoint(point);
-                    Vector3 newPoint =
-                        new(
-                            (float)Math.Round(localPoint.x, 2),
-                            (float)Math.Round(localPoint.y, 2),
-                            (float)Math.Round(localPoint.z, 2));
-                    return newPoint;
-                }
-                ).ToArray().Select(e => e.ToString()).ToCommaSeparatedString());
         return
             this._verticesWorld
             .Select(

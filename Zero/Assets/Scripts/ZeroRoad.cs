@@ -88,8 +88,8 @@ public class ZeroRoad
                 foreach (ZeroRoadIntersection intersection in entry.Value)
                 {
                     // intersection.RenderSidewalkCorners();
-                    intersection.RenderCrosswalks();
-                    intersection.RenderLaneIntersections();
+                    // intersection.RenderCrosswalks();
+                    // intersection.RenderLaneIntersections();
                     // intersection.RenderSidewalks();
                     ZeroController.AppendToDebugLog(
                         intersection.CrosswalksLogPairs());
@@ -134,18 +134,6 @@ public class ZeroRoad
 
             allLaneVertices[leftIndex] = parallelLines[0];
             allLaneVertices[rightIndex] = parallelLines[1];
-            Debug.LogFormat(
-               "leftIndex={0} allLaneVertices[{0}]={1}",
-               leftIndex,
-               allLaneVertices[leftIndex].Select(e => e.ToString()).ToCommaSeparatedString());
-            Debug.LogFormat(
-                "distance={0} centerVertices={1}",
-                distMultiplier * 0.5f * ZeroRoadBuilder.RoadLaneWidth,
-                centerVertices.Select(e => e.ToString()).ToCommaSeparatedString());
-            Debug.LogFormat(
-               "rightIndex={0} allLaneVertices[{0}]={1}",
-               rightIndex,
-               allLaneVertices[rightIndex].Select(e => e.ToString()).ToCommaSeparatedString());
         }
 
         ZeroRoadLane[] lanes = new ZeroRoadLane[this.NumberOfLanes + 2];

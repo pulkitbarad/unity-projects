@@ -74,18 +74,15 @@ public class ZeroRoadLane
             Vector3 currRight = rightVertices[vertexIndex];
             Vector3 nextRight = rightVertices[vertexIndex + 1];
 
-            Vector3 forward = nextCenter - currCenter;
             float lengthSoFar = (currCenter - startCenter).magnitude;
-            float length = forward.magnitude;
-
             ZeroRoadSegment newSegment = new(
                 index: vertexIndex,
                 width: this.Width,
                 height: this.Height,
-                length: length,
                 roadLengthSoFar: lengthSoFar,
                 centerVertices: new Vector3[] { currLeft, nextLeft, nextRight, currRight },
-                center: currCenter + forward * 0.5f,
+                centerStart: currCenter ,
+                centerEnd: nextCenter,
                 parentLane: this);
             segments[vertexIndex] = newSegment;
         }
