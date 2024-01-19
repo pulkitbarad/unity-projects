@@ -314,30 +314,29 @@ public class ZeroRoad
                     intersectionsByRoadName[intersectingRoadName].Add(new ZeroRoadIntersection(
                         name: this.Name + intersectingRoadName + "I" + intersectionsByRoadName[intersectingRoadName].Count(),
                         height: Mathf.Max(this.Height, intersectingRoad.Height),
-                        primaryRoadWidth: this.Width,
-                        intersectingRoadWidth: intersectingRoad.Width,
-                        leftStartIntersection: leftIntersections[0],
-                        rightStartIntersection: rightIntersections[0],
-                        leftEndIntersection: leftIntersections[1],
-                        rightEndIntersection: rightIntersections[1]
+                        laneIntersections: new ZeroLaneIntersection[]{
+                            leftIntersections[0],
+                            rightIntersections[0],
+                            leftIntersections[1],
+                            rightIntersections[1]
+                        }
                     ));
                     // leftIntersections[0].IntersectionPoints.RenderVertices(Color.white);
                     // rightIntersections[0].IntersectionPoints.RenderVertices(Color.black);
                     // leftIntersections[1].IntersectionPoints.RenderVertices(Color.gray);
                     // rightIntersections[1].IntersectionPoints.RenderVertices(Color.cyan);
 
-
                     if (leftIntersections.Length == 4)
                     {
                         intersectionsByRoadName[intersectingRoadName].Add(new ZeroRoadIntersection(
                             name: this.Name + intersectingRoadName + "I" + intersectionsByRoadName[intersectingRoadName].Count(),
                             height: Mathf.Max(this.Height, intersectingRoad.Height),
-                            primaryRoadWidth: this.Width,
-                            intersectingRoadWidth: intersectingRoad.Width,
-                            leftStartIntersection: leftIntersections[2],
-                            rightStartIntersection: rightIntersections[2],
-                            leftEndIntersection: leftIntersections[3],
-                            rightEndIntersection: rightIntersections[3]
+                            laneIntersections: new ZeroLaneIntersection[]{
+                                leftIntersections[2],
+                                rightIntersections[2],
+                                leftIntersections[3],
+                                rightIntersections[3]
+                            }
                         ));
                         // leftIntersections[2].IntersectionPoints.RenderVertices(Color.green);
                         // rightIntersections[2].IntersectionPoints.RenderVertices(Color.red);

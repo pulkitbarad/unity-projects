@@ -7,7 +7,6 @@ using UnityEngine;
 
 public class ZeroRoadIntersection
 {
-
     public string Name;
     public Vector3[][] Sidewalks;
     public Vector3[][] CrossWalks;
@@ -15,14 +14,10 @@ public class ZeroRoadIntersection
     public ZeroLaneIntersection[] LaneIntersections;
     public Vector3[][] LaneIntersectionPoints;
     public float Height;
-    public float IntersectingRoadWidth;
-    public float PrimaryRoadWidth;
 
     public ZeroRoadIntersection(
         string name,
         float height,
-        float primaryRoadWidth,
-        float intersectingRoadWidth,
         ZeroLaneIntersection[] laneIntersections)
     {
         this.Name = name;
@@ -31,8 +26,6 @@ public class ZeroRoadIntersection
             this.LaneIntersections
             .Select(e =>
                 e.IntersectionPoints.Select(c => c.CollisionPoint).ToArray()).ToArray();
-        this.PrimaryRoadWidth = primaryRoadWidth;
-        this.IntersectingRoadWidth = intersectingRoadWidth;
         this.Height = height;
 
         GetIntersectionSections();
@@ -307,8 +300,8 @@ public class ZeroRoadIntersection
         if (!E[3].Equals(R[3]))
             rightSidewalk.Add(E[3]);
 
+        //
         return new Vector3[][] { rightSidewalk.ToArray(), leftSidewalk.ToArray() };
-
     }
 
     public void RenderLaneIntersections(Color? color = null)
@@ -378,5 +371,4 @@ public class ZeroRoadIntersection
                 );
         return vertexStrings.ToArray();
     }
-
 }
