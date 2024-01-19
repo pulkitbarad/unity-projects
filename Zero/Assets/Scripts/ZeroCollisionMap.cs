@@ -262,11 +262,11 @@ public class ZeroCollisionMap
                     name: laneIntersectionName,
                     primaryDistance: leftStartCollisions[0].PrimarySegment.RoadLengthSofar,
                     intersectionPoints:
-                        new Vector3[]{
-                             leftStartCollisions[0].CollisionPoint,
-                             leftEndCollisions[0].CollisionPoint,
-                             rightEndCollisions[0].CollisionPoint,
-                             rightStartCollisions[0].CollisionPoint},
+                        new ZeroCollisionInfo[]{
+                             leftStartCollisions[0] ,
+                             leftEndCollisions[0] ,
+                             rightEndCollisions[0] ,
+                             rightStartCollisions[0] },
                     primaryLane: this.PrimaryLane,
                     intersectingLane: leftStartCollisions[0].CollidingSegment.ParentLane));
                 // ZeroRenderer.RenderSphere(leftStartCollisions[0].CollisionPoint, sphereName: laneIntersectionName + "LS", color: Color.white);
@@ -286,11 +286,11 @@ public class ZeroCollisionMap
                         name: laneIntersectionName,
                         primaryDistance: leftStartCollisions[1].PrimarySegment.RoadLengthSofar,
                         intersectionPoints:
-                            new Vector3[]{
-                             leftStartCollisions[1].CollisionPoint,
-                             leftEndCollisions[1].CollisionPoint,
-                             rightEndCollisions[1].CollisionPoint,
-                             rightStartCollisions[1].CollisionPoint},
+                            new ZeroCollisionInfo[]{
+                             leftStartCollisions[1],
+                             leftEndCollisions[1],
+                             rightEndCollisions[1],
+                             rightStartCollisions[1]},
                         primaryLane: this.PrimaryLane,
                         intersectingLane: leftStartCollisions[1].CollidingSegment.ParentLane));
                     // ZeroRenderer.RenderSphere(leftStartCollisions[1].CollisionPoint, sphereName: laneIntersectionName + "LS2", color: Color.green);

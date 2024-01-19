@@ -10,11 +10,13 @@ using UnityEngine.UIElements;
 public class ZeroRoad
 {
     public string Name;
-    public float Width;
+    public float WidthExclSidewalks;
+    public float WidthInclSidewalks;
     public float Height;
     public float SidewalkHeight;
     public int VertexCount;
-    public int NumberOfLanes;
+    public int NumberOfLanesExclSidewalks;
+    public int NumberOfLanesInclSidewalks;
     public int NumberOfSegmentsPerLane;
     public int LeftSidewalkIndex;
     public int RightSidewalkIndex;
@@ -40,10 +42,12 @@ public class ZeroRoad
     {
         this.Name = "R" + ZeroRoadBuilder.BuiltRoadsByName.Count();
         this.IsCurved = isCurved;
-        this.NumberOfLanes = numberOfLanes;
+        this.NumberOfLanesExclSidewalks = numberOfLanes;
+        this.NumberOfLanesInclSidewalks = numberOfLanes + 2;
         this.LeftSidewalkIndex = numberOfLanes;
         this.RightSidewalkIndex = numberOfLanes + 1;
-        this.Width = numberOfLanes * ZeroRoadBuilder.RoadLaneWidth;
+        this.WidthExclSidewalks = numberOfLanes * ZeroRoadBuilder.RoadLaneWidth;
+        this.WidthInclSidewalks = (numberOfLanes + 2) * ZeroRoadBuilder.RoadLaneWidth;
         this.Height = height;
         this.SidewalkHeight = sidewalkHeight;
         this.HasBusLane = hasBusLane && numberOfLanes > 1;
@@ -87,10 +91,10 @@ public class ZeroRoad
             {
                 foreach (ZeroRoadIntersection intersection in entry.Value)
                 {
-                    intersection.RenderSidewalkCorners();
-                    intersection.RenderCrosswalks();
+                    // intersection.RenderSidewalkCorners();
+                    // intersection.RenderCrosswalks();
                     intersection.RenderLaneIntersections();
-                    intersection.RenderSidewalks();
+                    // intersection.RenderSidewalks();
                     ZeroController.AppendToDebugLog(
                         intersection.CrosswalksLogPairs());
                     ZeroController.AppendToDebugLog(
@@ -122,13 +126,7 @@ public class ZeroRoad
     private ZeroRoadLane[] GetLanes(Vector3[] centerVertices)
     {
         Vector3[][] allLaneVertices = new Vector3[this.NumberOfLanes * 2 + 1][];
-        // 6
-        // 0 5 7
-        // 1 4 8
-        // 2 3 9
-        // 3 2 10
-        // 4 1 11
-        // 5 0 12
+
         allLaneVertices[this.NumberOfLanes] = centerVertices;
         for (
             int leftIndex = this.NumberOfLanes - 1, rightIndex = this.NumberOfLanes + 1, distMultiplier = 1;
@@ -295,13 +293,13 @@ public class ZeroRoad
                 ZeroLaneIntersection[] leftIntersections =
                    leftIntersectionsByRoadName[intersectingRoadName]
                    .OrderBy(e => e.PrimaryDistance)
-                   .ThenBy(e => (e.IntersectionPoints[0] - e.PrimaryLane.Segments[0].SegmentBounds.TopPlane[0]).magnitude)
+                   .ThenBy(e => (e.IntersectionPoints[0].CollisionPoint - e.PrimaryLane.Segments[0].SegmentBounds.TopPlane[0]).magnitude)
                    .ToArray();
 
                 ZeroLaneIntersection[] rightIntersections =
                     rightIntersectionsByRoadName[intersectingRoadName]
                     .OrderBy(e => e.PrimaryDistance)
-                    .ThenBy(e => (e.IntersectionPoints[0] - e.PrimaryLane.Segments[0].SegmentBounds.TopPlane[0]).magnitude)
+                    .ThenBy(e => (e.IntersectionPoints[0].CollisionPoint - e.PrimaryLane.Segments[0].SegmentBounds.TopPlane[0]).magnitude)
                     .ToArray();
 
                 List<ZeroRoadIntersection> roadIntersections = new();

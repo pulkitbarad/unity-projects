@@ -7,19 +7,22 @@ public class ZeroLaneIntersection
 
     public string Name;
     public float PrimaryDistance;
-    public Vector3[] IntersectionPoints;
+    public ZeroCollisionInfo[] IntersectionPoints;
     public ZeroRoadLane PrimaryLane;
     public ZeroRoadLane IntersectingLane;
+    public int LaneIntersectionType;
 
     public ZeroLaneIntersection(
         string name,
         float primaryDistance,
-        Vector3[] intersectionPoints,
+        int intersectionType,
+        ZeroCollisionInfo[] intersectionPoints,
         ZeroRoadLane primaryLane,
         ZeroRoadLane intersectingLane)
     {
         this.Name = name;
         this.PrimaryDistance = primaryDistance;
+        this.LaneIntersectionType = intersectionType;
         this.IntersectionPoints = intersectionPoints;
         this.PrimaryLane = primaryLane;
         this.IntersectingLane = intersectingLane;

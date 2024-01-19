@@ -24,6 +24,7 @@ public class ZeroRoadSegment
     public Vector3 CenterStart;
     public Vector3 CenterEnd;
     public Vector3 NextCenterEnd;
+    public Vector3 DirectionL2R;
     public GameObject SegmentObject;
     public ZeroRoadSegment PreviousSibling;
     public ZeroRoadSegment NextSibling;
@@ -57,6 +58,7 @@ public class ZeroRoadSegment
         NextCenterEnd = nextCenterEnd;
         RoadLengthSofar = roadLengthSoFar;
 
+        SegmentObjectType = ZeroObjectManager.OBJECT_TYPE_ROAD_CUBE;
         Up = GetUpVector(centerVertices);
 
         ComputeSegmentDimensions();
@@ -66,10 +68,7 @@ public class ZeroRoadSegment
                 Height,
                 Up,
                 centerVertices);
-        //Mesh collision is not as responsive. Fix object type to cube.
-        SegmentObjectType = ZeroObjectManager.OBJECT_TYPE_ROAD_CUBE;
-        // SegmentObjectType = GetSegmentObjectType();
-
+        DirectionL2R = SegmentBounds.TopPlane[3] - SegmentBounds.TopPlane[0];
         InitSegmentObject();
         if (Index > 0)
             PreviousSibling.NextSibling = this;
@@ -91,7 +90,6 @@ public class ZeroRoadSegment
         Forward = CenterEnd - CenterStart;
         Length = Forward.magnitude;
         RoadLengthSofar += Length;
-
     }
 
     private Vector3 GetSegmentCenter()
@@ -134,10 +132,11 @@ public class ZeroRoadSegment
         segmentObject.transform.localScale = new Vector3(Width, Height, Length);
         segmentObject.transform.rotation = Quaternion.LookRotation(Forward);
         segmentObject.transform.SetParent(ZeroRoadBuilder.BuiltRoadSegmentsParent.transform);
+        segmentObject.GetComponent<MeshRenderer>().material = ZeroRoadBuilder.RoadSegmentMaterial;
 
         ZeroRoadLane parentLane = ParentLane;
         ZeroRoad parentRoad = parentLane.ParentRoad;
-        int numOfLanes = parentRoad.NumberOfLanes;
+        int numOfLanes = parentRoad.NumberOfLanesExclSidewalks;
         if (parentLane.LaneIndex == parentRoad.LeftSidewalkIndex || parentLane.LaneIndex == parentRoad.RightSidewalkIndex)
             segmentObject.layer = LayerMask.NameToLayer(ZeroRoadBuilder.RoadSidewalkMaskName);
         else if (parentLane.LaneIndex == 0 || parentLane.LaneIndex == numOfLanes - 1)
@@ -145,9 +144,6 @@ public class ZeroRoadSegment
 
         SegmentObject = segmentObject;
         RegisterToLookups();
-
-        if (SegmentObjectType == ZeroObjectManager.OBJECT_TYPE_ROAD_POLYGON_3D)
-            RenderMesh();
     }
 
     private void RegisterToLookups()
