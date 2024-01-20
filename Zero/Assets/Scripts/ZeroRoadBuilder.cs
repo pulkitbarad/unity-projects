@@ -116,7 +116,7 @@ public class ZeroRoadBuilder
         CurrentActiveRoad = new ZeroRoad(
             isCurved: isCurved,
             hasBusLane: true,
-            numberOfLanes: 2,
+            numberOfLanesExclSidewalks: 2,
             height: ZeroRoadBuilder.RoadLaneHeight,
             sidewalkHeight: ZeroRoadBuilder.RoadSideWalkHeight,
             controlPoints: ZeroRoadBuilder.ResetControlObjects(isCurved));

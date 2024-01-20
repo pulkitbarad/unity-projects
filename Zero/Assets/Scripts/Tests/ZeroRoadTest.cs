@@ -45,7 +45,7 @@ public class ZeroRoadTest
             new(
                 isCurved: false,
                 hasBusLane: true,
-                numberOfLanes: 2,
+                numberOfLanesExclSidewalks: 2,
                 height: ZeroRoadBuilder.RoadLaneHeight,
                 sidewalkHeight: ZeroRoadBuilder.RoadSideWalkHeight,
                 controlPoints: controlPoints1);
@@ -54,7 +54,7 @@ public class ZeroRoadTest
             new(
                 isCurved: false,
                 hasBusLane: true,
-                numberOfLanes: 2,
+                numberOfLanesExclSidewalks: 2,
                 height: ZeroRoadBuilder.RoadLaneHeight,
                 sidewalkHeight: ZeroRoadBuilder.RoadSideWalkHeight,
                 controlPoints: controlPoints2);
@@ -103,7 +103,7 @@ public class ZeroRoadTest
             new(
                 isCurved: false,
                 hasBusLane: true,
-                numberOfLanes: 2,
+                numberOfLanesExclSidewalks: 2,
                 height: ZeroRoadBuilder.RoadLaneHeight,
                 sidewalkHeight: ZeroRoadBuilder.RoadSideWalkHeight,
                 controlPoints: controlPoints);
@@ -136,7 +136,7 @@ public class ZeroRoadTest
             new(
                 isCurved: false,
                 hasBusLane: true,
-                numberOfLanes: 2,
+                numberOfLanesExclSidewalks: 2,
                 height: ZeroRoadBuilder.RoadLaneHeight,
                 sidewalkHeight: ZeroRoadBuilder.RoadSideWalkHeight,
                 controlPoints: controlPoints);

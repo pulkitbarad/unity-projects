@@ -10,18 +10,25 @@ public class ZeroRoadIntersection
     public string Name;
     public Vector3[][] Sidewalks;
     public Vector3[][] CrossWalks;
-    public Vector3[][] MainSquareParts;
+    public Vector3[][] MainSquare;
+    public Vector3[][] RoadEdges;
     public ZeroLaneIntersection[] LaneIntersections;
     public Vector3[][] LaneIntersectionPoints;
     public float Height;
+    public int RoadIntersectionType;
+    public static int ROAD_INTERSESCTION_TYPE_LEFT = 0;
+    public static int ROAD_INTERSESCTION_TYPE_UP = 1;
+    public static int ROAD_INTERSESCTION_TYPE_RIGHT = 2;
+    public static int ROAD_INTERSESCTION_TYPE_DOWN = 3;
+    public static int ROAD_INTERSESCTION_TYPE_X = 4;
 
     public ZeroRoadIntersection(
-        string name,
         float height,
+        int roadIntersectionType,
         ZeroLaneIntersection[] laneIntersections)
     {
-        this.Name = name;
         this.LaneIntersections = laneIntersections;
+        this.RoadIntersectionType = roadIntersectionType;
         this.LaneIntersectionPoints =
             this.LaneIntersections
             .Select(e =>
@@ -42,6 +49,7 @@ public class ZeroRoadIntersection
         List<Vector3[]> sidewalks = new();
         List<Vector3[]> crosswalks = new();
         List<Vector3[]> mainSquares = new();
+        List<Vector3[]> roadEdges = new();
 
         int n = this.LaneIntersections.Length;
         for (int i = 0; i < n; i++)
@@ -57,6 +65,7 @@ public class ZeroRoadIntersection
                 mainSquares.Add(new Vector3[] { E[0], L[1], L[2], R[1], R[2], E[3] });
             crosswalks.Add(new Vector3[] { L[3], L[2], R[1], R[0] });
             sidewalks.AddRange(GetSidewalks(n: n, L: L, R: R, E: E));
+            roadEdges.Add(E);
 
             //If there are only two lane intersections (it's a T intersection), 
             //then there should be only one iteration of this loop i.e. one crosswalk, two sidewalks and one main s=square part
@@ -64,7 +73,8 @@ public class ZeroRoadIntersection
         }
         this.Sidewalks = sidewalks.ToArray();
         this.CrossWalks = crosswalks.ToArray();
-        this.MainSquareParts = mainSquares.ToArray();
+        this.MainSquare = mainSquares.ToArray();
+        this.RoadEdges = roadEdges.ToArray();
     }
 
     private void GetLRE(
@@ -82,12 +92,22 @@ public class ZeroRoadIntersection
         ZeroCollisionInfo[] _L = new ZeroCollisionInfo[4];
         ZeroCollisionInfo[] _R = new ZeroCollisionInfo[4];
 
-        int leftIntersectionType = leftIntersection.LaneIntersectionType;
-        int rightIntersectionType = rightIntersection.LaneIntersectionType;
+        int leftIntersectionPosition;
+        if (this.RoadIntersectionType == ROAD_INTERSESCTION_TYPE_X)
+            leftIntersectionPosition = i;
+        else if (this.RoadIntersectionType == ROAD_INTERSESCTION_TYPE_LEFT)
+            leftIntersectionPosition = 0;
+        else if (this.RoadIntersectionType == ROAD_INTERSESCTION_TYPE_UP)
+            leftIntersectionPosition = 1;
+        else if (this.RoadIntersectionType == ROAD_INTERSESCTION_TYPE_RIGHT)
+            leftIntersectionPosition = 2;
+        // else if (this.RoadIntersectionType == INTERSESCTION_TYPE_T_DOWN)
+        else
+            leftIntersectionPosition = 3;
         for (int j = 0; j < 4; j++)
         {
-            _L[j] = leftIntersection.IntersectionPoints[(j + leftIntersectionType) % 4];
-            _R[j] = rightIntersection.IntersectionPoints[(j + rightIntersectionType) % 4];
+            _L[j] = leftIntersection.IntersectionPoints[(j + leftIntersectionPosition) % 4];
+            _R[j] = rightIntersection.IntersectionPoints[(j + leftIntersectionPosition) % 4];
             L[j] = _L[j].CollisionPoint;
             R[j] = _R[j].CollisionPoint;
         }
@@ -95,44 +115,44 @@ public class ZeroRoadIntersection
         {
             E = GetRoadEdgePoints(
              collisionInfo: _L[3],
-             intersectionType: leftIntersectionType,
+             intersectionType: leftIntersectionPosition,
              pointIndex: 1,
              point: L[3]
             );
-            if (IsEdgeValid(E, L, R))
+            if (IsEdgeValid(L, R, E))
                 return;
         }
         else
         {
             GetRoadEdgePoints(
              collisionInfo: _L[0],
-             intersectionType: leftIntersectionType,
+             intersectionType: leftIntersectionPosition,
              pointIndex: 0,
              point: L[0]
             );
-            if (IsEdgeValid(E, L, R))
+            if (IsEdgeValid(L, R, E))
                 return;
         }
         if (Vector3.Angle(R[1] - R[0], R[3] - R[0]) > 90)
         {
             GetRoadEdgePoints(
              collisionInfo: _R[3],
-             intersectionType: leftIntersectionType,
+             intersectionType: leftIntersectionPosition,
              pointIndex: 3,
              point: R[3]
             );
-            if (IsEdgeValid(E, L, R))
+            if (IsEdgeValid(L, R, E))
                 return;
         }
         else
         {
             GetRoadEdgePoints(
              collisionInfo: _R[0],
-             intersectionType: leftIntersectionType,
+             intersectionType: leftIntersectionPosition,
              pointIndex: 2,
              point: R[0]
             );
-            if (IsEdgeValid(E, L, R))
+            if (IsEdgeValid(L, R, E))
                 return;
         }
     }
@@ -188,7 +208,6 @@ public class ZeroRoadIntersection
         out Vector3 edgeDirectionL2R,
         out float roadWidthExclSidewalks)
     {
-
         ZeroRoadSegment leftSegment;
 
         if (intersectionType % 2 == 0)
@@ -212,9 +231,9 @@ public class ZeroRoadIntersection
     }
 
     private bool IsEdgeValid(
-        Vector3[] E,
         Vector3[] L,
-        Vector3[] R
+        Vector3[] R,
+        Vector3[] E
     )
     {
         Vector3 forward = Vector3.Cross(E[1] - E[0], Vector3.up);
@@ -317,10 +336,25 @@ public class ZeroRoadIntersection
           this.Name + "SW",
          color: color);
     }
+
     public void RenderCrosswalks(Color? color = null)
     {
         RenderVertices(this.CrossWalks,
           this.Name + "CW",
+         color: color);
+    }
+
+    public void RenderMainSquare(Color? color = null)
+    {
+        RenderVertices(this.MainSquare,
+          this.Name + "MS",
+         color: color);
+    }
+
+    public void RenderRoadEdges(Color? color = null)
+    {
+        RenderVertices(this.RoadEdges,
+          this.Name + "RE",
          color: color);
     }
 
@@ -337,6 +371,16 @@ public class ZeroRoadIntersection
     public (string, string)[] SidewalksLogPairs()
     {
         return GetVertexLogPairs(this.Sidewalks, this.Name + "SW");
+    }
+
+    public (string, string)[] MainSquareLogPairs()
+    {
+        return GetVertexLogPairs(this.MainSquare, this.Name + "MS");
+    }
+
+    public (string, string)[] RoadEdgesLogPairs()
+    {
+        return GetVertexLogPairs(this.RoadEdges, this.Name + "RE");
     }
 
     private void RenderVertices(Vector3[][] vertices, string prefix, Color? color = null)

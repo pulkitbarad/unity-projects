@@ -35,22 +35,22 @@ public class ZeroRoad
     public ZeroRoad(
         bool isCurved,
         bool hasBusLane,
-        int numberOfLanes,
+        int numberOfLanesExclSidewalks,
         float height,
         float sidewalkHeight,
         Vector3[] controlPoints)
     {
         this.Name = "R" + ZeroRoadBuilder.BuiltRoadsByName.Count();
         this.IsCurved = isCurved;
-        this.NumberOfLanesExclSidewalks = numberOfLanes;
-        this.NumberOfLanesInclSidewalks = numberOfLanes + 2;
-        this.LeftSidewalkIndex = numberOfLanes;
-        this.RightSidewalkIndex = numberOfLanes + 1;
-        this.WidthExclSidewalks = numberOfLanes * ZeroRoadBuilder.RoadLaneWidth;
-        this.WidthInclSidewalks = (numberOfLanes + 2) * ZeroRoadBuilder.RoadLaneWidth;
+        this.NumberOfLanesExclSidewalks = numberOfLanesExclSidewalks;
+        this.NumberOfLanesInclSidewalks = numberOfLanesExclSidewalks + 2;
+        this.LeftSidewalkIndex = 0;
+        this.RightSidewalkIndex = NumberOfLanesInclSidewalks - 1;
+        this.WidthExclSidewalks = numberOfLanesExclSidewalks * ZeroRoadBuilder.RoadLaneWidth;
+        this.WidthInclSidewalks = (numberOfLanesExclSidewalks + 2) * ZeroRoadBuilder.RoadLaneWidth;
         this.Height = height;
         this.SidewalkHeight = sidewalkHeight;
-        this.HasBusLane = hasBusLane && numberOfLanes > 1;
+        this.HasBusLane = hasBusLane && numberOfLanesExclSidewalks > 1;
         this.ControlPoints = controlPoints;
         InitRoadObject();
 
@@ -83,7 +83,7 @@ public class ZeroRoad
         this.Lanes =
            GetLanes(
                centerVertices: centerVertices);
-        this.IntersectionsByRoadName = GetRoadIntersections();
+        this.IntersectionsByRoadName = GetRoadIntersectionsByRoad();
 
         if (IntersectionsByRoadName.Count() > 0)
         {
@@ -91,18 +91,21 @@ public class ZeroRoad
             {
                 foreach (ZeroRoadIntersection intersection in entry.Value)
                 {
-                    // intersection.RenderSidewalkCorners();
-                    // intersection.RenderCrosswalks();
                     intersection.RenderLaneIntersections();
-                    // intersection.RenderSidewalks();
-                    ZeroController.AppendToDebugLog(
-                        intersection.CrosswalksLogPairs());
+                    intersection.RenderSidewalks();
+                    intersection.RenderCrosswalks();
+                    intersection.RenderMainSquare();
+                    intersection.RenderRoadEdges();
                     ZeroController.AppendToDebugLog(
                         intersection.SidewalksLogPairs());
                     ZeroController.AppendToDebugLog(
-                        intersection.SidewalkCornersLogPairs());
+                        intersection.CrosswalksLogPairs());
                     ZeroController.AppendToDebugLog(
                         intersection.LaneIntersectionsLogPairs());
+                    ZeroController.AppendToDebugLog(
+                        intersection.MainSquareLogPairs());
+                    ZeroController.AppendToDebugLog(
+                        intersection.RoadEdgesLogPairs());
                 }
             }
         }
@@ -125,11 +128,11 @@ public class ZeroRoad
 
     private ZeroRoadLane[] GetLanes(Vector3[] centerVertices)
     {
-        Vector3[][] allLaneVertices = new Vector3[this.NumberOfLanes * 2 + 1][];
+        Vector3[][] allLaneVertices = new Vector3[this.NumberOfLanesInclSidewalks * 2 + 1][];
 
-        allLaneVertices[this.NumberOfLanes] = centerVertices;
+        allLaneVertices[this.NumberOfLanesInclSidewalks] = centerVertices;
         for (
-            int leftIndex = this.NumberOfLanes - 1, rightIndex = this.NumberOfLanes + 1, distMultiplier = 1;
+            int leftIndex = this.NumberOfLanesInclSidewalks - 1, rightIndex = this.NumberOfLanesInclSidewalks + 1, distMultiplier = 1;
             leftIndex >= 0;
             leftIndex--, rightIndex++, distMultiplier++)
         {
@@ -141,10 +144,10 @@ public class ZeroRoad
             allLaneVertices[rightIndex] = parallelLines[1];
         }
 
-        ZeroRoadLane[] lanes = new ZeroRoadLane[this.NumberOfLanes + 2];
+        ZeroRoadLane[] lanes = new ZeroRoadLane[this.NumberOfLanesInclSidewalks];
 
         int laneIndex = 0;
-        for (; laneIndex < this.NumberOfLanes; laneIndex++)
+        for (; laneIndex < this.NumberOfLanesInclSidewalks; laneIndex++)
         {
             ZeroRoadLane newLane =
                 new(
@@ -157,49 +160,6 @@ public class ZeroRoad
                     parentRoad: this);
             lanes[laneIndex] = newLane;
         }
-        ZeroRoadLane[] sidewalks = this.GetSideWalks(centerVertices);
-        lanes[laneIndex++] = sidewalks[0];
-        lanes[laneIndex++] = sidewalks[1];
-        return lanes;
-    }
-
-    private ZeroRoadLane[] GetSideWalks(Vector3[] centerVertices)
-    {
-        ZeroRoadLane[] lanes = new ZeroRoadLane[2];
-
-        float distanceToSideWalkCenter =
-            (this.NumberOfLanes + 1) * (0.5f * ZeroRoadBuilder.RoadLaneWidth);
-
-        Vector3[][] sideWalkCenterVertices =
-            GetParallelLines(
-                vertices: centerVertices,
-                distance: distanceToSideWalkCenter);
-
-        Vector3[][] sideWalk1Edges =
-            GetParallelLines(
-                vertices: sideWalkCenterVertices[0],
-                distance: 0.5f * ZeroRoadBuilder.RoadLaneWidth);
-        Vector3[][] sideWalk2Edges =
-            GetParallelLines(
-                vertices: sideWalkCenterVertices[1],
-                distance: 0.5f * ZeroRoadBuilder.RoadLaneWidth);
-
-        lanes[0] = new(
-            laneIndex: this.LeftSidewalkIndex,
-            width: ZeroRoadBuilder.RoadLaneWidth,
-            height: this.SidewalkHeight,
-            leftVertices: sideWalk1Edges[0],
-            centerVertices: sideWalkCenterVertices[0],
-            rightVertices: sideWalk1Edges[1],
-            parentRoad: this);
-        lanes[1] = new(
-            laneIndex: this.RightSidewalkIndex,
-            width: ZeroRoadBuilder.RoadLaneWidth,
-            height: this.SidewalkHeight,
-            leftVertices: sideWalk2Edges[0],
-            centerVertices: sideWalkCenterVertices[1],
-            rightVertices: sideWalk2Edges[1],
-            parentRoad: this);
         return lanes;
     }
 
@@ -266,86 +226,165 @@ public class ZeroRoad
         leftPoint = originPoint + (leftVector * distance);
         rightPoint = originPoint - (leftVector * distance);
     }
-    public Dictionary<string, List<ZeroRoadIntersection>> GetRoadIntersections()
+    public Dictionary<string, List<ZeroRoadIntersection>> GetRoadIntersectionsByRoad()
     {
         Dictionary<string, List<ZeroRoadIntersection>> intersectionsByRoadName = new();
-        Dictionary<string, List<ZeroLaneIntersection>> leftIntersectionsByRoadName =
+        Dictionary<string, ZeroLaneIntersection[]> leftIntersectionsByRoadName =
                      new ZeroCollisionMap(
                         roadName: this.Name,
                         primaryLane: this.Lanes[this.LeftSidewalkIndex],
                         layerMaskName: ZeroRoadBuilder.RoadSidewalkMaskName)
                      .GetLaneIntersectionsByRoadName();
-        Dictionary<string, List<ZeroLaneIntersection>> rightIntersectionsByRoadName =
+        Dictionary<string, ZeroLaneIntersection[]> rightIntersectionsByRoadName =
                      new ZeroCollisionMap(
                         roadName: this.Name,
                         primaryLane: this.Lanes[this.RightSidewalkIndex],
                         layerMaskName: ZeroRoadBuilder.RoadSidewalkMaskName)
                      .GetLaneIntersectionsByRoadName();
 
-        if (leftIntersectionsByRoadName.Count() == rightIntersectionsByRoadName.Count())
+        List<string> allIntersectingRoads =
+            leftIntersectionsByRoadName.Keys
+            .Union(rightIntersectionsByRoadName.Keys)
+            .ToList();
+        foreach (var intersectingRoadName in allIntersectingRoads)
         {
-            List<string> listOfRoads = leftIntersectionsByRoadName.Keys.Intersect(rightIntersectionsByRoadName.Keys).ToList();
-            foreach (var intersectingRoadName in listOfRoads)
+            ZeroRoad intersectingRoad = ZeroRoadBuilder.BuiltRoadsByName[intersectingRoadName];
+
+            ZeroLaneIntersection[] leftIntersections =
+               leftIntersectionsByRoadName[intersectingRoadName];
+
+            ZeroLaneIntersection[] rightIntersections =
+                rightIntersectionsByRoadName[intersectingRoadName];
+
+            List<ZeroRoadIntersection> roadIntersections = new();
+
+            if (leftIntersections != null
+                && rightIntersections != null)
             {
+                if (!intersectionsByRoadName.ContainsKey(intersectingRoadName))
+                    intersectionsByRoadName[intersectingRoadName] = new();
 
-                ZeroRoad intersectingRoad = ZeroRoadBuilder.BuiltRoadsByName[intersectingRoadName];
-
-                ZeroLaneIntersection[] leftIntersections =
-                   leftIntersectionsByRoadName[intersectingRoadName]
-                   .OrderBy(e => e.PrimaryDistance)
-                   .ThenBy(e => (e.IntersectionPoints[0].CollisionPoint - e.PrimaryLane.Segments[0].SegmentBounds.TopPlane[0]).magnitude)
-                   .ToArray();
-
-                ZeroLaneIntersection[] rightIntersections =
-                    rightIntersectionsByRoadName[intersectingRoadName]
-                    .OrderBy(e => e.PrimaryDistance)
-                    .ThenBy(e => (e.IntersectionPoints[0].CollisionPoint - e.PrimaryLane.Segments[0].SegmentBounds.TopPlane[0]).magnitude)
-                    .ToArray();
-
-                List<ZeroRoadIntersection> roadIntersections = new();
-
-                if (leftIntersections != null
-                    && (leftIntersections.Length == 2 || leftIntersections.Length == 4)
-                    && leftIntersections.Length == rightIntersections.Length)
-                {
-                    if (!intersectionsByRoadName.ContainsKey(intersectingRoadName))
-                        intersectionsByRoadName[intersectingRoadName] = new();
-
-                    intersectionsByRoadName[intersectingRoadName].Add(new ZeroRoadIntersection(
-                        name: this.Name + intersectingRoadName + "I" + intersectionsByRoadName[intersectingRoadName].Count(),
-                        height: Mathf.Max(this.Height, intersectingRoad.Height),
-                        laneIntersections: new ZeroLaneIntersection[]{
-                            leftIntersections[0],
-                            rightIntersections[0],
-                            leftIntersections[1],
-                            rightIntersections[1]
-                        }
-                    ));
-                    // leftIntersections[0].IntersectionPoints.RenderVertices(Color.white);
-                    // rightIntersections[0].IntersectionPoints.RenderVertices(Color.black);
-                    // leftIntersections[1].IntersectionPoints.RenderVertices(Color.gray);
-                    // rightIntersections[1].IntersectionPoints.RenderVertices(Color.cyan);
-
-                    if (leftIntersections.Length == 4)
-                    {
-                        intersectionsByRoadName[intersectingRoadName].Add(new ZeroRoadIntersection(
-                            name: this.Name + intersectingRoadName + "I" + intersectionsByRoadName[intersectingRoadName].Count(),
-                            height: Mathf.Max(this.Height, intersectingRoad.Height),
-                            laneIntersections: new ZeroLaneIntersection[]{
-                                leftIntersections[2],
-                                rightIntersections[2],
-                                leftIntersections[3],
-                                rightIntersections[3]
-                            }
-                        ));
-                        // leftIntersections[2].IntersectionPoints.RenderVertices(Color.green);
-                        // rightIntersections[2].IntersectionPoints.RenderVertices(Color.red);
-                        // leftIntersections[3].IntersectionPoints.RenderVertices(Color.blue);
-                        // rightIntersections[3].IntersectionPoints.RenderVertices(Color.yellow);
-                    }
-                }
+                intersectionsByRoadName[intersectingRoadName].AddRange(
+                    GetRoadIntersections(
+                        intersectingRoad.Height,
+                        leftIntersections,
+                        rightIntersections));
             }
         }
         return intersectionsByRoadName;
+    }
+
+    private ZeroRoadIntersection[] GetRoadIntersections(
+        float intersectingRoadHeight,
+        ZeroLaneIntersection[] leftIntersections,
+        ZeroLaneIntersection[] rightIntersections)
+    {
+
+        List<ZeroRoadIntersection> roadIntersections = new();
+        int leftIntersectionCount = leftIntersections.Length;
+        int rightIntersectionCount = rightIntersections.Length;
+        float intersectionHeight = Mathf.Max(this.Height, intersectingRoadHeight);
+
+        if (leftIntersectionCount == 4 && rightIntersectionCount == 4)
+        {
+            roadIntersections.Add(new ZeroRoadIntersection(
+                    height: intersectionHeight,
+                    roadIntersectionType: ZeroRoadIntersection.ROAD_INTERSESCTION_TYPE_X,
+                    laneIntersections: new ZeroLaneIntersection[]{
+                        leftIntersections[0],
+                        rightIntersections[0],
+                        leftIntersections[1],
+                        rightIntersections[1]
+                    }
+                ));
+            roadIntersections.Add(new ZeroRoadIntersection(
+                    height: intersectionHeight,
+                    roadIntersectionType: ZeroRoadIntersection.ROAD_INTERSESCTION_TYPE_X,
+                    laneIntersections: new ZeroLaneIntersection[]{
+                        leftIntersections[2],
+                        rightIntersections[2],
+                        leftIntersections[3],
+                        rightIntersections[3]
+                    }
+                ));
+        }
+        else if (leftIntersectionCount == 2 && rightIntersectionCount == 2)
+        {
+            roadIntersections.Add(new ZeroRoadIntersection(
+                    height: intersectionHeight,
+                    roadIntersectionType: ZeroRoadIntersection.ROAD_INTERSESCTION_TYPE_X,
+                    laneIntersections: new ZeroLaneIntersection[]{
+                        leftIntersections[0],
+                        rightIntersections[0],
+                        leftIntersections[1],
+                        rightIntersections[1]
+                    }
+                ));
+        }
+        else if (leftIntersectionCount == 2 && rightIntersectionCount == 0)
+        {
+            roadIntersections.Add(new ZeroRoadIntersection(
+                    height: intersectionHeight,
+                    roadIntersectionType: ZeroRoadIntersection.ROAD_INTERSESCTION_TYPE_UP,
+                    laneIntersections: new ZeroLaneIntersection[]{
+                        leftIntersections[0],
+                        leftIntersections[1]
+                    }
+                ));
+        }
+        else if (leftIntersectionCount == 0 && rightIntersectionCount == 2)
+        {
+            roadIntersections.Add(new ZeroRoadIntersection(
+                    height: intersectionHeight,
+                    roadIntersectionType: ZeroRoadIntersection.ROAD_INTERSESCTION_TYPE_UP,
+                    laneIntersections: new ZeroLaneIntersection[]{
+                        rightIntersections[0],
+                        rightIntersections[1]
+                    }
+                ));
+        }
+        else if (leftIntersectionCount == 1 && rightIntersectionCount == 1)
+        {
+            int intersectionType;
+            if (IsRoadStartInsideCollidingRoad(leftIntersections, rightIntersections))
+                intersectionType = ZeroRoadIntersection.ROAD_INTERSESCTION_TYPE_RIGHT;
+            else
+                intersectionType = ZeroRoadIntersection.ROAD_INTERSESCTION_TYPE_LEFT;
+            //
+            roadIntersections.Add(new ZeroRoadIntersection(
+                height: intersectionHeight,
+                roadIntersectionType: intersectionType,
+                laneIntersections: new ZeroLaneIntersection[]{
+                leftIntersections[0],
+                rightIntersections[0]
+                }
+            ));
+        }
+        return roadIntersections.ToArray();
+    }
+
+    private bool IsRoadStartInsideCollidingRoad(
+        ZeroLaneIntersection[] leftIntersections,
+        ZeroLaneIntersection[] rightIntersections
+    )
+    {
+        float collidingRoadWidth =
+                leftIntersections[0].IntersectionPoints[0]
+                .CollidingSegment.ParentLane
+                .ParentRoad.WidthInclSidewalks;
+        ZeroRoadSegment leftSegment = leftIntersections[0].IntersectionPoints[0].PrimarySegment;
+        ZeroRoadSegment rightSegment = rightIntersections[0].IntersectionPoints[0].PrimarySegment;
+        Vector3 leftStartPoint = leftIntersections[0].IntersectionPoints[0].CollisionPoint;
+        Vector3 rightStartPoint = rightIntersections[0].IntersectionPoints[0].CollisionPoint;
+        Vector3 leftEndPoint = leftStartPoint + leftSegment.Forward * collidingRoadWidth;
+        Vector3 rightEndPoint = rightStartPoint + rightSegment.Forward * collidingRoadWidth;
+
+        return ZeroCollisionMap.IsPointInsideBounds(
+            this.ControlPoints[0],
+            new Vector3[]{
+                    leftStartPoint,
+                    leftEndPoint,
+                    rightEndPoint,
+                    rightStartPoint});
     }
 }

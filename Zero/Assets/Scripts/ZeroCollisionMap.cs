@@ -191,9 +191,9 @@ public class ZeroCollisionMap
         }
     }
 
-    public Dictionary<string, List<ZeroLaneIntersection>> GetLaneIntersectionsByRoadName()
+    public Dictionary<string, ZeroLaneIntersection[]> GetLaneIntersectionsByRoadName()
     {
-        Dictionary<string, List<ZeroLaneIntersection>> intersectionsByRoadName = new();
+        Dictionary<string, List<ZeroLaneIntersection>> _intersectionsByRoadName = new();
 
         foreach (var entry in this.CollisionsByCollidingLane)
         {
@@ -252,14 +252,13 @@ public class ZeroCollisionMap
 
                 string collidingRoadName = leftStartCollisions[0].CollidingSegment.ParentLane.ParentRoad.Name;
 
-                if (!intersectionsByRoadName.ContainsKey(collidingRoadName))
+                if (!_intersectionsByRoadName.ContainsKey(collidingRoadName))
                 {
-                    intersectionsByRoadName[collidingRoadName] = new();
+                    _intersectionsByRoadName[collidingRoadName] = new();
                 }
                 string laneIntersectionName = this.PrimaryLane.Name + leftStartCollisions[0].CollidingSegment.ParentLane.Name + "I0";
-                intersectionsByRoadName[collidingRoadName].Add(
+                _intersectionsByRoadName[collidingRoadName].Add(
                 new ZeroLaneIntersection(
-                    name: laneIntersectionName,
                     primaryDistance: leftStartCollisions[0].PrimarySegment.RoadLengthSofar,
                     intersectionPoints:
                         new ZeroCollisionInfo[]{
@@ -281,9 +280,8 @@ public class ZeroCollisionMap
                 if (leftStartCollisions.Count() == 2)
                 {
                     laneIntersectionName = this.PrimaryLane.Name + leftStartCollisions[0].CollidingSegment.ParentLane.Name + "I1";
-                    intersectionsByRoadName[collidingRoadName].Add(
+                    _intersectionsByRoadName[collidingRoadName].Add(
                     new ZeroLaneIntersection(
-                        name: laneIntersectionName,
                         primaryDistance: leftStartCollisions[1].PrimarySegment.RoadLengthSofar,
                         intersectionPoints:
                             new ZeroCollisionInfo[]{
@@ -302,6 +300,18 @@ public class ZeroCollisionMap
             }
             else
                 this.IsValid = false;
+        }
+        Dictionary<string, ZeroLaneIntersection[]> intersectionsByRoadName = new();
+        foreach (string key in _intersectionsByRoadName.Keys)
+        {
+            intersectionsByRoadName[key] =
+           _intersectionsByRoadName[key]
+           .OrderBy(e => e.PrimaryDistance)
+           .ThenBy(e =>
+                (e.IntersectionPoints[0].CollisionPoint
+                - e.PrimaryLane.Segments[0].SegmentBounds.TopPlane[0])
+                .magnitude)
+           .ToArray();
         }
         return intersectionsByRoadName;
     }
@@ -368,7 +378,7 @@ public class ZeroCollisionMap
         return Math.Round(Vector3.Cross(point - start, end - point).magnitude, 2) == 0;
 
     }
-    private static bool IsPointInsideBounds(Vector3 point, Vector3[] bounds, float margin = 0)
+    public static bool IsPointInsideBounds(Vector3 point, Vector3[] bounds, float margin = 0)
     {
         float maxX = bounds[0].x;
         float maxY = bounds[0].y;
@@ -385,5 +395,4 @@ public class ZeroCollisionMap
         }
         return point.x > minX && point.x < maxX && point.y > minY && point.y < maxY;
     }
-
 }
