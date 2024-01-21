@@ -250,26 +250,30 @@ public class ZeroRoad
         {
             ZeroRoad intersectingRoad = ZeroRoadBuilder.BuiltRoadsByName[intersectingRoadName];
 
-            ZeroLaneIntersection[] leftIntersections =
-               leftIntersectionsByRoadName[intersectingRoadName];
+            ZeroLaneIntersection[] leftIntersections, rightIntersections;
+            if (leftIntersectionsByRoadName
+                .ContainsKey(intersectingRoadName))
+                leftIntersections =
+                  leftIntersectionsByRoadName[intersectingRoadName];
+            else
+                leftIntersections = new ZeroLaneIntersection[0];
 
-            ZeroLaneIntersection[] rightIntersections =
-                rightIntersectionsByRoadName[intersectingRoadName];
+            if (rightIntersectionsByRoadName
+                .ContainsKey(intersectingRoadName))
+                rightIntersections =
+                   rightIntersectionsByRoadName[intersectingRoadName];
+            else
+                rightIntersections = new ZeroLaneIntersection[0];
 
-            List<ZeroRoadIntersection> roadIntersections = new();
 
-            if (leftIntersections != null
-                && rightIntersections != null)
-            {
-                if (!intersectionsByRoadName.ContainsKey(intersectingRoadName))
-                    intersectionsByRoadName[intersectingRoadName] = new();
+            if (!intersectionsByRoadName.ContainsKey(intersectingRoadName))
+                intersectionsByRoadName[intersectingRoadName] = new();
 
-                intersectionsByRoadName[intersectingRoadName].AddRange(
-                    GetRoadIntersections(
-                        intersectingRoad.Height,
-                        leftIntersections,
-                        rightIntersections));
-            }
+            intersectionsByRoadName[intersectingRoadName].AddRange(
+                GetRoadIntersections(
+                    intersectingRoad.Height,
+                    leftIntersections,
+                    rightIntersections));
         }
         return intersectionsByRoadName;
     }
@@ -336,7 +340,7 @@ public class ZeroRoad
         {
             roadIntersections.Add(new ZeroRoadIntersection(
                     height: intersectionHeight,
-                    roadIntersectionType: ZeroRoadIntersection.ROAD_INTERSESCTION_TYPE_UP,
+                    roadIntersectionType: ZeroRoadIntersection.ROAD_INTERSESCTION_TYPE_DOWN,
                     laneIntersections: new ZeroLaneIntersection[]{
                         rightIntersections[0],
                         rightIntersections[1]
