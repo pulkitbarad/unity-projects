@@ -10,9 +10,9 @@ public class ZeroCollisionMap
 {
 
     public static int COLLISION_ORIGIN_LEFT_START = 0;
-    public static int COLLISION_ORIGIN_RIGHT_START = 1;
-    public static int COLLISION_ORIGIN_LEFT_END = 2;
-    public static int COLLISION_ORIGIN_RIGHT_END = 3;
+    public static int COLLISION_ORIGIN_LEFT_END = 1;
+    public static int COLLISION_ORIGIN_RIGHT_END = 2;
+    public static int COLLISION_ORIGIN_RIGHT_START = 3;
 
     public ZeroRoadLane PrimaryLane;
     public string RoadName;
@@ -147,6 +147,49 @@ public class ZeroCollisionMap
         }
     }
 
+    private static bool GetRayHitPointOnSegment(
+        Vector3 origin,
+        Vector3 end,
+        float maxDistance,
+        Collider collider,
+        out Vector3? hitPoint)
+    {
+        ZeroRoadSegment colliderSegment = ZeroRoadBuilder.BuiltRoadSegmentsByName[collider.gameObject.name];
+        Vector3[] colliderTopPlane = colliderSegment.SegmentBounds.TopPlane;
+        Vector3 direction = end - origin;
+
+        if (collider.Raycast(
+                ray: new Ray(origin, direction),
+                hitInfo: out RaycastHit rayHitInfo,
+                maxDistance: maxDistance)
+            && (
+                colliderSegment.PreviousSibling == null
+                || !IsPointInsideBounds(
+                    rayHitInfo.point,
+                    colliderSegment.PreviousSibling.SegmentBounds.TopPlane
+                ))
+            && (
+                colliderSegment.NextSibling == null
+                || !IsPointInsideBounds(
+                    rayHitInfo.point,
+                    colliderSegment.NextSibling.SegmentBounds.TopPlane
+                ))
+            && !IsPointOnLineSegment(
+                    rayHitInfo.point,
+                    colliderTopPlane[0],
+                    colliderTopPlane[3])
+            && !IsPointOnLineSegment(
+                    rayHitInfo.point,
+                    colliderTopPlane[1],
+                    colliderTopPlane[2]))
+        {
+            hitPoint = rayHitInfo.point;
+            return true;
+        }
+        hitPoint = null;
+        return false;
+    }
+
     public void AddCollision(
         ZeroRoadSegment primarySegment,
         ZeroRoadSegment collidingSegment,
@@ -175,8 +218,9 @@ public class ZeroCollisionMap
                     .FindIndex(e =>
                         e.CollidingSegment.ParentLane.Name
                         .Equals(collidingLaneName)
-                            && (e.CollisionPoint - collision.CollisionPoint).magnitude
-                                    < collision.CollidingSegment.Width);
+                        && e.CollisionOriginType == collisionOriginType
+                        && (e.CollisionPoint - collision.CollisionPoint).magnitude
+                                < collision.CollidingSegment.Width);
         if (lookupIndex != -1)
         {
             if (this.CollisionsByCollidingLane[collidingLaneName][lookupIndex]
@@ -184,6 +228,20 @@ public class ZeroCollisionMap
             {
                 this.CollisionsByCollidingLane[collidingLaneName][lookupIndex] = collision;
             }
+            // else
+            // {
+            //     var existingC = this.CollisionsByCollidingLane[collidingLaneName][lookupIndex];
+
+            //     Debug.LogFormat("existing ={0}-{1} at {4} new ={2}-{3} at {5} for type={6}",
+            //         existingC.PrimarySegment.Name,
+            //         existingC.CollidingSegment.Name,
+            //         collision.PrimarySegment.Name,
+            //         collision.CollidingSegment.Name,
+            //         existingC.DistanceFromOrigin,
+            //         collision.DistanceFromOrigin,
+            //         collisionOriginType);
+            //     ZeroRenderer.RenderSphere(collision.CollisionPoint, color: Color.white);
+            // }
         }
         else
         {
@@ -314,49 +372,6 @@ public class ZeroCollisionMap
            .ToArray();
         }
         return intersectionsByRoadName;
-    }
-
-    private static bool GetRayHitPointOnSegment(
-        Vector3 origin,
-        Vector3 end,
-        float maxDistance,
-        Collider collider,
-        out Vector3? hitPoint)
-    {
-        ZeroRoadSegment colliderSegment = ZeroRoadBuilder.BuiltRoadSegmentsByName[collider.gameObject.name];
-        Vector3[] colliderTopPlane = colliderSegment.SegmentBounds.TopPlane;
-        Vector3 direction = end - origin;
-
-        if (collider.Raycast(
-                ray: new Ray(origin, direction),
-                hitInfo: out RaycastHit rayHitInfo,
-                maxDistance: maxDistance)
-            && (
-                colliderSegment.PreviousSibling == null
-                || !IsPointInsideBounds(
-                    rayHitInfo.point,
-                    colliderSegment.PreviousSibling.SegmentBounds.TopPlane
-                ))
-            && (
-                colliderSegment.NextSibling == null
-                || !IsPointInsideBounds(
-                    rayHitInfo.point,
-                    colliderSegment.NextSibling.SegmentBounds.TopPlane
-                ))
-            && !IsPointOnLineSegment(
-                    rayHitInfo.point,
-                    colliderTopPlane[0],
-                    colliderTopPlane[3])
-            && !IsPointOnLineSegment(
-                    rayHitInfo.point,
-                    colliderTopPlane[1],
-                    colliderTopPlane[2]))
-        {
-            hitPoint = rayHitInfo.point;
-            return true;
-        }
-        hitPoint = null;
-        return false;
     }
 
     private static bool IsColliderWithinbounds(Collider collider, Vector3[] bounds)

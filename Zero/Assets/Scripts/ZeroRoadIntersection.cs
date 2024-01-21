@@ -23,10 +23,12 @@ public class ZeroRoadIntersection
     public static int ROAD_INTERSESCTION_TYPE_X = 4;
 
     public ZeroRoadIntersection(
+        string name,
         float height,
         int roadIntersectionType,
         ZeroLaneIntersection[] laneIntersections)
     {
+        this.Name = name;
         this.LaneIntersections = laneIntersections;
         this.RoadIntersectionType = roadIntersectionType;
         this.LaneIntersectionPoints =
@@ -104,6 +106,14 @@ public class ZeroRoadIntersection
         // else if (this.RoadIntersectionType == INTERSESCTION_TYPE_T_DOWN)
         else
             leftIntersectionPosition = 3;
+        // Debug.LogFormat("n={5} this.RoadIntersectionType={0} leftIntersectionPosition={1} leftIntersection=[{2}-{3}] rightIntersection=[{3}-{4}]",
+        //     this.RoadIntersectionType,
+        //     leftIntersectionPosition,
+        //     leftIntersection.PrimaryLane.Name,
+        //     leftIntersection.IntersectingLane.Name,
+        //     rightIntersection.PrimaryLane.Name,
+        //     rightIntersection.IntersectingLane.Name,
+        //     n);
         for (int j = 0; j < 4; j++)
         {
             _L[j] = leftIntersection.IntersectionPoints[(j + leftIntersectionPosition) % 4];
@@ -121,7 +131,7 @@ public class ZeroRoadIntersection
              edgePointIndex: 1,
              edgePoint: L[3]
             );
-            Debug.LogFormat("i={0} edgePointIndex={1} Valid={2} edgePoints={3}", i, 1, IsEdgeValid(L, R, _E), _E.Select(e => e.ToString()).ToCommaSeparatedString());
+            // Debug.LogFormat("i={0} edgePointIndex={1} Valid={2} edgePoints={3}", i, 1, IsEdgeValid(L, R, _E), _E.Select(e => e.ToString()).ToCommaSeparatedString());
             if (IsEdgeValid(L, R, _E))
             {
                 E = _E;
@@ -136,7 +146,7 @@ public class ZeroRoadIntersection
              edgePointIndex: 0,
              edgePoint: L[0]
             );
-            Debug.LogFormat("i={0} edgePointIndex={1} Valid={2} edgePoints={3}", i, 0, IsEdgeValid(L, R, _E), _E.Select(e => e.ToString()).ToCommaSeparatedString());
+            // Debug.LogFormat("i={0} edgePointIndex={1} Valid={2} edgePoints={3}", i, 0, IsEdgeValid(L, R, _E), _E.Select(e => e.ToString()).ToCommaSeparatedString());
             if (IsEdgeValid(L, R, _E))
             {
                 E = _E;
@@ -151,7 +161,7 @@ public class ZeroRoadIntersection
              edgePointIndex: 3,
              edgePoint: R[3]
             );
-            Debug.LogFormat("i={0} edgePointIndex={1} Valid={2} edgePoints={3}", i, 3, IsEdgeValid(L, R, _E), _E.Select(e => e.ToString()).ToCommaSeparatedString());
+            // Debug.LogFormat("i={0} edgePointIndex={1} Valid={2} edgePoints={3}", i, 3, IsEdgeValid(L, R, _E), _E.Select(e => e.ToString()).ToCommaSeparatedString());
             if (IsEdgeValid(L, R, _E))
             {
                 E = _E;
@@ -166,7 +176,7 @@ public class ZeroRoadIntersection
               edgePointIndex: 2,
               edgePoint: R[0]
              );
-            Debug.LogFormat("i={0} edgePointIndex={1} Valid={2} edgePoints={3}", i, 2, IsEdgeValid(L, R, _E), _E.Select(e => e.ToString()).ToCommaSeparatedString());
+            // Debug.LogFormat("i={0} edgePointIndex={1} Valid={2} edgePoints={3}", i, 2, IsEdgeValid(L, R, _E), _E.Select(e => e.ToString()).ToCommaSeparatedString());
             if (IsEdgeValid(L, R, _E))
             {
                 E = _E;
@@ -191,7 +201,6 @@ public class ZeroRoadIntersection
         float laneWidth = ZeroRoadBuilder.RoadLaneWidth;
         Vector3[] edgePoints = new Vector3[4];
         edgePoints[edgePointIndex] = edgePoint;
-        Debug.LogFormat("laneWidth={0} roadWidthExclSidewalks={1}", laneWidth, roadWidthExclSidewalks);
 
         if (edgePointIndex == 0)
         {
@@ -236,10 +245,10 @@ public class ZeroRoadIntersection
         edgeDirectionL2R = leftSegment.DirectionL2R;
         roadWidthExclSidewalks = leftSegment.ParentLane.ParentRoad.WidthExclSidewalks;
 
-        Debug.LogFormat("leftSegment={0} IsRightSidewalk={1} leftIntersectionPosition={2}",
-            leftSegment.Name,
-            leftSegment.ParentLane.IsRightSidewalk,
-            leftIntersectionPosition);
+        // Debug.LogFormat("leftSegment={0} IsRightSidewalk={1} leftIntersectionPosition={2}",
+        //     leftSegment.Name,
+        //     leftSegment.ParentLane.IsRightSidewalk,
+        //     leftIntersectionPosition);
 
         if (leftSegment.ParentLane.IsRightSidewalk)
             edgeDirectionL2R = -edgeDirectionL2R;
@@ -252,10 +261,10 @@ public class ZeroRoadIntersection
     )
     {
         Vector3 forward = Vector3.Cross(E[1] - E[0], Vector3.up);
-        Debug.LogFormat("Vector3.Angle(L[0] - E[0], forward)={0}", Vector3.Angle(L[0] - E[0], forward));
-        Debug.LogFormat("Vector3.Angle(L[3] - E[1], forward)={0}", Vector3.Angle(L[3] - E[1], forward));
-        Debug.LogFormat("Vector3.Angle(R[0] - E[2], forward)={0}", Vector3.Angle(R[0] - E[2], forward));
-        Debug.LogFormat("Vector3.Angle(R[3] - E[3], forward)={0}", Vector3.Angle(R[3] - E[3], forward));
+        // Debug.LogFormat("Vector3.Angle(L[0] - E[0], forward)={0}", Vector3.Angle(L[0] - E[0], forward));
+        // Debug.LogFormat("Vector3.Angle(L[3] - E[1], forward)={0}", Vector3.Angle(L[3] - E[1], forward));
+        // Debug.LogFormat("Vector3.Angle(R[0] - E[2], forward)={0}", Vector3.Angle(R[0] - E[2], forward));
+        // Debug.LogFormat("Vector3.Angle(R[3] - E[3], forward)={0}", Vector3.Angle(R[3] - E[3], forward));
 
         if (!E[0].Equals(L[0]) && Vector3.Angle(L[0] - E[0], forward) > 90)
             return false;
@@ -322,7 +331,7 @@ public class ZeroRoadIntersection
             ZeroCurvedLine.FindBazierLinePoints(
                 vertexCount: 8,
                 controlPoints: new Vector3[] { L[1], L[2], L[3] }
-            ));
+            ).Item1);
         if (!E[1].Equals(L[3]))
             leftSidewalk.Add(E[1]);
         //
@@ -333,7 +342,7 @@ public class ZeroRoadIntersection
             ZeroCurvedLine.FindBazierLinePoints(
                 vertexCount: 8,
                 controlPoints: new Vector3[] { R[0], R[1], R[2] }
-            ));
+            ).Item1);
         rightSidewalk.Add(R[3]);
         if (!E[3].Equals(R[3]))
             rightSidewalk.Add(E[3]);
@@ -342,6 +351,146 @@ public class ZeroRoadIntersection
         return new Vector3[][] { rightSidewalk.ToArray(), leftSidewalk.ToArray() };
     }
 
+    public static ZeroRoadIntersection[] GetRoadIntersections(
+        float primaryRoadHeight,
+        float collidingRoadHeight,
+        Vector3[] controlPoints,
+        ZeroLaneIntersection[] allLeftIntersections,
+        ZeroLaneIntersection[] allRightIntersections)
+    {
+
+        List<ZeroRoadIntersection> roadIntersections = new();
+        int leftIntersectionCount = allLeftIntersections.Length;
+        int rightIntersectionCount = allRightIntersections.Length;
+        float intersectionHeight = Mathf.Max(primaryRoadHeight, collidingRoadHeight);
+
+        Debug.LogFormat("leftIntersectionCount={0} rightIntersectionCount={1}",
+            leftIntersectionCount,
+            rightIntersectionCount);
+
+        ZeroCollisionInfo left0Collision = allLeftIntersections[0].IntersectionPoints[0];
+        string primaryRoad = left0Collision.PrimarySegment.ParentLane.ParentRoad.Name;
+        string collidingRoad = left0Collision.CollidingSegment.ParentLane.ParentRoad.Name;
+        if (leftIntersectionCount == 4 && rightIntersectionCount == 4)
+        {
+            roadIntersections.Add(new ZeroRoadIntersection(
+                    name: primaryRoad + collidingRoad + 0,
+                    height: intersectionHeight,
+                    roadIntersectionType: ZeroRoadIntersection.ROAD_INTERSESCTION_TYPE_X,
+                    laneIntersections: new ZeroLaneIntersection[]{
+                        allLeftIntersections[0],
+                        allLeftIntersections[1],
+                        allRightIntersections[1],
+                        allRightIntersections[0]
+                    }
+                ));
+            roadIntersections.Add(new ZeroRoadIntersection(
+                    name: primaryRoad + collidingRoad + 1,
+                    height: intersectionHeight,
+                    roadIntersectionType: ZeroRoadIntersection.ROAD_INTERSESCTION_TYPE_X,
+                    laneIntersections: new ZeroLaneIntersection[]{
+                        allLeftIntersections[2],
+                        allLeftIntersections[3],
+                        allRightIntersections[3],
+                        allRightIntersections[2]
+                    }
+                ));
+        }
+        else if (leftIntersectionCount == 2 && rightIntersectionCount == 2)
+        {
+            roadIntersections.Add(new ZeroRoadIntersection(
+                    name: primaryRoad + collidingRoad + 0,
+                    height: intersectionHeight,
+                    roadIntersectionType: ZeroRoadIntersection.ROAD_INTERSESCTION_TYPE_X,
+                    laneIntersections: new ZeroLaneIntersection[]{
+                        allLeftIntersections[0],
+                        allLeftIntersections[1],
+                        allRightIntersections[1],
+                        allRightIntersections[0]
+                    }
+                ));
+        }
+        else if (leftIntersectionCount == 2 && rightIntersectionCount == 0)
+        {
+            roadIntersections.Add(new ZeroRoadIntersection(
+                    name: primaryRoad + collidingRoad + 0,
+                    height: intersectionHeight,
+                    roadIntersectionType: ZeroRoadIntersection.ROAD_INTERSESCTION_TYPE_UP,
+                    laneIntersections: new ZeroLaneIntersection[]{
+                        allLeftIntersections[0],
+                        allLeftIntersections[1]
+                    }
+                ));
+        }
+        else if (leftIntersectionCount == 0 && rightIntersectionCount == 2)
+        {
+            roadIntersections.Add(new ZeroRoadIntersection(
+                    name: primaryRoad + collidingRoad + 0,
+                    height: intersectionHeight,
+                    roadIntersectionType: ZeroRoadIntersection.ROAD_INTERSESCTION_TYPE_DOWN,
+                    laneIntersections: new ZeroLaneIntersection[]{
+                        allRightIntersections[1],
+                        allRightIntersections[0]
+                    }
+                ));
+        }
+        else if (leftIntersectionCount == 1 && rightIntersectionCount == 1)
+        {
+            int intersectionType;
+            if (IsRoadIntersectionLeft(controlPoints, allLeftIntersections, allRightIntersections))
+                intersectionType = ZeroRoadIntersection.ROAD_INTERSESCTION_TYPE_LEFT;
+            else
+                intersectionType = ZeroRoadIntersection.ROAD_INTERSESCTION_TYPE_RIGHT;
+            //
+            roadIntersections.Add(new ZeroRoadIntersection(
+                    name: primaryRoad + collidingRoad + 0,
+                height: intersectionHeight,
+                roadIntersectionType: intersectionType,
+                laneIntersections: new ZeroLaneIntersection[]{
+                allLeftIntersections[0],
+                allRightIntersections[0]
+                }
+            ));
+        }
+        return roadIntersections.ToArray();
+    }
+
+    private static bool IsRoadIntersectionLeft(
+        Vector3[] controlPoints,
+        ZeroLaneIntersection[] leftIntersections,
+        ZeroLaneIntersection[] rightIntersections
+    )
+    {
+        float collidingRoadWidth =
+                leftIntersections[0].IntersectionPoints[0]
+                .CollidingSegment.ParentLane
+                .ParentRoad.WidthInclSidewalks;
+        ZeroRoadSegment leftSegment = leftIntersections[0].IntersectionPoints[0].PrimarySegment;
+        ZeroRoadSegment rightSegment = rightIntersections[0].IntersectionPoints[0].PrimarySegment;
+        Vector3 leftStartPoint = leftIntersections[0].IntersectionPoints[0].CollisionPoint;
+        Vector3 rightStartPoint = rightIntersections[0].IntersectionPoints[0].CollisionPoint;
+        Vector3 leftEndPoint = leftStartPoint + leftSegment.Forward * collidingRoadWidth;
+        Vector3 rightEndPoint = rightStartPoint + rightSegment.Forward * collidingRoadWidth;
+
+        if (ZeroCollisionMap.IsPointInsideBounds(
+            controlPoints[0],
+            new Vector3[]{
+                        leftStartPoint,
+                        leftEndPoint,
+                        rightEndPoint,
+                        rightStartPoint}))
+            return false;
+        else if (ZeroCollisionMap.IsPointInsideBounds(
+            controlPoints[^1],
+            new Vector3[]{
+                        leftStartPoint,
+                        leftEndPoint,
+                        rightEndPoint,
+                        rightStartPoint}))
+            return true;
+        else
+            throw new Exception("Unrecognised road intersection type");
+    }
     public void RenderLaneIntersections(Color? color = null)
     {
         RenderVertices(this.LaneIntersectionPoints,

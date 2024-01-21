@@ -25,6 +25,7 @@ public class ZeroRoadSegment
     public Vector3 CenterEnd;
     public Vector3 NextCenterEnd;
     public Vector3 DirectionL2R;
+    public bool IsSegmentAngleChangeValid;
     public GameObject SegmentObject;
     public ZeroRoadSegment PreviousSibling;
     public ZeroRoadSegment NextSibling;
@@ -72,6 +73,7 @@ public class ZeroRoadSegment
         InitSegmentObject();
         if (Index > 0)
             PreviousSibling.NextSibling = this;
+        this.IsSegmentAngleChangeValid = ValidateSegmentAngleChange();
     }
 
     private void ComputeSegmentDimensions()
@@ -118,6 +120,33 @@ public class ZeroRoadSegment
                     MathF.Sin(
                         angleBetweenSegments * MathF.PI / 180f));
         }
+    }
+
+    private bool ValidateSegmentAngleChange()
+    {
+        if (this.Index > 1)
+            return
+                ValidateSegmentCollision(this.PreviousSibling.PreviousSibling, this)
+                && ValidateSegmentCollision(this, this.PreviousSibling.PreviousSibling);
+        return true;
+    }
+
+    private bool ValidateSegmentCollision(
+        ZeroRoadSegment segment,
+        ZeroRoadSegment refSegment)
+    {
+        Vector3 topPlaneCenter = segment.Center + 0.5f * segment.Height * segment.Up;
+        float diagonalAngle = Vector3.Angle(segment.SegmentBounds.TopPlane[3] - topPlaneCenter, segment.Forward);
+        float collisionRadius = segment.Width / 2 / Mathf.Sin(diagonalAngle / 180f * Mathf.PI);
+        Vector3[] refTopPlane = refSegment.SegmentBounds.TopPlane;
+
+
+        if (refSegment.Index > segment.Index)
+            return (refTopPlane[0] - topPlaneCenter).magnitude > collisionRadius
+                 && (refTopPlane[3] - topPlaneCenter).magnitude > collisionRadius;
+        else
+            return (refTopPlane[1] - topPlaneCenter).magnitude > collisionRadius
+                 && (refTopPlane[2] - topPlaneCenter).magnitude > collisionRadius;
     }
 
     private void InitSegmentObject()

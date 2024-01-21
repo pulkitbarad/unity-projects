@@ -10,7 +10,8 @@ using UnityEngine.UIElements;
 public class ZeroRoadBuilder
 {
     public static Material RoadSegmentMaterial;
-    public static float RoadMaxChangeInAngle;
+    public static float RoadChangeAngleThreshold;
+    public static float RoadChangeAngleMax;
     public static int RoadMaxVertexCount;
     public static int RoadMinVertexCount;
     public static float RoadSegmentMinLength;
@@ -55,7 +56,8 @@ public class ZeroRoadBuilder
     }
     private static void InitialiseConfig()
     {
-        ZeroRoadBuilder.RoadMaxChangeInAngle = 15;
+        ZeroRoadBuilder.RoadChangeAngleThreshold = 10;
+        ZeroRoadBuilder.RoadChangeAngleMax = 20;
         ZeroRoadBuilder.RoadMaxVertexCount = 30;
         ZeroRoadBuilder.RoadMinVertexCount = 6;
         ZeroRoadBuilder.RoadSegmentMinLength = 3;

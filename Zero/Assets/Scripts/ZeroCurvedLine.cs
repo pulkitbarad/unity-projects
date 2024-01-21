@@ -6,7 +6,7 @@ using UnityEngine;
 
 public class ZeroCurvedLine
 {
-    public static Vector3[] FindBazierLinePoints(params Vector3[] controlPoints)
+    public static (Vector3[], float) FindBazierLinePoints(params Vector3[] controlPoints)
     {
         int vertexCount = 1;
         if (controlPoints.Length > 2)
@@ -15,10 +15,11 @@ public class ZeroCurvedLine
         return FindBazierLinePoints(vertexCount, controlPoints);
     }
 
-    public static Vector3[] FindBazierLinePoints(
+    public static (Vector3[], float) FindBazierLinePoints(
       int vertexCount,
       params Vector3[] controlPoints)
     {
+        float maxAngle = 0;
         List<Vector3> bazierLinePoints = new();
 
         for (int p = 0; p < vertexCount; p++)
@@ -34,14 +35,16 @@ public class ZeroCurvedLine
 
                 if (vertexCount < ZeroRoadBuilder.RoadMaxVertexCount
                     && currSegment.magnitude >= ZeroRoadBuilder.RoadSegmentMinLength
-                    && currAngle > ZeroRoadBuilder.RoadMaxChangeInAngle)
+                    && currAngle > ZeroRoadBuilder.RoadChangeAngleThreshold)
                 {
                     return FindBazierLinePoints(vertexCount + 1, controlPoints);
                 }
+                else if (currAngle > maxAngle)
+                    maxAngle = currAngle;
             }
         }
         bazierLinePoints.Add(controlPoints[^1]);
-        return bazierLinePoints.ToArray();
+        return (bazierLinePoints.ToArray(), maxAngle);
     }
 
     private static Vector3 BezierPathCalculation(
@@ -149,7 +152,7 @@ public class ZeroCurvedLine
             curvePoints.Add(curve);
         }
         curvePoints.Add(endPosition);
-        
+
         return curvePoints;
     }
 }

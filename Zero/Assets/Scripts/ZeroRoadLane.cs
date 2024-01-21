@@ -14,6 +14,7 @@ public class ZeroRoadLane
     public ZeroRoad ParentRoad;
     public bool IsLeftSidewalk;
     public bool IsRightSidewalk;
+    public bool IsLaneAngleChangeValid;
 
     public ZeroRoadLane()
     {
@@ -38,7 +39,13 @@ public class ZeroRoadLane
         this.Segments = GetRoadSegments(
             leftVertices: leftVertices,
             centerVertices: centerVertices,
-            rightVertices: rightVertices); ;
+            rightVertices: rightVertices);
+
+        this.IsLaneAngleChangeValid = true;
+        foreach (var segment in this.Segments)
+        {
+            this.IsLaneAngleChangeValid &= segment.IsSegmentAngleChangeValid;
+        }
     }
 
     public void HideAllSegments()

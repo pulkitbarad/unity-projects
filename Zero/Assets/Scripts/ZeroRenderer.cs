@@ -69,6 +69,9 @@ public class ZeroRenderer
         var sphereRenderer = sphere.GetComponent<Renderer>();
         sphereRenderer.material.color = color ?? UnityEngine.Color.yellow;
 
+        if (GameObject.Find("DebuggingParent") == null)
+            DebuggingParent = new GameObject("DebuggingParent");
+
         if (parentTransform != null)
         {
             sphere.transform.SetParent(parentTransform);
