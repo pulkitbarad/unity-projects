@@ -63,9 +63,11 @@ public class ZeroRoadIntersection
                 R: out Vector3[] R,
                 E: out Vector3[] E);
 
-            if (i % 2 == 0)
-                mainSquares.Add(new Vector3[] { E[0], L[1], L[2], R[1], R[2], E[3] });
-            crosswalks.Add(new Vector3[] { L[3], L[2], R[1], R[0] });
+            //
+            Vector3[] mainSquare = new Vector3[] { E[0], L[1], L[2], R[1], R[2], E[3] };
+            Vector3[] crosswalk = new Vector3[] { L[3], L[2], R[1], R[0] };
+            mainSquares.Add(mainSquare);
+            crosswalks.Add(crosswalk);
             sidewalks.AddRange(GetSidewalks(i: i, L: L, R: R, E: E));
             roadEdges.Add(E);
 
@@ -73,6 +75,7 @@ public class ZeroRoadIntersection
             //then there should be only one iteration of this loop i.e. one crosswalk, two sidewalks and one main s=square part
             if (n == 2) i++;
         }
+        //
         this.Sidewalks = sidewalks.ToArray();
         this.CrossWalks = crosswalks.ToArray();
         this.MainSquare = mainSquares.ToArray();
