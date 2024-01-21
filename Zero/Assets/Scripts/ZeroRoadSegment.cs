@@ -68,7 +68,7 @@ public class ZeroRoadSegment
                 Height,
                 Up,
                 centerVertices);
-        DirectionL2R = SegmentBounds.TopPlane[3] - SegmentBounds.TopPlane[0];
+        DirectionL2R = (SegmentBounds.TopPlane[3] - SegmentBounds.TopPlane[0]).normalized;
         InitSegmentObject();
         if (Index > 0)
             PreviousSibling.NextSibling = this;

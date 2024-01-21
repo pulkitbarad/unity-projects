@@ -296,9 +296,9 @@ public class ZeroRoad
                     roadIntersectionType: ZeroRoadIntersection.ROAD_INTERSESCTION_TYPE_X,
                     laneIntersections: new ZeroLaneIntersection[]{
                         leftIntersections[0],
-                        rightIntersections[0],
                         leftIntersections[1],
-                        rightIntersections[1]
+                        rightIntersections[1],
+                        rightIntersections[0]
                     }
                 ));
             roadIntersections.Add(new ZeroRoadIntersection(
@@ -306,9 +306,9 @@ public class ZeroRoad
                     roadIntersectionType: ZeroRoadIntersection.ROAD_INTERSESCTION_TYPE_X,
                     laneIntersections: new ZeroLaneIntersection[]{
                         leftIntersections[2],
-                        rightIntersections[2],
                         leftIntersections[3],
-                        rightIntersections[3]
+                        rightIntersections[3],
+                        rightIntersections[2]
                     }
                 ));
         }
@@ -319,9 +319,9 @@ public class ZeroRoad
                     roadIntersectionType: ZeroRoadIntersection.ROAD_INTERSESCTION_TYPE_X,
                     laneIntersections: new ZeroLaneIntersection[]{
                         leftIntersections[0],
-                        rightIntersections[0],
                         leftIntersections[1],
-                        rightIntersections[1]
+                        rightIntersections[1],
+                        rightIntersections[0]
                     }
                 ));
         }
@@ -342,8 +342,8 @@ public class ZeroRoad
                     height: intersectionHeight,
                     roadIntersectionType: ZeroRoadIntersection.ROAD_INTERSESCTION_TYPE_DOWN,
                     laneIntersections: new ZeroLaneIntersection[]{
-                        rightIntersections[0],
-                        rightIntersections[1]
+                        rightIntersections[1],
+                        rightIntersections[0]
                     }
                 ));
         }

@@ -35,7 +35,7 @@ public class ZeroRoadIntersection
                 e.IntersectionPoints.Select(c => c.CollisionPoint).ToArray()).ToArray();
         this.Height = height;
 
-        GetIntersectionSections();
+        GetIntersectionModules();
 
         // Debug.LogFormat(
         //    "intersectingRoadName={0} right intersections={1}",
@@ -44,7 +44,7 @@ public class ZeroRoadIntersection
 
     }
 
-    private void GetIntersectionSections()
+    private void GetIntersectionModules()
     {
         List<Vector3[]> sidewalks = new();
         List<Vector3[]> crosswalks = new();
@@ -61,10 +61,10 @@ public class ZeroRoadIntersection
                 R: out Vector3[] R,
                 E: out Vector3[] E);
 
-            if (n % 2 == 0)
+            if (i % 2 == 0)
                 mainSquares.Add(new Vector3[] { E[0], L[1], L[2], R[1], R[2], E[3] });
             crosswalks.Add(new Vector3[] { L[3], L[2], R[1], R[0] });
-            sidewalks.AddRange(GetSidewalks(n: n, L: L, R: R, E: E));
+            sidewalks.AddRange(GetSidewalks(i: i, L: L, R: R, E: E));
             roadEdges.Add(E);
 
             //If there are only two lane intersections (it's a T intersection), 
@@ -111,82 +111,101 @@ public class ZeroRoadIntersection
             L[j] = _L[j].CollisionPoint;
             R[j] = _R[j].CollisionPoint;
         }
+        Vector3[] _E = new Vector3[4];
+        ZeroCollisionInfo leftCollisionInfo = _L[0];
         if (Vector3.Angle(L[1] - L[0], L[3] - L[0]) > 90)
         {
-            E = GetRoadEdgePoints(
-             collisionInfo: _L[3],
-             intersectionType: leftIntersectionPosition,
-             pointIndex: 1,
-             point: L[3]
+            _E = GetRoadEdgePoints(
+             leftIntersectionPosition: leftIntersectionPosition,
+             leftCollisionInfo: leftCollisionInfo,
+             edgePointIndex: 1,
+             edgePoint: L[3]
             );
-            if (IsEdgeValid(L, R, E))
+            Debug.LogFormat("i={0} edgePointIndex={1} Valid={2} edgePoints={3}", i, 1, IsEdgeValid(L, R, _E), _E.Select(e => e.ToString()).ToCommaSeparatedString());
+            if (IsEdgeValid(L, R, _E))
+            {
+                E = _E;
                 return;
+            }
         }
         else
         {
-            GetRoadEdgePoints(
-             collisionInfo: _L[0],
-             intersectionType: leftIntersectionPosition,
-             pointIndex: 0,
-             point: L[0]
+            _E = GetRoadEdgePoints(
+             leftIntersectionPosition: leftIntersectionPosition,
+             leftCollisionInfo: leftCollisionInfo,
+             edgePointIndex: 0,
+             edgePoint: L[0]
             );
-            if (IsEdgeValid(L, R, E))
+            Debug.LogFormat("i={0} edgePointIndex={1} Valid={2} edgePoints={3}", i, 0, IsEdgeValid(L, R, _E), _E.Select(e => e.ToString()).ToCommaSeparatedString());
+            if (IsEdgeValid(L, R, _E))
+            {
+                E = _E;
                 return;
+            }
         }
         if (Vector3.Angle(R[1] - R[0], R[3] - R[0]) > 90)
         {
-            GetRoadEdgePoints(
-             collisionInfo: _R[3],
-             intersectionType: leftIntersectionPosition,
-             pointIndex: 3,
-             point: R[3]
+            _E = GetRoadEdgePoints(
+             leftIntersectionPosition: leftIntersectionPosition,
+             leftCollisionInfo: leftCollisionInfo,
+             edgePointIndex: 3,
+             edgePoint: R[3]
             );
-            if (IsEdgeValid(L, R, E))
+            Debug.LogFormat("i={0} edgePointIndex={1} Valid={2} edgePoints={3}", i, 3, IsEdgeValid(L, R, _E), _E.Select(e => e.ToString()).ToCommaSeparatedString());
+            if (IsEdgeValid(L, R, _E))
+            {
+                E = _E;
                 return;
+            }
         }
         else
         {
-            GetRoadEdgePoints(
-             collisionInfo: _R[0],
-             intersectionType: leftIntersectionPosition,
-             pointIndex: 2,
-             point: R[0]
-            );
-            if (IsEdgeValid(L, R, E))
+            _E = GetRoadEdgePoints(
+              leftIntersectionPosition: leftIntersectionPosition,
+              leftCollisionInfo: leftCollisionInfo,
+              edgePointIndex: 2,
+              edgePoint: R[0]
+             );
+            Debug.LogFormat("i={0} edgePointIndex={1} Valid={2} edgePoints={3}", i, 2, IsEdgeValid(L, R, _E), _E.Select(e => e.ToString()).ToCommaSeparatedString());
+            if (IsEdgeValid(L, R, _E))
+            {
+                E = _E;
                 return;
+            }
         }
     }
 
 
     private Vector3[] GetRoadEdgePoints(
-        ZeroCollisionInfo collisionInfo,
-        int intersectionType,
-        int pointIndex,
-        Vector3 point)
+        int leftIntersectionPosition,
+        ZeroCollisionInfo leftCollisionInfo,
+        int edgePointIndex,
+        Vector3 edgePoint)
     {
         GetEdgeDirectionAndRoadWidth(
-        collisionInfo: collisionInfo,
-        intersectionType: intersectionType,
-        edgeDirectionL2R: out Vector3 edgeDirectionL2R,
-        roadWidthExclSidewalks: out float roadWidthExclSidewalks);
+            leftCollisionInfo: leftCollisionInfo,
+            leftIntersectionPosition: leftIntersectionPosition,
+            edgeDirectionL2R: out Vector3 edgeDirectionL2R,
+            roadWidthExclSidewalks: out float roadWidthExclSidewalks);
 
         float laneWidth = ZeroRoadBuilder.RoadLaneWidth;
         Vector3[] edgePoints = new Vector3[4];
-        edgePoints[pointIndex] = point;
+        edgePoints[edgePointIndex] = edgePoint;
+        Debug.LogFormat("laneWidth={0} roadWidthExclSidewalks={1}", laneWidth, roadWidthExclSidewalks);
 
-        if (pointIndex == 0)
+        if (edgePointIndex == 0)
         {
             edgePoints[1] = edgePoints[0] + laneWidth * edgeDirectionL2R;
             edgePoints[2] = edgePoints[1] + roadWidthExclSidewalks * edgeDirectionL2R;
             edgePoints[3] = edgePoints[2] + laneWidth * edgeDirectionL2R;
         }
-        else if (pointIndex == 1)
+        else if (edgePointIndex == 1)
         {
             edgePoints[0] = edgePoints[1] - laneWidth * edgeDirectionL2R;
             edgePoints[2] = edgePoints[1] + roadWidthExclSidewalks * edgeDirectionL2R;
             edgePoints[3] = edgePoints[2] + laneWidth * edgeDirectionL2R;
         }
-        else if (pointIndex == 2)
+        else if (edgePointIndex == 2)
         {
             edgePoints[1] = edgePoints[2] - roadWidthExclSidewalks * edgeDirectionL2R;
             edgePoints[0] = edgePoints[1] - laneWidth * edgeDirectionL2R;
@@ -198,35 +217,31 @@ public class ZeroRoadIntersection
             edgePoints[1] = edgePoints[2] - roadWidthExclSidewalks * edgeDirectionL2R;
             edgePoints[0] = edgePoints[1] - laneWidth * edgeDirectionL2R;
         }
-
         return edgePoints;
     }
 
     private void GetEdgeDirectionAndRoadWidth(
-        ZeroCollisionInfo collisionInfo,
-        int intersectionType,
+        ZeroCollisionInfo leftCollisionInfo,
+        int leftIntersectionPosition,
         out Vector3 edgeDirectionL2R,
         out float roadWidthExclSidewalks)
     {
         ZeroRoadSegment leftSegment;
 
-        if (intersectionType % 2 == 0)
-            leftSegment = collisionInfo.PrimarySegment;
+        if (leftIntersectionPosition % 2 == 0)
+            leftSegment = leftCollisionInfo.PrimarySegment;
         else
-            leftSegment = collisionInfo.CollidingSegment;
+            leftSegment = leftCollisionInfo.CollidingSegment;
 
         edgeDirectionL2R = leftSegment.DirectionL2R;
         roadWidthExclSidewalks = leftSegment.ParentLane.ParentRoad.WidthExclSidewalks;
 
-        if (intersectionType == 1 || intersectionType == 3)
-            if (leftSegment.ParentLane.IsRightSidewalk)
-                //Because default assumption is left segment is of the left sidewalk, 
-                //And colliding lane direction is not captured within collision info obect
-                edgeDirectionL2R = -edgeDirectionL2R;
+        Debug.LogFormat("leftSegment={0} IsRightSidewalk={1} leftIntersectionPosition={2}",
+            leftSegment.Name,
+            leftSegment.ParentLane.IsRightSidewalk,
+            leftIntersectionPosition);
 
-        if (intersectionType == 2 || intersectionType == 3)
-            //Further inverse the left to right direction, 
-            //Because section opposite side of the main square always has inversed left to right 
+        if (leftSegment.ParentLane.IsRightSidewalk)
             edgeDirectionL2R = -edgeDirectionL2R;
     }
 
@@ -237,6 +252,10 @@ public class ZeroRoadIntersection
     )
     {
         Vector3 forward = Vector3.Cross(E[1] - E[0], Vector3.up);
+        Debug.LogFormat("Vector3.Angle(L[0] - E[0], forward)={0}", Vector3.Angle(L[0] - E[0], forward));
+        Debug.LogFormat("Vector3.Angle(L[3] - E[1], forward)={0}", Vector3.Angle(L[3] - E[1], forward));
+        Debug.LogFormat("Vector3.Angle(R[0] - E[2], forward)={0}", Vector3.Angle(R[0] - E[2], forward));
+        Debug.LogFormat("Vector3.Angle(R[3] - E[3], forward)={0}", Vector3.Angle(R[3] - E[3], forward));
 
         if (!E[0].Equals(L[0]) && Vector3.Angle(L[0] - E[0], forward) > 90)
             return false;
@@ -252,12 +271,12 @@ public class ZeroRoadIntersection
     }
 
     private Vector3[][] GetSidewalks(
-        float n,
+        float i,
         Vector3[] L,
         Vector3[] R,
         Vector3[] E)
     {
-        if (n % 2 == 0)
+        if (i % 2 == 0)
             return GetCurvedSidewalks(L: L, R: R, E: E);
         else
             return GetNonCurvedSidewalks(L: L, R: R, E: E);
