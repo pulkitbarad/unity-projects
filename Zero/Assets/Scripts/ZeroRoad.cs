@@ -88,8 +88,21 @@ public class ZeroRoad
                centerVertices: bazierResult.Item1);
         this.IsRoadAngleChangeValid = true;
         foreach (var lane in this.Lanes)
+        {
+            if (ZeroController.TestType == ZeroRoadTest.Test1)
+            {
+                Dictionary<string, Vector3> logs = new();
+
+                logs.AddRange(
+                    this.Lanes
+                    .Select(
+                        e => e.GetSegmentVertexLogs())
+                    .SelectMany(e => e));
+                ZeroController.AppendToDebugLog(logs);
+            }
+
             this.IsRoadAngleChangeValid &= lane.IsLaneAngleChangeValid;
-        // Debug.LogFormat("this.IsRoadAngleChangeValid= {0} maxBendAngle={1}", this.IsRoadAngleChangeValid, bazierResult.Item2);
+        }
 
         if (this.IsRoadAngleChangeValid)
         {
@@ -103,18 +116,28 @@ public class ZeroRoad
                         intersection.RenderLaneIntersections();
                         intersection.RenderSidewalks();
                         intersection.RenderCrosswalks();
-                        intersection.RenderMainSquare();
                         intersection.RenderRoadEdges();
-                        ZeroController.AppendToDebugLog(
-                            intersection.SidewalksLogPairs());
-                        ZeroController.AppendToDebugLog(
-                            intersection.CrosswalksLogPairs());
-                        ZeroController.AppendToDebugLog(
-                            intersection.LaneIntersectionsLogPairs());
-                        ZeroController.AppendToDebugLog(
-                            intersection.MainSquareLogPairs());
-                        ZeroController.AppendToDebugLog(
-                            intersection.RoadEdgesLogPairs());
+                        intersection.RenderMainSquare();
+                        if (
+                            new List<string> {
+                                ZeroRoadTest.Test2,
+                                ZeroRoadTest.Test3,
+                                ZeroRoadTest.Test4,
+                                ZeroRoadTest.Test5
+                            }
+                            .Contains(ZeroController.TestType))
+                        {
+                            ZeroController.AppendToDebugLog(
+                                intersection.LaneIntersectionsLogPairs());
+                            ZeroController.AppendToDebugLog(
+                                intersection.SidewalksLogPairs());
+                            ZeroController.AppendToDebugLog(
+                                intersection.CrosswalksLogPairs());
+                            ZeroController.AppendToDebugLog(
+                                intersection.RoadEdgesLogPairs());
+                            ZeroController.AppendToDebugLog(
+                                intersection.MainSquareLogPairs());
+                        }
                     }
                 }
             }
@@ -123,12 +146,10 @@ public class ZeroRoad
 
     public void LogRoadPositions()
     {
-        int i = 0;
-        ZeroController.AppendToDebugLog(
-            this.ControlPoints
-            .Select(e =>
-                (this.Name + "Control" + i++.ToString(), e.ToString())).ToArray()
-            );
+        Dictionary<string, Vector3> logs = new();
+        for (int i = 0; i < this.ControlPoints.Length; i++)
+            logs[this.Name + "Control" + i++.ToString()] = this.ControlPoints[i];
+        ZeroController.AppendToDebugLog(logs);
     }
 
     private string GetVectorString(string name, Vector3 vector)
@@ -159,11 +180,15 @@ public class ZeroRoad
         int laneIndex = 0;
         for (; laneIndex < this.NumberOfLanesInclSidewalks; laneIndex++)
         {
+            float height = this.Height;
+            if (laneIndex == this.LeftSidewalkIndex || laneIndex == this.RightSidewalkIndex)
+                height = this.SidewalkHeight;
+
             ZeroRoadLane newLane =
                 new(
                     laneIndex: laneIndex,
                     width: ZeroRoadBuilder.RoadLaneWidth,
-                    height: ZeroRoadBuilder.RoadLaneHeight,
+                    height: height,
                     leftVertices: allLaneVertices[laneIndex * 2],
                     centerVertices: allLaneVertices[laneIndex * 2 + 1],
                     rightVertices: allLaneVertices[laneIndex * 2 + 2],
@@ -240,17 +265,17 @@ public class ZeroRoad
     {
         Dictionary<string, List<ZeroRoadIntersection>> intersectionsByRoadName = new();
         Dictionary<string, ZeroLaneIntersection[]> leftIntersectionsByRoadName =
-                     new ZeroCollisionMap(
-                        roadName: this.Name,
-                        primaryLane: this.Lanes[this.LeftSidewalkIndex],
-                        layerMaskName: ZeroRoadBuilder.RoadSidewalkMaskName)
-                     .GetLaneIntersectionsByRoadName();
+            new ZeroCollisionMap(
+            roadName: this.Name,
+            primaryLane: this.Lanes[this.LeftSidewalkIndex],
+            layerMaskName: ZeroRoadBuilder.RoadSidewalkMaskName)
+            .GetLaneIntersectionsByRoadName();
         Dictionary<string, ZeroLaneIntersection[]> rightIntersectionsByRoadName =
-                     new ZeroCollisionMap(
-                        roadName: this.Name,
-                        primaryLane: this.Lanes[this.RightSidewalkIndex],
-                        layerMaskName: ZeroRoadBuilder.RoadSidewalkMaskName)
-                     .GetLaneIntersectionsByRoadName();
+            new ZeroCollisionMap(
+            roadName: this.Name,
+            primaryLane: this.Lanes[this.RightSidewalkIndex],
+            layerMaskName: ZeroRoadBuilder.RoadSidewalkMaskName)
+            .GetLaneIntersectionsByRoadName();
 
         List<string> allCollidingRoads =
             leftIntersectionsByRoadName.Keys

@@ -11,7 +11,6 @@ public class ZeroRenderer
     private static readonly List<string> _existingSpheres = new();
     public static GameObject DebuggingParent;
     private static Material _baseLineMaterial;
-    public static bool IsDebugEnabled = false;
 
     public static void Initialise()
     {

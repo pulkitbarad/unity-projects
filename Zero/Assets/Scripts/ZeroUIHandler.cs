@@ -86,7 +86,7 @@ public class ZeroUIHandler
             Vector2 currentTouch0 = _touch0Action.ReadValue<Vector2>();
             if (_isRoadMenuActive)
                 ZeroRoadBuilder.HandleControlDrag(
-                    isCurved: ZeroRoadBuilder.CurrentActiveRoad.IsCurved,
+                    isCurved: ZeroRoadBuilder.ActiveRoad.IsCurved,
                     touchPosition: currentTouch0);
         }
 

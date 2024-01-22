@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -123,4 +124,11 @@ public class ZeroRoadLane
         + ")";
     }
 
+    public Dictionary<string, Vector3> GetSegmentVertexLogs()
+    {
+        Dictionary<string, Vector3> vertexStrings = new();
+        for (int i = 0; i < this.Segments.Length; i++)
+            vertexStrings.AddRange(this.Segments[i].SegmentBounds.GetVertexLogPairs());
+        return vertexStrings;
+    }
 }

@@ -186,4 +186,26 @@ public class ZeroPolygon3D
         foreach (var point in this._verticesWorld)
             ZeroRenderer.RenderSphere(point, this.Name + i++.ToString(), color: color ?? Color.yellow);
     }
+
+    public Dictionary<string, Vector3> GetVertexLogPairs()
+    {
+        Dictionary<string, Vector3> vertexStrings = new();
+        vertexStrings.AddRange(GetVertexLogs(this.TopPlane, this.Name + "T"));
+        vertexStrings.AddRange(GetVertexLogs(this.BottomPlane, this.Name + "B"));
+        vertexStrings.AddRange(GetVertexLogs(this.LeftPlane, this.Name + "L"));
+        vertexStrings.AddRange(GetVertexLogs(this.RightPlane, this.Name + "R"));
+        vertexStrings.AddRange(GetVertexLogs(this.FrontPlane, this.Name + "F"));
+        vertexStrings.AddRange(GetVertexLogs(this.BackPlane, this.Name + "K"));
+
+        return vertexStrings;
+    }
+
+    private Dictionary<string, Vector3> GetVertexLogs(Vector3[] vertices, string prefix)
+    {
+        Dictionary<string, Vector3> vertexStrings = new();
+        for (int i = 0; i < vertices.Length; i++)
+            vertexStrings[String.Format("{0}{1}", prefix, i)] =
+            vertices[i];
+        return vertexStrings;
+    }
 }

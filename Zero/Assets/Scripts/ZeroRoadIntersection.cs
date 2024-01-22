@@ -52,6 +52,7 @@ public class ZeroRoadIntersection
         List<Vector3[]> crosswalks = new();
         List<Vector3[]> mainSquares = new();
         List<Vector3[]> roadEdges = new();
+        List<Vector3> middleSquare = new();
 
         int n = this.LaneIntersections.Length;
         for (int i = 0; i < n; i++)
@@ -63,9 +64,12 @@ public class ZeroRoadIntersection
                 R: out Vector3[] R,
                 E: out Vector3[] E);
 
+
+
             //
             Vector3[] mainSquare = new Vector3[] { E[0], L[1], L[2], R[1], R[2], E[3] };
             Vector3[] crosswalk = new Vector3[] { L[3], L[2], R[1], R[0] };
+            middleSquare.Add(L[2]);
             mainSquares.Add(mainSquare);
             crosswalks.Add(crosswalk);
             sidewalks.AddRange(GetSidewalks(i: i, L: L, R: R, E: E));
@@ -75,6 +79,8 @@ public class ZeroRoadIntersection
             //then there should be only one iteration of this loop i.e. one crosswalk, two sidewalks and one main s=square part
             if (n == 2) i++;
         }
+        if (n == 4)
+            mainSquares.Add(middleSquare.ToArray());
         //
         this.Sidewalks = sidewalks.ToArray();
         this.CrossWalks = crosswalks.ToArray();
@@ -366,18 +372,19 @@ public class ZeroRoadIntersection
         int leftIntersectionCount = allLeftIntersections.Length;
         int rightIntersectionCount = allRightIntersections.Length;
         float intersectionHeight = Mathf.Max(primaryRoadHeight, collidingRoadHeight);
+        ZeroCollisionInfo left0Collision = allLeftIntersections[0].IntersectionPoints[0];
+        string primaryRoad = left0Collision.PrimarySegment.ParentLane.ParentRoad.Name;
+        string collidingRoad = left0Collision.CollidingSegment.ParentLane.ParentRoad.Name;
+        string name = String.Format("{0}_{1}", primaryRoad, collidingRoad);
 
         Debug.LogFormat("leftIntersectionCount={0} rightIntersectionCount={1}",
             leftIntersectionCount,
             rightIntersectionCount);
 
-        ZeroCollisionInfo left0Collision = allLeftIntersections[0].IntersectionPoints[0];
-        string primaryRoad = left0Collision.PrimarySegment.ParentLane.ParentRoad.Name;
-        string collidingRoad = left0Collision.CollidingSegment.ParentLane.ParentRoad.Name;
         if (leftIntersectionCount == 4 && rightIntersectionCount == 4)
         {
             roadIntersections.Add(new ZeroRoadIntersection(
-                    name: primaryRoad + collidingRoad + 0,
+                    name: name + "0",
                     height: intersectionHeight,
                     roadIntersectionType: ZeroRoadIntersection.ROAD_INTERSESCTION_TYPE_X,
                     laneIntersections: new ZeroLaneIntersection[]{
@@ -388,7 +395,7 @@ public class ZeroRoadIntersection
                     }
                 ));
             roadIntersections.Add(new ZeroRoadIntersection(
-                    name: primaryRoad + collidingRoad + 1,
+                    name: name + "1",
                     height: intersectionHeight,
                     roadIntersectionType: ZeroRoadIntersection.ROAD_INTERSESCTION_TYPE_X,
                     laneIntersections: new ZeroLaneIntersection[]{
@@ -402,7 +409,7 @@ public class ZeroRoadIntersection
         else if (leftIntersectionCount == 2 && rightIntersectionCount == 2)
         {
             roadIntersections.Add(new ZeroRoadIntersection(
-                    name: primaryRoad + collidingRoad + 0,
+                    name: name,
                     height: intersectionHeight,
                     roadIntersectionType: ZeroRoadIntersection.ROAD_INTERSESCTION_TYPE_X,
                     laneIntersections: new ZeroLaneIntersection[]{
@@ -416,7 +423,7 @@ public class ZeroRoadIntersection
         else if (leftIntersectionCount == 2 && rightIntersectionCount == 0)
         {
             roadIntersections.Add(new ZeroRoadIntersection(
-                    name: primaryRoad + collidingRoad + 0,
+                    name: name,
                     height: intersectionHeight,
                     roadIntersectionType: ZeroRoadIntersection.ROAD_INTERSESCTION_TYPE_UP,
                     laneIntersections: new ZeroLaneIntersection[]{
@@ -428,7 +435,7 @@ public class ZeroRoadIntersection
         else if (leftIntersectionCount == 0 && rightIntersectionCount == 2)
         {
             roadIntersections.Add(new ZeroRoadIntersection(
-                    name: primaryRoad + collidingRoad + 0,
+                    name: name,
                     height: intersectionHeight,
                     roadIntersectionType: ZeroRoadIntersection.ROAD_INTERSESCTION_TYPE_DOWN,
                     laneIntersections: new ZeroLaneIntersection[]{
@@ -446,7 +453,7 @@ public class ZeroRoadIntersection
                 intersectionType = ZeroRoadIntersection.ROAD_INTERSESCTION_TYPE_RIGHT;
             //
             roadIntersections.Add(new ZeroRoadIntersection(
-                    name: primaryRoad + collidingRoad + 0,
+                name: name,
                 height: intersectionHeight,
                 roadIntersectionType: intersectionType,
                 laneIntersections: new ZeroLaneIntersection[]{
@@ -455,6 +462,9 @@ public class ZeroRoadIntersection
                 }
             ));
         }
+        foreach (var intersection in roadIntersections)
+            ZeroRoadBuilder.ActiveIntersections[intersection.Name] = intersection;
+
         return roadIntersections.ToArray();
     }
 
@@ -529,27 +539,27 @@ public class ZeroRoadIntersection
          color: color);
     }
 
-    public (string, string)[] LaneIntersectionsLogPairs()
+    public Dictionary<string, Vector3> LaneIntersectionsLogPairs()
     {
         return GetVertexLogPairs(this.LaneIntersectionPoints, this.Name + "LI");
     }
 
-    public (string, string)[] CrosswalksLogPairs()
+    public Dictionary<string, Vector3> CrosswalksLogPairs()
     {
         return GetVertexLogPairs(this.CrossWalks, this.Name + "CW");
     }
 
-    public (string, string)[] SidewalksLogPairs()
+    public Dictionary<string, Vector3> SidewalksLogPairs()
     {
         return GetVertexLogPairs(this.Sidewalks, this.Name + "SW");
     }
 
-    public (string, string)[] MainSquareLogPairs()
+    public Dictionary<string, Vector3> MainSquareLogPairs()
     {
         return GetVertexLogPairs(this.MainSquare, this.Name + "MS");
     }
 
-    public (string, string)[] RoadEdgesLogPairs()
+    public Dictionary<string, Vector3> RoadEdgesLogPairs()
     {
         return GetVertexLogPairs(this.RoadEdges, this.Name + "RE");
     }
@@ -575,15 +585,13 @@ public class ZeroRoadIntersection
                     color: color ?? colors[i > colors.Length ? i - colors.Length : i]);
     }
 
-    private (string, string)[] GetVertexLogPairs(Vector3[][] vertices, string prefix)
+    private Dictionary<string, Vector3> GetVertexLogPairs(Vector3[][] vertices, string prefix)
     {
-        List<(string, string)> vertexStrings = new();
+        Dictionary<string, Vector3> vertexStrings = new();
         for (int i = 0; i < vertices.Length; i++)
             for (int j = 0; j < vertices[i].Length; j++)
-                vertexStrings.Add(
-                    (String.Format("{0}{1}{2}", prefix, i, j),
-                    String.Format(vertices[i][j].ToString()))
-                );
-        return vertexStrings.ToArray();
+                vertexStrings[String.Format("{0}{1}{2}", prefix, i, j)] =
+                vertices[i][j];
+        return vertexStrings;
     }
 }

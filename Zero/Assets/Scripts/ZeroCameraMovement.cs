@@ -22,7 +22,7 @@ public class ZeroCameraMovement
     {
         InitConfig();
         Transform rootTransform = MainCameraRoot.transform;
-        rootTransform.position = new Vector3(-100f, 0f, 15f);
+        rootTransform.position = new Vector3(-67f, 0f, 33f);
 
         Transform anchorTransform = MainCameraAnchor.transform;
         anchorTransform.localPosition = Vector3.zero;

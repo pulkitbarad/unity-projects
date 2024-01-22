@@ -15,10 +15,10 @@ public class ZeroRoadBuilder
     public static int RoadMaxVertexCount;
     public static int RoadMinVertexCount;
     public static float RoadSegmentMinLength;
-    public static float RoadLaneHeight = 1f;
-    public static float RoadLaneWidth = 3f;
-    public static float RoadSideWalkHeight = 1.5f;
-    public static float RoadCrossWalkLength = 6f;
+    public static float RoadLaneHeight;
+    public static float RoadLaneWidth;
+    public static float RoadSideWalkHeight;
+    public static float RoadCrossWalkLength;
     public static GameObject RoadControlsParent;
     public static GameObject BuiltRoadsParent;
     public static GameObject BuiltRoadSegmentsParent;
@@ -26,12 +26,13 @@ public class ZeroRoadBuilder
     public static GameObject StartObject;
     public static GameObject ControlObject;
     public static GameObject EndObject;
-    public static ZeroRoad CurrentActiveRoad;
+    public static ZeroRoad ActiveRoad;
+    public static Dictionary<string, ZeroRoadIntersection> ActiveIntersections = new();
     public static readonly Dictionary<string, Vector3> InitialStaticLocalScale = new();
     public static readonly Dictionary<string, ZeroRoad> BuiltRoadsByName = new();
     public static readonly Dictionary<string, List<ZeroRoadSegment>> BuiltRoadSegmentsByLane = new();
     public static readonly Dictionary<string, ZeroRoadSegment> BuiltRoadSegmentsByName = new();
-    // public static readonly Dictionary<string, CustomRoadTIntersection> BuiltTIntersections = new();
+    public static readonly Dictionary<string, ZeroRoadIntersection> BuiltRoadIntersections = new();
     public static string RoadStartObjectName = "RoadStart";
     public static string RoadControlObjectName = "RoadControl";
     public static string RoadEndObjectName = "RoadEnd";
@@ -61,7 +62,7 @@ public class ZeroRoadBuilder
         ZeroRoadBuilder.RoadMaxVertexCount = 30;
         ZeroRoadBuilder.RoadMinVertexCount = 6;
         ZeroRoadBuilder.RoadSegmentMinLength = 3;
-        ZeroRoadBuilder.RoadLaneHeight = 0.25f;
+        ZeroRoadBuilder.RoadLaneHeight = 0.02f;
         ZeroRoadBuilder.RoadLaneWidth = 3;
         ZeroRoadBuilder.RoadSideWalkHeight = 0.3f;
     }
@@ -115,7 +116,7 @@ public class ZeroRoadBuilder
 
     public static void StartBuilding(bool isCurved)
     {
-        CurrentActiveRoad = new ZeroRoad(
+        ActiveRoad = new ZeroRoad(
             isCurved: isCurved,
             hasBusLane: true,
             numberOfLanesExclSidewalks: 2,
@@ -128,16 +129,23 @@ public class ZeroRoadBuilder
     public static void CancelBuilding()
     {
         HideControlObjects();
-        CurrentActiveRoad?.Hide();
-        CurrentActiveRoad = null;
+        ZeroRoadBuilder.ActiveIntersections.Clear();
+        ActiveRoad?.Hide();
+        ActiveRoad = null;
     }
 
     public static void ConfirmBuilding()
     {
-        CurrentActiveRoad.LogRoadPositions();
+        ActiveRoad.LogRoadPositions();
+        foreach (var intersectionTempName in ZeroRoadBuilder.ActiveIntersections.Keys)
+        {
+            ZeroRoadIntersection intersection = ZeroRoadBuilder.ActiveIntersections[intersectionTempName];
+            intersection.Name = "RI" + ZeroRoadBuilder.BuiltRoadIntersections.Count();
+            ZeroRoadBuilder.BuiltRoadIntersections[intersectionTempName] = intersection;
+        }
+        ZeroRoadBuilder.ActiveIntersections.Clear();
         HideControlObjects();
-        CurrentActiveRoad = null;
-
+        ActiveRoad = null;
     }
 
     public static void HideControlObjects()
@@ -208,7 +216,7 @@ public class ZeroRoadBuilder
 
 
             if (roadStartChanged || roadControlChanged || roadEndChanged)
-                ZeroRoadBuilder.CurrentActiveRoad.Build(controlPoints.ToArray());
+                ZeroRoadBuilder.ActiveRoad.Build(controlPoints.ToArray());
         }
     }
 

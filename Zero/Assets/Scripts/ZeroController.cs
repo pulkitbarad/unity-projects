@@ -8,14 +8,17 @@ using System.IO;
 public class ZeroController : MonoBehaviour
 {
 
-    private static string _logFile;
-    private static Dictionary<string, string> _logEntries = new();
+    private static string _logFilePath;
+    private static string _logFileName;
+    private static Dictionary<string, Vector3> _loggedVertices = new();
     [SerializeField] public GameObject MainCameraRoot;
     [SerializeField] public GameObject MainCameraAnchor;
     [SerializeField] public GameObject MainCameraHolder;
     [SerializeField] public Camera MainCamera;
     [SerializeField] public Material RoadSegmentMaterial;
     public static bool IsPlayMode = false;
+    public static bool IsDebuggingEnabled = false;
+    public static string TestType;
 
     void Awake()
     {
@@ -29,13 +32,16 @@ public class ZeroController : MonoBehaviour
     void Start()
     {
         IsPlayMode = true;
+        IsDebuggingEnabled = true;
         ZeroObjectManager.Initialise();
         ZeroRoadBuilder.Initialise();
         ZeroCameraMovement.Initialise();
         ZeroUIHandler.Initialise();
         ZeroRenderer.Initialise();
-        // ZeroRoadTest roadTest = new ZeroRoadTest("20240114T0135");
-        // // roadTest.ZeroRoadTestIntersectionStraight();
+        TestType = ZeroRoadTest.Test1;
+        // _logFileName = DateTime.Now.ToString("yyyyMMddTHHmm");
+        _logFileName = ZeroRoadTest.Test1;
+        ZeroRoadTest.RunTest1();
     }
 
     void Update()
@@ -43,45 +49,55 @@ public class ZeroController : MonoBehaviour
         ZeroUIHandler.HandleInputChanges();
     }
 
-    public static void AppendToDebugLog((string, string)[] pairs)
+    public static void AppendToDebugLog(Dictionary<string, Vector3> logs)
     {
-        for (int i = 0; i < pairs.Length; i++)
-        {
-            _logEntries[pairs[i].Item1] = pairs[i].Item2;
-        }
+        if (IsDebuggingEnabled)
+            foreach (string key in logs.Keys)
+                _loggedVertices[key] = logs[key];
     }
 
     public static void WriteDebugFile()
     {
-        if (_logEntries.Count() > 0)
-        {
-            string timestamp = DateTime.Now.ToString("yyyyMMddTHHmm");
-            _logFile = @"C:\Users\pulki\Desktop\logFile" + timestamp;
-            File.WriteAllLines(_logFile, _logEntries.Select(e => String.Format("{0}={1}", e.Key, e.Value)));
-            _logEntries.Clear();
-        }
+        if (IsDebuggingEnabled)
+            if (_loggedVertices.Count() > 0)
+            {
+                _logFilePath = @"C:\Users\pulki\Desktop\UnityLogs\log" + _logFileName + ".txt";
+                File.WriteAllLines(_logFilePath, _loggedVertices.Select(e => String.Format("{0}={1}", e.Key, e.Value.ToString())));
+                _loggedVertices.Clear();
+            }
     }
 
-    public static Dictionary<string, string> LoadLogEntries(string timeStamp)
+    public static void AppendToDebugFile()
     {
-        _logEntries = new();
-        _logFile = @"C:\Users\pulki\Desktop\logFile" + timeStamp;
+        if (IsDebuggingEnabled)
+            if (_loggedVertices.Count() > 0)
+            {
+                _logFilePath = @"C:\Users\pulki\Desktop\UnityLogs\log" + _logFileName + ".txt";
+                File.AppendAllLines(_logFilePath, _loggedVertices.Select(e => String.Format("{0}={1}", e.Key, e.Value.ToString())));
+                _loggedVertices.Clear();
+            }
+    }
 
-        File.ReadAllLines(_logFile)
-        .Select(
-            (e) =>
-            {
-                var pair = e.Split("=");
-                return (pair[0], pair[1].Substring(1, pair[1].Length - 2));
-            }
-        ).ToList()
-        .ForEach(
-            (e) =>
-            {
-                _logEntries[e.Item1] = e.Item2;
-            }
-        );
-        return _logEntries;
+    public static Dictionary<string, Vector3> LoadLogEntries(string logFileName)
+    {
+        Dictionary<string, Vector3> tempLogEntries = new();
+        _logFilePath = @"C:\Users\pulki\Desktop\UnityLogs\log" + logFileName + ".txt";
+
+        if (IsDebuggingEnabled)
+        {
+            File.ReadAllLines(_logFilePath)
+            .ToList()
+            .ForEach(
+                (e) =>
+                {
+                    var pair = e.Split("=");
+                    string vectorString = pair[1];
+                    float[] cordinates = vectorString.Substring(1, vectorString.Length - 2).Split(",").Select(e => float.Parse(e)).ToArray();
+                    tempLogEntries[pair[0]] = new Vector3(cordinates[0], cordinates[1], cordinates[2]);
+                }
+            );
+        }
+        return tempLogEntries;
     }
 
     // public static string GetPositionHexCode(params Vector3[] positions)
