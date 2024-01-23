@@ -104,14 +104,15 @@ public class ZeroRoadBuilder
 
     private static Vector3 InitCurveControlPosition(bool isCurved)
     {
+
         Vector3 startPosition = StartObject.transform.position;
-        var startToEndDirection = EndObject.transform.position - startPosition;
-        var startToEndDistance = startToEndDirection.magnitude;
-        Vector3 midPointVector = 0.5f * startToEndDistance * startToEndDirection.normalized;
+        var startToEnd = EndObject.transform.position - startPosition;
+        Vector3 scaledStartToEnd = 0.5f * startToEnd;
+
         if (isCurved)
-            return startPosition + Quaternion.AngleAxis(45, Vector3.up) * midPointVector;
+            return startPosition + Quaternion.AngleAxis(-45, Vector3.up) * scaledStartToEnd;
         else
-            return startPosition + midPointVector;
+            return startPosition + scaledStartToEnd;
     }
 
     public static void StartBuilding(bool isCurved)
@@ -136,7 +137,6 @@ public class ZeroRoadBuilder
 
     public static void ConfirmBuilding()
     {
-        ActiveRoad.LogRoadPositions();
         foreach (var intersectionTempName in ZeroRoadBuilder.ActiveIntersections.Keys)
         {
             ZeroRoadIntersection intersection = ZeroRoadBuilder.ActiveIntersections[intersectionTempName];
@@ -160,29 +160,32 @@ public class ZeroRoadBuilder
     {
         List<Vector3> controlPoints = new();
 
-
         Vector3 startPosition =
             ZeroCameraMovement
             .GetTerrainHitPoint(GetScreenCenterPoint());
         startPosition.y = 0;
         StartObject.transform.position = startPosition;
         StartObject.SetActive(true);
-        controlPoints.Add(startPosition);
+        Vector3 endPosition =
+            startPosition + 50f * ZeroCameraMovement.MainCameraRoot.transform.right;
+        EndObject.transform.position = endPosition;
+        EndObject.SetActive(true);
 
+        Vector3 curveControlPosition = Vector3.zero;
         if (isCurved)
         {
-            Vector3 curveControlPosition = InitCurveControlPosition(isCurved);
+            curveControlPosition = InitCurveControlPosition(isCurved);
             ControlObject.transform.position = curveControlPosition;
-            controlPoints.Add(curveControlPosition);
+
             ControlObject.SetActive(true);
         }
         else
             ControlObject.SetActive(false);
 
-        Vector3 endPosition =
-            startPosition + 20f * ZeroCameraMovement.MainCameraRoot.transform.right;
-        EndObject.transform.position = endPosition;
-        EndObject.SetActive(true);
+        controlPoints.Add(startPosition);
+        if (isCurved)
+            controlPoints.Add(curveControlPosition);
+
         controlPoints.Add(endPosition);
 
         return controlPoints.ToArray();

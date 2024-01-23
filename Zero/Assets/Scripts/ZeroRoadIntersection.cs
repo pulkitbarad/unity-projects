@@ -72,7 +72,7 @@ public class ZeroRoadIntersection
             middleSquare.Add(L[2]);
             mainSquares.Add(mainSquare);
             crosswalks.Add(crosswalk);
-            sidewalks.AddRange(GetSidewalks(i: i, L: L, R: R, E: E));
+            sidewalks.AddRange(GetSidewalks(i: i, L: L, R: R, E: E).Where(e => e.Length > 2));
             roadEdges.Add(E);
 
             //If there are only two lane intersections (it's a T intersection), 
@@ -275,13 +275,13 @@ public class ZeroRoadIntersection
         // Debug.LogFormat("Vector3.Angle(R[0] - E[2], forward)={0}", Vector3.Angle(R[0] - E[2], forward));
         // Debug.LogFormat("Vector3.Angle(R[3] - E[3], forward)={0}", Vector3.Angle(R[3] - E[3], forward));
 
-        if (!E[0].Equals(L[0]) && Vector3.Angle(L[0] - E[0], forward) > 90)
+        if (!ArePointsCloseEnough(E[0], L[0]) && Vector3.Angle(L[0] - E[0], forward) > 90)
             return false;
-        if (!E[1].Equals(L[3]) && Vector3.Angle(L[3] - E[1], forward) > 90)
+        if (!ArePointsCloseEnough(E[1], L[3]) && Vector3.Angle(L[3] - E[1], forward) > 90)
             return false;
-        if (!E[2].Equals(R[0]) && Vector3.Angle(R[0] - E[2], forward) > 90)
+        if (!ArePointsCloseEnough(E[2], R[0]) && Vector3.Angle(R[0] - E[2], forward) > 90)
             return false;
-        if (!E[3].Equals(R[3]) && Vector3.Angle(R[3] - E[3], forward) > 90)
+        if (!ArePointsCloseEnough(E[3], R[3]) && Vector3.Angle(R[3] - E[3], forward) > 90)
             return false;
         //
         //
@@ -308,18 +308,18 @@ public class ZeroRoadIntersection
         List<Vector3> rightSidewalk = new();
         List<Vector3> leftSidewalk = new();
 
-        if (!E[0].Equals(L[0]))
+        if (!ArePointsCloseEnough(E[0], L[0]))
             leftSidewalk.Add(E[0]);
         leftSidewalk.Add(L[0]);
         leftSidewalk.Add(L[3]);
-        if (!E[1].Equals(L[3]))
+        if (!ArePointsCloseEnough(E[1], L[3]))
             leftSidewalk.Add(E[1]);
         //
-        if (!E[2].Equals(R[0]))
+        if (!ArePointsCloseEnough(E[2], R[0]))
             rightSidewalk.Add(E[2]);
         rightSidewalk.Add(R[0]);
         rightSidewalk.Add(R[3]);
-        if (!E[3].Equals(R[3]))
+        if (!ArePointsCloseEnough(E[3], R[3]))
             rightSidewalk.Add(E[3]);
 
         return new Vector3[][] { rightSidewalk.ToArray(), leftSidewalk.ToArray() };
@@ -333,7 +333,7 @@ public class ZeroRoadIntersection
         List<Vector3> rightSidewalk = new();
         List<Vector3> leftSidewalk = new();
 
-        if (!E[0].Equals(L[0]))
+        if (!ArePointsCloseEnough(E[0], L[0]))
             leftSidewalk.Add(E[0]);
         leftSidewalk.Add(L[0]);
         leftSidewalk.AddRange(
@@ -341,11 +341,11 @@ public class ZeroRoadIntersection
                 vertexCount: 8,
                 controlPoints: new Vector3[] { L[1], L[2], L[3] }
             ).Item1);
-        if (!E[1].Equals(L[3]))
+        if (!ArePointsCloseEnough(E[1], L[3]))
             leftSidewalk.Add(E[1]);
         //
         //
-        if (!E[2].Equals(R[0]))
+        if (!ArePointsCloseEnough(E[2], R[0]))
             rightSidewalk.Add(E[2]);
         rightSidewalk.AddRange(
             ZeroCurvedLine.FindBazierLinePoints(
@@ -353,11 +353,17 @@ public class ZeroRoadIntersection
                 controlPoints: new Vector3[] { R[0], R[1], R[2] }
             ).Item1);
         rightSidewalk.Add(R[3]);
-        if (!E[3].Equals(R[3]))
+        if (!ArePointsCloseEnough(E[3], R[3]))
             rightSidewalk.Add(E[3]);
 
         //
         return new Vector3[][] { rightSidewalk.ToArray(), leftSidewalk.ToArray() };
+    }
+
+    private bool ArePointsCloseEnough(Vector3 p1, Vector3 p2)
+    {
+        return (p1 - p2).magnitude < 0.75;
+
     }
 
     public static ZeroRoadIntersection[] GetRoadIntersections(
@@ -504,6 +510,8 @@ public class ZeroRoadIntersection
         else
             throw new Exception("Unrecognised road intersection type");
     }
+
+
     public void RenderLaneIntersections(Color? color = null)
     {
         RenderVertices(this.LaneIntersectionPoints,

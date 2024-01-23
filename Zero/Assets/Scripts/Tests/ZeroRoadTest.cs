@@ -1,11 +1,9 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Assertions;
-using UnityEngine.TestTools;
 
 public class ZeroRoadTest
 {
@@ -15,111 +13,72 @@ public class ZeroRoadTest
     public static string Test4 = "IntersectionCurvedOnStraight";
     public static string Test5 = "IntersectionStraightOnCurved";
 
-    public ZeroRoadTest(string testDataTimestamp)
+    public ZeroRoadTest()
     {
-    }
-
-    public static void RunTest1()
-    {
-        Dictionary<string, Vector3> testData = ZeroController.LoadLogEntries(Test1);
-        Vector3[] controlPoints0 = new Vector3[]{
-            testData["R0Control0"],
-            testData["R0Control1"]
-        };
-
-
-        Vector3[] controlPoints1 = new Vector3[]{
-            testData["R1Control0"],
-            testData["R1Control1"]
-        };
-
-        Debug.LogFormat("controlpoints0 = {0}", controlPoints0.Select(e => e.ToString()).ToCommaSeparatedString());
-        Debug.LogFormat("controlpoints1 = {0}", controlPoints1.Select(e => e.ToString()).ToCommaSeparatedString());
-        ZeroRoad actualRoad0 =
-            new(
-                isCurved: false,
-                hasBusLane: true,
-                numberOfLanesExclSidewalks: 2,
-                height: ZeroRoadBuilder.RoadLaneHeight,
-                sidewalkHeight: ZeroRoadBuilder.RoadSideWalkHeight,
-                controlPoints: controlPoints0);
-
-        ZeroRoad actualRoad1 =
-            new(
-                isCurved: false,
-                hasBusLane: true,
-                numberOfLanesExclSidewalks: 2,
-                height: ZeroRoadBuilder.RoadLaneHeight,
-                sidewalkHeight: ZeroRoadBuilder.RoadSideWalkHeight,
-                controlPoints: controlPoints1);
-
-        AssertRoads(testData, actualRoad0);
-        AssertRoads(testData, actualRoad1);
-
-    }
-
-    private static void AssertRoads(Dictionary<string, Vector3> expectedTestData, ZeroRoad actualRoad)
-    {
-        for (int laneIndex = 0; laneIndex < actualRoad.Lanes.Length; laneIndex++)
+        if (!ZeroController.IsPlayMode)
         {
-            ZeroRoadLane actualLane = actualRoad.Lanes[laneIndex];
-
-            for (int segmentIndex = 0; segmentIndex < actualLane.Segments.Length; segmentIndex++)
-            {
-                ZeroRoadSegment actualSegment = actualLane.Segments[segmentIndex];
-                Dictionary<string, Vector3> actualVertexDict = actualSegment.SegmentBounds.GetVertexLogPairs();
-                foreach (var pair in actualVertexDict)
-                    AssertVectors(expectedTestData[pair.Key], pair.Value);
-            }
+            // RunTest1();
+            RunTest2();
         }
     }
 
-    // private ZeroRoad GetStraightTestRoad(
-    //     Vector3[] controlPoints,
-    //     Vector3[] segmentPositions,
-    //     Vector3[] segmentScales
-    // )
-    // {
-    //     return
-    //        new()
-    //        {
-    //            ControlPoints = controlPoints,
-    //            Lanes =
-    //                 Enumerable.Range(0, 4)
-    //                 .Select((i) =>
-    //                     {
-    //                         ZeroRoadLane lane0 = new();
-    //                         GameObject gameObject = new();
-    //                         gameObject.transform.position = segmentPositions[i];
-    //                         gameObject.transform.localScale = segmentScales[i];
-    //                         return
-    //                             new ZeroRoadLane()
-    //                             {
-    //                                 Segments = new ZeroRoadSegment[]{
-    //                                     new ()
-    //                                     {
-    //                                         SegmentObject = gameObject
-    //                                     }
-    //                                 }
-    //                             };
-    //                     }).ToArray()
-    //        };
-    // }
-
-    // private bool AssertPolygonAgainstTestData(string prefix, Vector3[][] polygons)
-    // {
-    //     bool areEqual = true;
-    //     for (int i = 0; i < polygons.Length; i++)
-    //         for (int j = 0; j < polygons.Length; j++)
-    //             areEqual &= AssertVectors(polygons[i][j], _registeredPoints[prefix + i + j]);
-    //     return areEqual;
-    // }
-
-    private static bool AssertVectors(Vector3 vectorExpected, Vector3 vectorActual)
+    private void RunTest1()
     {
+        Dictionary<string, Vector3> testData = ZeroController.LoadTestData(Test1);
+        ZeroRoad straightRoad = GetTestRoad(testData, "R0", false);
+
+        ZeroRoad curvedRoad = GetTestRoad(testData, "R1", true);
+
+        AssertRoad(testData, straightRoad);
+        AssertRoad(testData, curvedRoad);
+
+    }
+    private void RunTest2()
+    {
+        //R1 -> R0
+        //R2, R3
+        //R4 -> R2,R3, R0
+        Dictionary<string, Vector3> testData = ZeroController.LoadTestData(Test2);
+        ZeroRoad road0 = GetTestRoad(testData, "R0", false);
+        ZeroRoad road1 = GetTestRoad(testData, "R1", false);
+        ZeroRoad road2 = GetTestRoad(testData, "R2", false);
+        ZeroRoad road3 = GetTestRoad(testData, "R3", false);
+        ZeroRoad road4 = GetTestRoad(testData, "R4", false);
+
+
+    }
+
+    private ZeroRoad GetTestRoad(Dictionary<string, Vector3> testData, string roadName, bool isCurved)
+    {
+        List<Vector3> controlPoints = new()
+        {
+            testData[roadName + "Control0"],
+            testData[roadName + "Control1"]
+        };
+        if (isCurved)
+            controlPoints.Add(testData[roadName + "Control2"]);
+
         return
-            RoundCordinates(vectorExpected)
-            .Equals(RoundCordinates(vectorActual));
+            new(
+                isCurved: isCurved,
+                hasBusLane: true,
+                numberOfLanesExclSidewalks: 2,
+                height: ZeroRoadBuilder.RoadLaneHeight,
+                sidewalkHeight: ZeroRoadBuilder.RoadSideWalkHeight,
+                controlPoints: controlPoints.ToArray());
+    }
+
+    private static void AssertRoad(Dictionary<string, Vector3> expectedTestData, ZeroRoad actualRoad)
+    {
+        Dictionary<string, Vector3> actualTestData = actualRoad.GenerateTestData();
+
+        foreach (var actualKey in actualTestData.Keys)
+        {
+            Assert.AreEqual(true, expectedTestData.ContainsKey(actualKey));
+            Assert.AreEqual(
+                RoundCordinates(expectedTestData[actualKey]),
+                RoundCordinates(actualTestData[actualKey]));
+        }
     }
 
     private static Vector3 RoundCordinates(Vector3 vector)

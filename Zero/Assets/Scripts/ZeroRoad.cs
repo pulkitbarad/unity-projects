@@ -52,7 +52,6 @@ public class ZeroRoad
         this.Height = height;
         this.SidewalkHeight = sidewalkHeight;
         this.HasBusLane = hasBusLane && numberOfLanesExclSidewalks > 1;
-        this.ControlPoints = controlPoints;
         InitRoadObject();
 
         if (!this.IsCurved)
@@ -76,10 +75,10 @@ public class ZeroRoad
 
     public void Build(Vector3[] controlPoints)
     {
+        this.ControlPoints = controlPoints;
         (Vector3[], float) bazierResult =
                ZeroCurvedLine.FindBazierLinePoints(
                    controlPoints);
-
 
         this.NumberOfSegmentsPerLane = bazierResult.Item1.Length;
 
@@ -87,22 +86,9 @@ public class ZeroRoad
            GetLanes(
                centerVertices: bazierResult.Item1);
         this.IsRoadAngleChangeValid = true;
+
         foreach (var lane in this.Lanes)
-        {
-            if (ZeroController.TestType == ZeroRoadTest.Test1)
-            {
-                Dictionary<string, Vector3> logs = new();
-
-                logs.AddRange(
-                    this.Lanes
-                    .Select(
-                        e => e.GetSegmentVertexLogs())
-                    .SelectMany(e => e));
-                ZeroController.AppendToDebugLog(logs);
-            }
-
             this.IsRoadAngleChangeValid &= lane.IsLaneAngleChangeValid;
-        }
 
         if (this.IsRoadAngleChangeValid)
         {
@@ -118,38 +104,63 @@ public class ZeroRoad
                         intersection.RenderCrosswalks();
                         intersection.RenderRoadEdges();
                         intersection.RenderMainSquare();
-                        if (
-                            new List<string> {
-                                ZeroRoadTest.Test2,
-                                ZeroRoadTest.Test3,
-                                ZeroRoadTest.Test4,
-                                ZeroRoadTest.Test5
-                            }
-                            .Contains(ZeroController.TestType))
-                        {
-                            ZeroController.AppendToDebugLog(
-                                intersection.LaneIntersectionsLogPairs());
-                            ZeroController.AppendToDebugLog(
-                                intersection.SidewalksLogPairs());
-                            ZeroController.AppendToDebugLog(
-                                intersection.CrosswalksLogPairs());
-                            ZeroController.AppendToDebugLog(
-                                intersection.RoadEdgesLogPairs());
-                            ZeroController.AppendToDebugLog(
-                                intersection.MainSquareLogPairs());
-                        }
                     }
                 }
             }
         }
+        ZeroController.AppendToTestData(GenerateTestData());
     }
 
-    public void LogRoadPositions()
+    public Dictionary<string, Vector3> GenerateTestData()
     {
-        Dictionary<string, Vector3> logs = new();
-        for (int i = 0; i < this.ControlPoints.Length; i++)
-            logs[this.Name + "Control" + i++.ToString()] = this.ControlPoints[i];
-        ZeroController.AppendToDebugLog(logs);
+        Dictionary<string, Vector3> testData = new();
+        if (ZeroController.TestToGenerateData.Length > 0)
+        {
+            for (int i = 0; i < this.ControlPoints.Length; i++)
+                testData[this.Name + "Control" + i.ToString()] = this.ControlPoints[i];
+        }
+        foreach (var lane in this.Lanes)
+        {
+            if (ZeroController.TestToGenerateData == ZeroRoadTest.Test1)
+            {
+                this.Lanes
+                    .Select(
+                        e => e.GetSegmentVertexLogs())
+                    .SelectMany(e => e)
+                    .ToList()
+                    .ForEach(e => testData[e.Key] = e.Value);
+            }
+        }
+        foreach (var entry in this.IntersectionsByRoadName)
+        {
+            foreach (ZeroRoadIntersection intersection in entry.Value)
+            {
+                if (new List<string> {
+                    ZeroRoadTest.Test2,
+                    ZeroRoadTest.Test3,
+                    ZeroRoadTest.Test4,
+                    ZeroRoadTest.Test5 }
+                .Contains(ZeroController.TestToGenerateData))
+                {
+                    intersection.LaneIntersectionsLogPairs()
+                    .ToList()
+                    .ForEach(e => testData[e.Key] = e.Value);
+                    intersection.SidewalksLogPairs()
+                    .ToList()
+                    .ForEach(e => testData[e.Key] = e.Value);
+                    intersection.CrosswalksLogPairs()
+                    .ToList()
+                    .ForEach(e => testData[e.Key] = e.Value);
+                    intersection.RoadEdgesLogPairs()
+                    .ToList()
+                    .ForEach(e => testData[e.Key] = e.Value);
+                    intersection.MainSquareLogPairs()
+                    .ToList()
+                    .ForEach(e => testData[e.Key] = e.Value);
+                }
+            }
+        }
+        return testData;
     }
 
     private string GetVectorString(string name, Vector3 vector)
