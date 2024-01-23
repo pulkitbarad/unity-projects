@@ -93,7 +93,7 @@ public class ZeroCollisionMap
                     primarySegment: primarySegment,
                     collidingSegment: colliderSegment,
                     collisionPoint: collisionPoint,
-                    collisionOriginType: ZeroCollisionMap.COLLISION_ORIGIN_LEFT_START,
+                    collisionOriginType: COLLISION_ORIGIN_LEFT_START,
                     distanceFromOrigin: (collisionPoint - primaryTopPlane[0]).magnitude);
             }
 
@@ -109,7 +109,7 @@ public class ZeroCollisionMap
                     primarySegment: primarySegment,
                     collidingSegment: colliderSegment,
                     collisionPoint: collisionPoint,
-                    collisionOriginType: ZeroCollisionMap.COLLISION_ORIGIN_RIGHT_START,
+                    collisionOriginType: COLLISION_ORIGIN_RIGHT_START,
                     distanceFromOrigin: (collisionPoint - primaryTopPlane[3]).magnitude);
             }
 
@@ -125,7 +125,7 @@ public class ZeroCollisionMap
                     primarySegment: primarySegment,
                     collidingSegment: colliderSegment,
                     collisionPoint: collisionPoint,
-                    collisionOriginType: ZeroCollisionMap.COLLISION_ORIGIN_LEFT_END,
+                    collisionOriginType: COLLISION_ORIGIN_LEFT_END,
                     distanceFromOrigin: (collisionPoint - primaryTopPlane[1]).magnitude);
             }
 
@@ -141,7 +141,7 @@ public class ZeroCollisionMap
                     primarySegment: primarySegment,
                     collidingSegment: colliderSegment,
                     collisionPoint: collisionPoint,
-                    collisionOriginType: ZeroCollisionMap.COLLISION_ORIGIN_RIGHT_END,
+                    collisionOriginType: COLLISION_ORIGIN_RIGHT_END,
                     distanceFromOrigin: (collisionPoint - primaryTopPlane[2]).magnitude);
             }
         }
@@ -265,13 +265,13 @@ public class ZeroCollisionMap
 
             foreach (ZeroCollisionInfo collision in entry.Value)
             {
-                if (collision.CollisionOriginType == ZeroCollisionMap.COLLISION_ORIGIN_LEFT_START)
+                if (collision.CollisionOriginType == COLLISION_ORIGIN_LEFT_START)
                     leftStartCollisions.Add(collision);
-                else if (collision.CollisionOriginType == ZeroCollisionMap.COLLISION_ORIGIN_RIGHT_START)
+                else if (collision.CollisionOriginType == COLLISION_ORIGIN_RIGHT_START)
                     rightStartCollisions.Add(collision);
-                else if (collision.CollisionOriginType == ZeroCollisionMap.COLLISION_ORIGIN_LEFT_END)
+                else if (collision.CollisionOriginType == COLLISION_ORIGIN_LEFT_END)
                     leftEndCollisions.Add(collision);
-                else if (collision.CollisionOriginType == ZeroCollisionMap.COLLISION_ORIGIN_RIGHT_END)
+                else if (collision.CollisionOriginType == COLLISION_ORIGIN_RIGHT_END)
                     rightEndCollisions.Add(collision);
             }
             //Each lane can intersect twice at maximum with another lane; 

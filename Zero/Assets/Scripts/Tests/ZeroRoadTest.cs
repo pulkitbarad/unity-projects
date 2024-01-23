@@ -29,9 +29,10 @@ public class ZeroRoadTest
 
         ZeroRoad curvedRoad = GetTestRoad(testData, "R1", true);
 
-        AssertRoad(testData, straightRoad);
-        AssertRoad(testData, curvedRoad);
+        AssertRoad(testData, Test1, straightRoad);
+        AssertRoad(testData, Test1, curvedRoad);
 
+        Debug.Log("Test 1 was successful.");
     }
     private void RunTest2()
     {
@@ -45,7 +46,12 @@ public class ZeroRoadTest
         ZeroRoad road3 = GetTestRoad(testData, "R3", false);
         ZeroRoad road4 = GetTestRoad(testData, "R4", false);
 
-
+        AssertRoad(testData, Test2, road0);
+        AssertRoad(testData, Test2, road1);
+        AssertRoad(testData, Test2, road2);
+        AssertRoad(testData, Test2, road3);
+        AssertRoad(testData, Test2, road4);
+        Debug.Log("Test 2 was successful.");
     }
 
     private ZeroRoad GetTestRoad(Dictionary<string, Vector3> testData, string roadName, bool isCurved)
@@ -65,28 +71,70 @@ public class ZeroRoadTest
                 numberOfLanesExclSidewalks: 2,
                 height: ZeroRoadBuilder.RoadLaneHeight,
                 sidewalkHeight: ZeroRoadBuilder.RoadSideWalkHeight,
+                forceSyncTransform: true,
                 controlPoints: controlPoints.ToArray());
     }
 
-    private static void AssertRoad(Dictionary<string, Vector3> expectedTestData, ZeroRoad actualRoad)
+    private static void AssertIntersections(Dictionary<string, Vector3> expectedTestData, string testName, ZeroRoad actualRoad)
     {
-        Dictionary<string, Vector3> actualTestData = actualRoad.GenerateTestData();
+        Dictionary<string, Vector3> actualTestData = actualRoad.GenerateTestData(testName);
+        List<string> filteredExpectedKeys = expectedTestData.Keys.Where(e => e.StartsWith(actualRoad.Name)).ToList();
 
-        foreach (var actualKey in actualTestData.Keys)
+        Assert.AreEqual(filteredExpectedKeys.Count, actualTestData.Keys.Count);
+        foreach (var expectedKey in filteredExpectedKeys)
         {
-            Assert.AreEqual(true, expectedTestData.ContainsKey(actualKey));
-            Assert.AreEqual(
-                RoundCordinates(expectedTestData[actualKey]),
-                RoundCordinates(actualTestData[actualKey]));
+            Assert.AreEqual(true, actualTestData.ContainsKey(expectedKey));
+            if (!AreVectorsEqual(expectedTestData[expectedKey], actualTestData[expectedKey]))
+            {
+                Debug.LogFormat("key={0} expected={1} actual{2}",
+                expectedKey,
+                VectorToString(expectedTestData[expectedKey]),
+                VectorToString(actualTestData[expectedKey]));
+            }
+            Assert.AreEqual(true, AreVectorsEqual(expectedTestData[expectedKey], actualTestData[expectedKey]));
         }
     }
 
-    private static Vector3 RoundCordinates(Vector3 vector)
+    private static void AssertRoad(Dictionary<string, Vector3> expectedTestData, string testName, ZeroRoad actualRoad)
     {
-        return new Vector3(
-            (float)Math.Round(vector.x, 3),
-            (float)Math.Round(vector.y, 3),
-            (float)Math.Round(vector.z, 3)
-        );
+        Dictionary<string, Vector3> actualTestData = actualRoad.GenerateTestData(testName);
+        List<string> filteredExpectedKeys = expectedTestData.Keys.Where(e => e.StartsWith(actualRoad.Name)).ToList();
+
+        if (filteredExpectedKeys.Count != actualTestData.Keys.Count)
+        {
+            Debug.LogFormat("testName={0} actualRoadName={1} expected_keys={2} actual_keys={3}",
+                testName,
+                actualRoad.Name,
+                filteredExpectedKeys.Count,
+                actualTestData.Count);
+        }
+        Assert.AreEqual(filteredExpectedKeys.Count, actualTestData.Keys.Count);
+
+        foreach (var expectedKey in filteredExpectedKeys)
+        {
+            Assert.AreEqual(true, actualTestData.ContainsKey(expectedKey));
+            if (!AreVectorsEqual(expectedTestData[expectedKey], actualTestData[expectedKey]))
+            {
+                Debug.LogFormat("key={0} expected={1} actual{2}",
+                expectedKey,
+                VectorToString(expectedTestData[expectedKey]),
+                VectorToString(actualTestData[expectedKey]));
+            }
+            Assert.AreEqual(true, AreVectorsEqual(expectedTestData[expectedKey], actualTestData[expectedKey]));
+        }
+    }
+
+    private static bool AreVectorsEqual(Vector3 vector1, Vector3 vector2)
+    {
+        return
+            Math.Abs(vector1.x - vector2.x) <= 0.1
+            && Math.Abs(vector1.y - vector2.y) <= 0.1
+            && Math.Abs(vector1.z - vector2.z) <= 0.1;
+    }
+
+    private static string VectorToString(Vector3 vector)
+    {
+        return String.Format("{0},{1},{2}", vector.x, vector.y, vector.z);
+
     }
 }

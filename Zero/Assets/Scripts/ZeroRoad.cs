@@ -28,17 +28,13 @@ public class ZeroRoad
     public ZeroRoadLane[] Sidewalks;
     public Dictionary<string, List<ZeroRoadIntersection>> IntersectionsByRoadName = new();
 
-    //Default constructor to generate test data
-    public ZeroRoad()
-    {
-
-    }
     public ZeroRoad(
         bool isCurved,
         bool hasBusLane,
         int numberOfLanesExclSidewalks,
         float height,
         float sidewalkHeight,
+        bool forceSyncTransform,
         Vector3[] controlPoints)
     {
         this.Name = "R" + ZeroRoadBuilder.BuiltRoadsByName.Count();
@@ -57,7 +53,7 @@ public class ZeroRoad
         if (!this.IsCurved)
             VertexCount = 4;
 
-        this.Build(controlPoints);
+        this.Build(controlPoints,forceSyncTransform);
     }
 
     private void InitRoadObject()
@@ -73,7 +69,7 @@ public class ZeroRoad
         }
     }
 
-    public void Build(Vector3[] controlPoints)
+    public void Build(Vector3[] controlPoints, bool forceSyncTransform)
     {
         this.ControlPoints = controlPoints;
         (Vector3[], float) bazierResult =
@@ -108,20 +104,21 @@ public class ZeroRoad
                 }
             }
         }
-        ZeroController.AppendToTestData(GenerateTestData());
+        if (forceSyncTransform)
+            Physics.SyncTransforms();
     }
 
-    public Dictionary<string, Vector3> GenerateTestData()
+    public Dictionary<string, Vector3> GenerateTestData(string testName)
     {
         Dictionary<string, Vector3> testData = new();
-        if (ZeroController.TestToGenerateData.Length > 0)
+        if (testName.Length > 0)
         {
             for (int i = 0; i < this.ControlPoints.Length; i++)
                 testData[this.Name + "Control" + i.ToString()] = this.ControlPoints[i];
         }
         foreach (var lane in this.Lanes)
         {
-            if (ZeroController.TestToGenerateData == ZeroRoadTest.Test1)
+            if (testName == ZeroRoadTest.Test1)
             {
                 this.Lanes
                     .Select(
@@ -140,7 +137,7 @@ public class ZeroRoad
                     ZeroRoadTest.Test3,
                     ZeroRoadTest.Test4,
                     ZeroRoadTest.Test5 }
-                .Contains(ZeroController.TestToGenerateData))
+                .Contains(testName))
                 {
                     intersection.LaneIntersectionsLogPairs()
                     .ToList()
@@ -161,11 +158,6 @@ public class ZeroRoad
             }
         }
         return testData;
-    }
-
-    private string GetVectorString(string name, Vector3 vector)
-    {
-        return String.Format("{0}={1},{2},{3}", name, vector.x, vector.y, vector.z);
     }
 
     private ZeroRoadLane[] GetLanes(Vector3[] centerVertices)

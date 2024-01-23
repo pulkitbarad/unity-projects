@@ -49,7 +49,7 @@ public class ZeroRoadSegment
     {
         Index = index;
         ParentLane = parentLane;
-        Name = parentLane.Name + "S" + index;
+        Name = parentLane.Name + "_S" + index;
         PreviousSibling = previousSibling;
         Width = width;
         Height = height;

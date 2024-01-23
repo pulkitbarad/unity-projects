@@ -43,12 +43,12 @@ public class ZeroCameraMovement
 
     private static void InitConfig()
     {
-        ZeroCameraMovement.MainCameraMoveSpeed = 0.5f;
-        ZeroCameraMovement.MainCameraSmoothing = 2;
-        ZeroCameraMovement.MainCameraZoomSpeed = 50;
-        ZeroCameraMovement.MainCameraRotationSpeed = 50;
-        ZeroCameraMovement.MainCameraTiltSpeed = 50;
-        ZeroCameraMovement.MainCameraTiltAngleThreshold = 10;
+        MainCameraMoveSpeed = 0.5f;
+        MainCameraSmoothing = 2;
+        MainCameraZoomSpeed = 50;
+        MainCameraRotationSpeed = 50;
+        MainCameraTiltSpeed = 50;
+        MainCameraTiltAngleThreshold = 10;
 
     }
 

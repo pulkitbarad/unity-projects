@@ -392,7 +392,7 @@ public class ZeroRoadIntersection
             roadIntersections.Add(new ZeroRoadIntersection(
                     name: name + "0",
                     height: intersectionHeight,
-                    roadIntersectionType: ZeroRoadIntersection.ROAD_INTERSESCTION_TYPE_X,
+                    roadIntersectionType: ROAD_INTERSESCTION_TYPE_X,
                     laneIntersections: new ZeroLaneIntersection[]{
                         allLeftIntersections[0],
                         allLeftIntersections[1],
@@ -403,7 +403,7 @@ public class ZeroRoadIntersection
             roadIntersections.Add(new ZeroRoadIntersection(
                     name: name + "1",
                     height: intersectionHeight,
-                    roadIntersectionType: ZeroRoadIntersection.ROAD_INTERSESCTION_TYPE_X,
+                    roadIntersectionType: ROAD_INTERSESCTION_TYPE_X,
                     laneIntersections: new ZeroLaneIntersection[]{
                         allLeftIntersections[2],
                         allLeftIntersections[3],
@@ -417,7 +417,7 @@ public class ZeroRoadIntersection
             roadIntersections.Add(new ZeroRoadIntersection(
                     name: name,
                     height: intersectionHeight,
-                    roadIntersectionType: ZeroRoadIntersection.ROAD_INTERSESCTION_TYPE_X,
+                    roadIntersectionType: ROAD_INTERSESCTION_TYPE_X,
                     laneIntersections: new ZeroLaneIntersection[]{
                         allLeftIntersections[0],
                         allLeftIntersections[1],
@@ -431,7 +431,7 @@ public class ZeroRoadIntersection
             roadIntersections.Add(new ZeroRoadIntersection(
                     name: name,
                     height: intersectionHeight,
-                    roadIntersectionType: ZeroRoadIntersection.ROAD_INTERSESCTION_TYPE_UP,
+                    roadIntersectionType: ROAD_INTERSESCTION_TYPE_UP,
                     laneIntersections: new ZeroLaneIntersection[]{
                         allLeftIntersections[0],
                         allLeftIntersections[1]
@@ -443,7 +443,7 @@ public class ZeroRoadIntersection
             roadIntersections.Add(new ZeroRoadIntersection(
                     name: name,
                     height: intersectionHeight,
-                    roadIntersectionType: ZeroRoadIntersection.ROAD_INTERSESCTION_TYPE_DOWN,
+                    roadIntersectionType: ROAD_INTERSESCTION_TYPE_DOWN,
                     laneIntersections: new ZeroLaneIntersection[]{
                         allRightIntersections[1],
                         allRightIntersections[0]
@@ -454,9 +454,9 @@ public class ZeroRoadIntersection
         {
             int intersectionType;
             if (IsRoadIntersectionLeft(controlPoints, allLeftIntersections, allRightIntersections))
-                intersectionType = ZeroRoadIntersection.ROAD_INTERSESCTION_TYPE_LEFT;
+                intersectionType = ROAD_INTERSESCTION_TYPE_LEFT;
             else
-                intersectionType = ZeroRoadIntersection.ROAD_INTERSESCTION_TYPE_RIGHT;
+                intersectionType = ROAD_INTERSESCTION_TYPE_RIGHT;
             //
             roadIntersections.Add(new ZeroRoadIntersection(
                 name: name,
@@ -549,27 +549,27 @@ public class ZeroRoadIntersection
 
     public Dictionary<string, Vector3> LaneIntersectionsLogPairs()
     {
-        return GetVertexLogPairs(this.LaneIntersectionPoints, this.Name + "LI");
+        return GetVertexLogPairs(this.LaneIntersectionPoints, this.Name + "_LI");
     }
 
     public Dictionary<string, Vector3> CrosswalksLogPairs()
     {
-        return GetVertexLogPairs(this.CrossWalks, this.Name + "CW");
+        return GetVertexLogPairs(this.CrossWalks, this.Name + "_CW");
     }
 
     public Dictionary<string, Vector3> SidewalksLogPairs()
     {
-        return GetVertexLogPairs(this.Sidewalks, this.Name + "SW");
+        return GetVertexLogPairs(this.Sidewalks, this.Name + "_SW");
     }
 
     public Dictionary<string, Vector3> MainSquareLogPairs()
     {
-        return GetVertexLogPairs(this.MainSquare, this.Name + "MS");
+        return GetVertexLogPairs(this.MainSquare, this.Name + "_MS");
     }
 
     public Dictionary<string, Vector3> RoadEdgesLogPairs()
     {
-        return GetVertexLogPairs(this.RoadEdges, this.Name + "RE");
+        return GetVertexLogPairs(this.RoadEdges, this.Name + "_RE");
     }
 
     private void RenderVertices(Vector3[][] vertices, string prefix, Color? color = null)
@@ -598,7 +598,7 @@ public class ZeroRoadIntersection
         Dictionary<string, Vector3> vertexStrings = new();
         for (int i = 0; i < vertices.Length; i++)
             for (int j = 0; j < vertices[i].Length; j++)
-                vertexStrings[String.Format("{0}{1}{2}", prefix, i, j)] =
+                vertexStrings[String.Format("{0}_{1}_{2}", prefix, i, j)] =
                 vertices[i][j];
         return vertexStrings;
     }

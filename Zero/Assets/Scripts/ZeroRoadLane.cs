@@ -34,7 +34,7 @@ public class ZeroRoadLane
         this.ParentRoad = parentRoad;
         this.Width = width;
         this.Height = height;
-        this.Name = this.ParentRoad.Name + "L" + laneIndex;
+        this.Name = this.ParentRoad.Name + "_L" + laneIndex;
         this.IsLeftSidewalk = this.LaneIndex == this.ParentRoad.LeftSidewalkIndex;
         this.IsRightSidewalk = this.LaneIndex == this.ParentRoad.RightSidewalkIndex;
         this.Segments = GetRoadSegments(

@@ -66,7 +66,7 @@ public class ZeroRenderer
         sphere.transform.localScale = new Vector3(size, size, size);
         sphere.transform.position = position;
         var sphereRenderer = sphere.GetComponent<Renderer>();
-        sphereRenderer.material.color = color ?? UnityEngine.Color.yellow;
+        sphereRenderer.material.color = color ?? Color.yellow;
 
         if (GameObject.Find("DebuggingParent") == null)
             DebuggingParent = new GameObject("DebuggingParent");

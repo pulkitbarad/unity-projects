@@ -9,7 +9,6 @@ public class ZeroController : MonoBehaviour
 {
 
     private static string _testDataFilePath;
-    private static Dictionary<string, Vector3> _loggedVertices = new();
     [SerializeField] public GameObject MainCameraRoot;
     [SerializeField] public GameObject MainCameraAnchor;
     [SerializeField] public GameObject MainCameraHolder;
@@ -46,50 +45,39 @@ public class ZeroController : MonoBehaviour
         ZeroUIHandler.HandleInputChanges();
     }
 
-    public static void AppendToTestData(Dictionary<string, Vector3> logs)
+
+    public static void OverWriteTestDataFile(Dictionary<string, Vector3> testData)
     {
-        if (IsDebuggingEnabled)
-            foreach (string key in logs.Keys)
-                _loggedVertices[key] = logs[key];
+        if (testData.Count() > 0)
+        {
+            _testDataFilePath = @"C:\Users\pulki\Desktop\UnityLogs\" + TestToGenerateData + ".txt";
+            File.WriteAllLines(_testDataFilePath,
+                testData
+                .Select(e =>
+                    String.Format("{0}={1}",
+                        e.Key,
+                        String.Format("{0},{1},{2}",
+                            e.Value.x,
+                            e.Value.y,
+                            e.Value.z))));
+        }
     }
 
-    public static void WriteTestDataFile()
+    public static void AppendToTestDataFile(Dictionary<string, Vector3> testData)
     {
-        if (IsDebuggingEnabled)
-            if (_loggedVertices.Count() > 0)
-            {
-                _testDataFilePath = @"C:\Users\pulki\Desktop\UnityLogs\" + TestToGenerateData + ".txt";
-                File.WriteAllLines(_testDataFilePath,
-                    _loggedVertices
-                    .Select(e =>
-                        String.Format("{0}={1}",
-                            e.Key,
-                            String.Format("{0},{1},{2}",
-                                e.Value.x,
-                                e.Value.y,
-                                e.Value.z))));
-
-                _loggedVertices.Clear();
-            }
-    }
-
-    public static void AppendToTestDataFile()
-    {
-        if (IsDebuggingEnabled)
-            if (_loggedVertices.Count() > 0)
-            {
-                _testDataFilePath = @"C:\Users\pulki\Desktop\UnityLogs\" + TestToGenerateData + ".txt";
-                File.AppendAllLines(_testDataFilePath,
-                    _loggedVertices
-                    .Select(e =>
-                        String.Format("{0}={1}",
-                            e.Key,
-                            String.Format("{0},{1},{2}",
-                                e.Value.x,
-                                e.Value.y,
-                                e.Value.z))));
-                _loggedVertices.Clear();
-            }
+        if (testData.Count() > 0)
+        {
+            _testDataFilePath = @"C:\Users\pulki\Desktop\UnityLogs\" + TestToGenerateData + ".txt";
+            File.AppendAllLines(_testDataFilePath,
+                testData
+                .Select(e =>
+                    String.Format("{0}={1}",
+                        e.Key,
+                        String.Format("{0},{1},{2}",
+                            e.Value.x,
+                            e.Value.y,
+                            e.Value.z))));
+        }
     }
 
     public static Dictionary<string, Vector3> LoadTestData(string testDataFileName)
@@ -97,21 +85,18 @@ public class ZeroController : MonoBehaviour
         Dictionary<string, Vector3> tempLogEntries = new();
         _testDataFilePath = @"C:\Users\pulki\Desktop\UnityLogs\" + testDataFileName + ".txt";
 
-        if (IsDebuggingEnabled)
-        {
-            File.ReadAllLines(_testDataFilePath)
-            .ToList()
-            .ForEach(
-                (e) =>
-                {
-                    var pair = e.Split("=");
-                    string vectorString = pair[1];
-                    float[] cordinates =
-                        vectorString.Split(",").Select(e => float.Parse(e)).ToArray();
-                    tempLogEntries[pair[0]] = new Vector3(cordinates[0], cordinates[1], cordinates[2]);
-                }
-            );
-        }
+        File.ReadAllLines(_testDataFilePath)
+        .ToList()
+        .ForEach(
+            (e) =>
+            {
+                var pair = e.Split("=");
+                string vectorString = pair[1];
+                float[] cordinates =
+                    vectorString.Split(",").Select(e => float.Parse(e)).ToArray();
+                tempLogEntries[pair[0]] = new Vector3(cordinates[0], cordinates[1], cordinates[2]);
+            }
+        );
         return tempLogEntries;
     }
 

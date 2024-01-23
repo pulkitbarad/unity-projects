@@ -57,14 +57,14 @@ public class ZeroRoadBuilder
     }
     private static void InitialiseConfig()
     {
-        ZeroRoadBuilder.RoadChangeAngleThreshold = 10;
-        ZeroRoadBuilder.RoadChangeAngleMax = 20;
-        ZeroRoadBuilder.RoadMaxVertexCount = 30;
-        ZeroRoadBuilder.RoadMinVertexCount = 6;
-        ZeroRoadBuilder.RoadSegmentMinLength = 3;
-        ZeroRoadBuilder.RoadLaneHeight = 0.02f;
-        ZeroRoadBuilder.RoadLaneWidth = 3;
-        ZeroRoadBuilder.RoadSideWalkHeight = 0.3f;
+        RoadChangeAngleThreshold = 10;
+        RoadChangeAngleMax = 20;
+        RoadMaxVertexCount = 30;
+        RoadMinVertexCount = 6;
+        RoadSegmentMinLength = 3;
+        RoadLaneHeight = 0.02f;
+        RoadLaneWidth = 3;
+        RoadSideWalkHeight = 0.3f;
     }
 
     public static void InitControlObjects(bool isCurved)
@@ -95,7 +95,7 @@ public class ZeroRoadBuilder
         cylinderObject.transform.localScale = new Vector3(size, 0.5f, size);
         cylinderObject.transform.position = Vector3.zero;
         var renderer = cylinderObject.GetComponent<Renderer>();
-        renderer.material.color = color ?? UnityEngine.Color.yellow;
+        renderer.material.color = color ?? Color.yellow;
 
         cylinderObject.transform.SetParent(RoadControlsParent.transform);
         InitialStaticLocalScale.Add(cylinderObject.name, cylinderObject.transform.localScale);
@@ -121,29 +121,29 @@ public class ZeroRoadBuilder
             isCurved: isCurved,
             hasBusLane: true,
             numberOfLanesExclSidewalks: 2,
-            height: ZeroRoadBuilder.RoadLaneHeight,
-            sidewalkHeight: ZeroRoadBuilder.RoadSideWalkHeight,
-            controlPoints: ZeroRoadBuilder.ResetControlObjects(isCurved));
+            height: RoadLaneHeight,
+            sidewalkHeight: RoadSideWalkHeight,
+            forceSyncTransform: false,
+            controlPoints: ResetControlObjects(isCurved));
     }
 
 
     public static void CancelBuilding()
     {
         HideControlObjects();
-        ZeroRoadBuilder.ActiveIntersections.Clear();
+        ActiveIntersections.Clear();
         ActiveRoad?.Hide();
         ActiveRoad = null;
     }
 
     public static void ConfirmBuilding()
     {
-        foreach (var intersectionTempName in ZeroRoadBuilder.ActiveIntersections.Keys)
+        foreach (var intersectionTempName in ActiveIntersections.Keys)
         {
-            ZeroRoadIntersection intersection = ZeroRoadBuilder.ActiveIntersections[intersectionTempName];
-            intersection.Name = "RI" + ZeroRoadBuilder.BuiltRoadIntersections.Count();
-            ZeroRoadBuilder.BuiltRoadIntersections[intersectionTempName] = intersection;
+            BuiltRoadIntersections[intersectionTempName] = ActiveIntersections[intersectionTempName];
         }
-        ZeroRoadBuilder.ActiveIntersections.Clear();
+        ZeroController.AppendToTestDataFile(ActiveRoad.GenerateTestData(ZeroController.TestToGenerateData));
+        ActiveIntersections.Clear();
         HideControlObjects();
         ActiveRoad = null;
     }
@@ -199,27 +199,27 @@ public class ZeroRoadBuilder
         if (!EventSystem.current.IsPointerOverGameObject())
         {
             var roadStartChanged =
-                !ZeroRoadBuilder.StartObject.transform.position.Equals(Vector3.zero)
-                && ZeroUIHandler.HandleGameObjectDrag(ZeroRoadBuilder.StartObject, touchPosition);
+                !StartObject.transform.position.Equals(Vector3.zero)
+                && ZeroUIHandler.HandleGameObjectDrag(StartObject, touchPosition);
 
             var roadControlChanged =
                 isCurved
-                && !ZeroRoadBuilder.ControlObject.transform.position.Equals(Vector3.zero)
-                && ZeroUIHandler.HandleGameObjectDrag(ZeroRoadBuilder.ControlObject, touchPosition);
+                && !ControlObject.transform.position.Equals(Vector3.zero)
+                && ZeroUIHandler.HandleGameObjectDrag(ControlObject, touchPosition);
 
             var roadEndChanged =
-                !ZeroRoadBuilder.EndObject.transform.position.Equals(Vector3.zero)
-                && ZeroUIHandler.HandleGameObjectDrag(ZeroRoadBuilder.EndObject, touchPosition);
+                !EndObject.transform.position.Equals(Vector3.zero)
+                && ZeroUIHandler.HandleGameObjectDrag(EndObject, touchPosition);
 
-            controlPoints.Add(ZeroRoadBuilder.StartObject.transform.position);
+            controlPoints.Add(StartObject.transform.position);
 
             if (isCurved)
-                controlPoints.Add(ZeroRoadBuilder.ControlObject.transform.position);
-            controlPoints.Add(ZeroRoadBuilder.EndObject.transform.position);
+                controlPoints.Add(ControlObject.transform.position);
+            controlPoints.Add(EndObject.transform.position);
 
 
             if (roadStartChanged || roadControlChanged || roadEndChanged)
-                ZeroRoadBuilder.ActiveRoad.Build(controlPoints.ToArray());
+                ActiveRoad.Build(controlPoints.ToArray(), false);
         }
     }
 

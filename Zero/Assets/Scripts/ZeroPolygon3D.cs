@@ -190,12 +190,12 @@ public class ZeroPolygon3D
     public Dictionary<string, Vector3> GetVertexLogPairs()
     {
         Dictionary<string, Vector3> vertexStrings = new();
-        vertexStrings.AddRange(GetVertexLogs(this.TopPlane, this.Name + "T"));
-        vertexStrings.AddRange(GetVertexLogs(this.BottomPlane, this.Name + "B"));
-        vertexStrings.AddRange(GetVertexLogs(this.LeftPlane, this.Name + "L"));
-        vertexStrings.AddRange(GetVertexLogs(this.RightPlane, this.Name + "R"));
-        vertexStrings.AddRange(GetVertexLogs(this.FrontPlane, this.Name + "F"));
-        vertexStrings.AddRange(GetVertexLogs(this.BackPlane, this.Name + "K"));
+        vertexStrings.AddRange(GetVertexLogs(this.TopPlane, this.Name + "_T"));
+        vertexStrings.AddRange(GetVertexLogs(this.BottomPlane, this.Name + "_B"));
+        vertexStrings.AddRange(GetVertexLogs(this.LeftPlane, this.Name + "_L"));
+        vertexStrings.AddRange(GetVertexLogs(this.RightPlane, this.Name + "_R"));
+        vertexStrings.AddRange(GetVertexLogs(this.FrontPlane, this.Name + "_F"));
+        vertexStrings.AddRange(GetVertexLogs(this.BackPlane, this.Name + "_K"));
 
         return vertexStrings;
     }
@@ -204,7 +204,7 @@ public class ZeroPolygon3D
     {
         Dictionary<string, Vector3> vertexStrings = new();
         for (int i = 0; i < vertices.Length; i++)
-            vertexStrings[String.Format("{0}{1}", prefix, i)] =
+            vertexStrings[String.Format("{0}_{1}", prefix, i)] =
             vertices[i];
         return vertexStrings;
     }
