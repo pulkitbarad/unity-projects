@@ -26,9 +26,9 @@ public class ZeroController : MonoBehaviour
         ZeroCameraMovement.MainCameraAnchor = MainCameraAnchor;
         ZeroRoadBuilder.RoadSegmentMaterial = RoadSegmentMaterial;
 
-        IsPlayMode = false;
+        IsPlayMode = true;
         IsDebuggingEnabled = true;
-        TestToGenerateData = ZeroRoadTest.Test4;
+        TestToGenerateData = "";
         ZeroObjectManager.Initialise();
         ZeroRoadBuilder.Initialise();
         ZeroCameraMovement.Initialise();
