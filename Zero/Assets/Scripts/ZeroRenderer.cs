@@ -6,9 +6,6 @@ using UnityEngine;
 public class ZeroRenderer
 {
 
-    private static readonly List<GameObject> _sphereObjectPool = new();
-    private static readonly int _sphereObjectPoolCount;
-    private static readonly List<string> _existingSpheres = new();
     public static GameObject DebuggingParent;
     private static Material _baseLineMaterial;
 

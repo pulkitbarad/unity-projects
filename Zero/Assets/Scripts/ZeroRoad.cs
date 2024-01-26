@@ -20,13 +20,13 @@ public class ZeroRoad
     public int NumberOfSegmentsPerLane;
     public int LeftSidewalkIndex;
     public int RightSidewalkIndex;
-    public bool IsCurved = true;
-    public bool HasBusLane = false;
+    public bool IsCurved;
+    public bool HasBusLane;
     public bool IsRoadAngleChangeValid;
     public Vector3[] ControlPoints;
     public ZeroRoadLane[] Lanes;
     public ZeroRoadLane[] Sidewalks;
-    public Dictionary<string, List<ZeroRoadIntersection>> IntersectionsByRoadName = new();
+    public Dictionary<string, List<ZeroRoadIntersection>> IntersectionsByRoadName;
 
     public ZeroRoad(
         bool isCurved,
@@ -37,6 +37,7 @@ public class ZeroRoad
         bool forceSyncTransform,
         Vector3[] controlPoints)
     {
+
         this.Name = "R" + ZeroRoadBuilder.BuiltRoadsByName.Count();
         this.IsCurved = isCurved;
         this.NumberOfLanesExclSidewalks = numberOfLanesExclSidewalks;
@@ -53,7 +54,7 @@ public class ZeroRoad
         if (!this.IsCurved)
             VertexCount = 4;
 
-        this.Build(controlPoints,forceSyncTransform);
+        this.Build(controlPoints, forceSyncTransform);
     }
 
     private void InitRoadObject()
@@ -64,13 +65,12 @@ public class ZeroRoad
     public void Hide()
     {
         foreach (ZeroRoadLane lane in this.Lanes)
-        {
             lane.HideAllSegments();
-        }
     }
 
     public void Build(Vector3[] controlPoints, bool forceSyncTransform)
     {
+        IntersectionsByRoadName = new();
         this.ControlPoints = controlPoints;
         (Vector3[], float) bazierResult =
                ZeroCurvedLine.FindBazierLinePoints(
@@ -86,6 +86,7 @@ public class ZeroRoad
         foreach (var lane in this.Lanes)
             this.IsRoadAngleChangeValid &= lane.IsLaneAngleChangeValid;
 
+        Debug.LogFormat("Road={0} roadAngleChangeValid={1}", this.Name, IsRoadAngleChangeValid);
         if (this.IsRoadAngleChangeValid)
         {
             this.IntersectionsByRoadName = GetRoadIntersectionsByRoad();
@@ -135,8 +136,7 @@ public class ZeroRoad
                 if (new List<string> {
                     ZeroRoadTest.Test2,
                     ZeroRoadTest.Test3,
-                    ZeroRoadTest.Test4,
-                    ZeroRoadTest.Test5 }
+                    ZeroRoadTest.Test4}
                 .Contains(testName))
                 {
                     intersection.LaneIntersectionsLogPairs()

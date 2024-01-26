@@ -19,7 +19,6 @@ public class ZeroRoadSegment
     public float Height;
     public float Length;
     public float RoadLengthSofar;
-    public float OldLength;
     public int SegmentObjectType;
     public Vector3 CenterStart;
     public Vector3 CenterEnd;
@@ -31,15 +30,11 @@ public class ZeroRoadSegment
     public ZeroRoadSegment NextSibling;
     public ZeroRoadLane ParentLane;
 
-    public ZeroRoadSegment()
-    {
-    }
 
     public ZeroRoadSegment(
          int index,
          float width,
          float height,
-         float roadLengthSoFar,
          Vector3[] centerVertices,
          Vector3 centerStart,
          Vector3 centerEnd,
@@ -57,7 +52,6 @@ public class ZeroRoadSegment
         CenterEnd = centerEnd;
 
         NextCenterEnd = nextCenterEnd;
-        RoadLengthSofar = roadLengthSoFar;
 
         SegmentObjectType = ZeroObjectManager.OBJECT_TYPE_ROAD_CUBE;
         Up = GetUpVector(centerVertices);
@@ -78,20 +72,18 @@ public class ZeroRoadSegment
 
     private void ComputeSegmentDimensions()
     {
+        float roadLengthSoFar =
+            Index == 0
+            ? 0
+            : PreviousSibling.RoadLengthSofar;
         float extension = GetSegmentExtension();
-
-        Forward = CenterEnd - CenterStart;
-        OldLength = Forward.magnitude;
         if (extension > 0)
-        {
-            CenterEnd += Forward.normalized * extension;
-        }
+            CenterEnd += (CenterEnd - CenterStart).normalized * extension;
 
         Center = GetSegmentCenter();
-
         Forward = CenterEnd - CenterStart;
         Length = Forward.magnitude;
-        RoadLengthSofar += Length;
+        RoadLengthSofar = roadLengthSoFar + Length;
     }
 
     private Vector3 GetSegmentCenter()
@@ -160,6 +152,7 @@ public class ZeroRoadSegment
         segmentObject.transform.position = Center;
         segmentObject.transform.localScale = new Vector3(Width, Height, Length);
         segmentObject.transform.rotation = Quaternion.LookRotation(Forward);
+
         segmentObject.transform.SetParent(ZeroRoadBuilder.BuiltRoadSegmentsParent.transform);
         segmentObject.GetComponent<MeshRenderer>().material = ZeroRoadBuilder.RoadSegmentMaterial;
 

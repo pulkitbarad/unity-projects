@@ -24,14 +24,19 @@ public class ZeroUIHandler
     public static InputAction _confirmAction;
     public static InputAction _cancelAction;
     public static InputAction _writeLogsAction;
-    public static bool _isRoadMenuActive = false;
-    public static Vector2 _startTouch0 = Vector2.zero;
-    public static Vector2 _startTouch1 = Vector2.zero;
-    private static string _objectBeingDragged = "";
+    public static bool _isRoadMenuActive;
+    public static Vector2 _startTouch0;
+    public static Vector2 _startTouch1;
+    private static string _objectBeingDragged;
 
 
     public static void Initialise()
     {
+        _isRoadMenuActive = false;
+        _startTouch0 = Vector2.zero;
+        _startTouch1 = Vector2.zero;
+        _objectBeingDragged = "";
+
         _zeroActions = new ZeroActions();
         _moveAction = _zeroActions.Player.Move;
         _lookAction = _zeroActions.Player.Look;

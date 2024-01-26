@@ -8,7 +8,7 @@ public class ZeroObjectPool
     private string _namePrefix;
     private GameObject _parentObject;
     private Stack<GameObject> _stack;
-    private int _objectsInUse = 0;
+    private int _objectsInUse;
     private int _batchSize;
     private int _maxSize;
 
@@ -19,6 +19,7 @@ public class ZeroObjectPool
         int maxSize
         )
     {
+        _objectsInUse = 0;
         this._objectType = objectType;
         this._namePrefix = namePrefix;
         this._batchSize = batchSize;

@@ -34,7 +34,7 @@ public class ZeroRoadIntersection
         this.LaneIntersectionPoints =
             this.LaneIntersections
             .Select(e =>
-                e.IntersectionPoints.Select(c => c.CollisionPoint).ToArray()).ToArray();
+                e.CollisonPoints.Select(c => c.CollisionPoint).ToArray()).ToArray();
         this.Height = height;
 
         GetIntersectionModules();
@@ -125,8 +125,8 @@ public class ZeroRoadIntersection
         //     n);
         for (int j = 0; j < 4; j++)
         {
-            _L[j] = leftIntersection.IntersectionPoints[(j + leftIntersectionPosition) % 4];
-            _R[j] = rightIntersection.IntersectionPoints[(j + leftIntersectionPosition) % 4];
+            _L[j] = leftIntersection.CollisonPoints[(j + leftIntersectionPosition) % 4];
+            _R[j] = rightIntersection.CollisonPoints[(j + leftIntersectionPosition) % 4];
             L[j] = _L[j].CollisionPoint;
             R[j] = _R[j].CollisionPoint;
         }
@@ -378,7 +378,7 @@ public class ZeroRoadIntersection
         int leftIntersectionCount = allLeftIntersections.Length;
         int rightIntersectionCount = allRightIntersections.Length;
         float intersectionHeight = Mathf.Max(primaryRoadHeight, collidingRoadHeight);
-        ZeroCollisionInfo left0Collision = allLeftIntersections[0].IntersectionPoints[0];
+        ZeroCollisionInfo left0Collision = allLeftIntersections[0].CollisonPoints[0];
         string primaryRoad = left0Collision.PrimarySegment.ParentLane.ParentRoad.Name;
         string collidingRoad = left0Collision.CollidingSegment.ParentLane.ParentRoad.Name;
         string name = String.Format("{0}_{1}", primaryRoad, collidingRoad);
@@ -390,7 +390,7 @@ public class ZeroRoadIntersection
         if (leftIntersectionCount == 4 && rightIntersectionCount == 4)
         {
             roadIntersections.Add(new ZeroRoadIntersection(
-                    name: name + "0",
+                    name: name + "_0",
                     height: intersectionHeight,
                     roadIntersectionType: ROAD_INTERSESCTION_TYPE_X,
                     laneIntersections: new ZeroLaneIntersection[]{
@@ -401,7 +401,7 @@ public class ZeroRoadIntersection
                     }
                 ));
             roadIntersections.Add(new ZeroRoadIntersection(
-                    name: name + "1",
+                    name: name + "_1",
                     height: intersectionHeight,
                     roadIntersectionType: ROAD_INTERSESCTION_TYPE_X,
                     laneIntersections: new ZeroLaneIntersection[]{
@@ -481,13 +481,13 @@ public class ZeroRoadIntersection
     )
     {
         float collidingRoadWidth =
-                leftIntersections[0].IntersectionPoints[0]
+                leftIntersections[0].CollisonPoints[0]
                 .CollidingSegment.ParentLane
                 .ParentRoad.WidthInclSidewalks;
-        ZeroRoadSegment leftSegment = leftIntersections[0].IntersectionPoints[0].PrimarySegment;
-        ZeroRoadSegment rightSegment = rightIntersections[0].IntersectionPoints[0].PrimarySegment;
-        Vector3 leftStartPoint = leftIntersections[0].IntersectionPoints[0].CollisionPoint;
-        Vector3 rightStartPoint = rightIntersections[0].IntersectionPoints[0].CollisionPoint;
+        ZeroRoadSegment leftSegment = leftIntersections[0].CollisonPoints[0].PrimarySegment;
+        ZeroRoadSegment rightSegment = rightIntersections[0].CollisonPoints[0].PrimarySegment;
+        Vector3 leftStartPoint = leftIntersections[0].CollisonPoints[0].CollisionPoint;
+        Vector3 rightStartPoint = rightIntersections[0].CollisonPoints[0].CollisionPoint;
         Vector3 leftEndPoint = leftStartPoint + leftSegment.Forward * collidingRoadWidth;
         Vector3 rightEndPoint = rightStartPoint + rightSegment.Forward * collidingRoadWidth;
 
@@ -515,35 +515,35 @@ public class ZeroRoadIntersection
     public void RenderLaneIntersections(Color? color = null)
     {
         RenderVertices(this.LaneIntersectionPoints,
-          this.Name + "LI",
+          this.Name + "_LI",
          color: color);
     }
 
     public void RenderSidewalks(Color? color = null)
     {
         RenderVertices(this.Sidewalks,
-          this.Name + "SW",
+          this.Name + "_SW",
          color: color);
     }
 
     public void RenderCrosswalks(Color? color = null)
     {
         RenderVertices(this.CrossWalks,
-          this.Name + "CW",
+          this.Name + "_CW",
          color: color);
     }
 
     public void RenderMainSquare(Color? color = null)
     {
         RenderVertices(this.MainSquare,
-          this.Name + "MS",
+          this.Name + "_MS",
          color: color);
     }
 
     public void RenderRoadEdges(Color? color = null)
     {
         RenderVertices(this.RoadEdges,
-          this.Name + "RE",
+          this.Name + "_RE",
          color: color);
     }
 
@@ -589,7 +589,7 @@ public class ZeroRoadIntersection
             for (int j = 0; j < vertices[i].Length; j++)
                 ZeroRenderer.RenderSphere(
                     position: vertices[i][j],
-                    sphereName: prefix + i.ToString() + j.ToString(),
+                    sphereName: String.Format("{0}_{1}_{2}", prefix, i, j),
                     color: color ?? colors[i > colors.Length ? i - colors.Length : i]);
     }
 

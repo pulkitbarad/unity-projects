@@ -51,7 +51,6 @@ public class ZeroRoadLane
 
     public void HideAllSegments()
     {
-
         if (ZeroRoadBuilder.BuiltRoadSegmentsByLane.ContainsKey(this.Name))
         {
             foreach (ZeroRoadSegment segment in
@@ -95,12 +94,10 @@ public class ZeroRoadLane
                 ? null
                 : segments[vertexIndex - 1];
 
-            float lengthSoFar = (currCenter - startCenter).magnitude;
             ZeroRoadSegment newSegment = new(
                 index: vertexIndex,
                 width: this.Width,
                 height: this.Height,
-                roadLengthSoFar: lengthSoFar,
                 centerVertices: new Vector3[] { currLeft, nextLeft, nextRight, currRight },
                 centerStart: currCenter,
                 centerEnd: nextCenter,

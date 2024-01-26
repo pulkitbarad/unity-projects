@@ -27,12 +27,12 @@ public class ZeroRoadBuilder
     public static GameObject ControlObject;
     public static GameObject EndObject;
     public static ZeroRoad ActiveRoad;
-    public static Dictionary<string, ZeroRoadIntersection> ActiveIntersections = new();
-    public static readonly Dictionary<string, Vector3> InitialStaticLocalScale = new();
-    public static readonly Dictionary<string, ZeroRoad> BuiltRoadsByName = new();
-    public static readonly Dictionary<string, List<ZeroRoadSegment>> BuiltRoadSegmentsByLane = new();
-    public static readonly Dictionary<string, ZeroRoadSegment> BuiltRoadSegmentsByName = new();
-    public static readonly Dictionary<string, ZeroRoadIntersection> BuiltRoadIntersections = new();
+    public static Dictionary<string, ZeroRoadIntersection> ActiveIntersections;
+    public static Dictionary<string, Vector3> InitialStaticLocalScale;
+    public static Dictionary<string, ZeroRoad> BuiltRoadsByName;
+    public static Dictionary<string, List<ZeroRoadSegment>> BuiltRoadSegmentsByLane;
+    public static Dictionary<string, ZeroRoadSegment> BuiltRoadSegmentsByName;
+    public static Dictionary<string, ZeroRoadIntersection> BuiltRoadIntersections;
     public static string RoadStartObjectName = "RoadStart";
     public static string RoadControlObjectName = "RoadControl";
     public static string RoadEndObjectName = "RoadEnd";
@@ -47,6 +47,13 @@ public class ZeroRoadBuilder
 
     public static void Initialise()
     {
+        ActiveIntersections = new();
+        InitialStaticLocalScale = new();
+        BuiltRoadsByName = new();
+        BuiltRoadSegmentsByLane = new();
+        BuiltRoadSegmentsByName = new();
+        BuiltRoadIntersections = new();
+
         InitialiseConfig();
         RoadControlsParent = new GameObject(RoadControlsObjectName);
         BuiltRoadsParent = new GameObject(BuiltRoadsObjectName);
@@ -139,10 +146,9 @@ public class ZeroRoadBuilder
     public static void ConfirmBuilding()
     {
         foreach (var intersectionTempName in ActiveIntersections.Keys)
-        {
             BuiltRoadIntersections[intersectionTempName] = ActiveIntersections[intersectionTempName];
-        }
-        ZeroController.AppendToTestDataFile(ActiveRoad.GenerateTestData(ZeroController.TestToGenerateData));
+        if (ZeroController.TestToGenerateData.Length > 0)
+            ZeroController.AppendToTestDataFile(ActiveRoad.GenerateTestData(ZeroController.TestToGenerateData));
         ActiveIntersections.Clear();
         HideControlObjects();
         ActiveRoad = null;

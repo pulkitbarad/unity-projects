@@ -18,14 +18,17 @@ public class ZeroCollisionMap
     public string RoadName;
     public string LayerMaskName;
     public List<ZeroCollisionInfo> Collisions;
-    public Dictionary<string, List<ZeroCollisionInfo>> CollisionsByCollidingLane = new();
-    public bool IsValid = false;
+    public Dictionary<string, List<ZeroCollisionInfo>> CollisionsByCollidingLane;
+    public bool IsValid;
 
     public ZeroCollisionMap(
         string roadName,
         ZeroRoadLane primaryLane,
         string layerMaskName)
     {
+        CollisionsByCollidingLane = new();
+        IsValid = false;
+
         this.RoadName = roadName;
         this.LayerMaskName = layerMaskName;
         this.PrimaryLane = primaryLane;
@@ -286,7 +289,20 @@ public class ZeroCollisionMap
                 && leftStartCollisions.Count() == rightStartCollisions.Count()
             )
             {
+                leftStartCollisions.ToList().ForEach(
+                    (e) =>
+                    {
+                        Debug.LogFormat("PrimarSegment={0} CollisionSegment={1} roadLengthSoFar={2} distFromOrigin={3} position={4}",
+                        e.PrimarySegment.Name,
+                        e.CollidingSegment.Name,
+                        e.PrimarySegment.RoadLengthSofar,
+                        e.DistanceFromOrigin,
+                        e.CollisionPoint.ToString()
+                        );
+
+                    });
                 leftStartCollisions =
+
                     leftStartCollisions
                     .OrderBy(e => e.PrimarySegment.RoadLengthSofar)
                     .ThenBy(e => e.DistanceFromOrigin)
@@ -314,18 +330,16 @@ public class ZeroCollisionMap
                 {
                     _intersectionsByRoadName[collidingRoadName] = new();
                 }
-                string laneIntersectionName = this.PrimaryLane.Name + leftStartCollisions[0].CollidingSegment.ParentLane.Name + "I0";
                 _intersectionsByRoadName[collidingRoadName].Add(
                 new ZeroLaneIntersection(
-                    primaryDistance: leftStartCollisions[0].PrimarySegment.RoadLengthSofar,
-                    intersectionPoints:
+                    collisionPoints:
                         new ZeroCollisionInfo[]{
                              leftStartCollisions[0] ,
                              leftEndCollisions[0] ,
                              rightEndCollisions[0] ,
                              rightStartCollisions[0] },
                     primaryLane: this.PrimaryLane,
-                    intersectingLane: leftStartCollisions[0].CollidingSegment.ParentLane));
+                    collidingLane: leftStartCollisions[0].CollidingSegment.ParentLane));
                 // ZeroRenderer.RenderSphere(leftStartCollisions[0].CollisionPoint, sphereName: laneIntersectionName + "LS", color: Color.white);
                 // ZeroRenderer.RenderSphere(rightStartCollisions[0].CollisionPoint, sphereName: laneIntersectionName + "RS", color: Color.black);
                 // ZeroRenderer.RenderSphere(leftEndCollisions[0].CollisionPoint, sphereName: laneIntersectionName + "LE", color: Color.gray);
@@ -337,18 +351,16 @@ public class ZeroCollisionMap
                 //Vice versa, left (and right) end points farther from their ray origin point used in collision detection   
                 if (leftStartCollisions.Count() == 2)
                 {
-                    laneIntersectionName = this.PrimaryLane.Name + leftStartCollisions[0].CollidingSegment.ParentLane.Name + "I1";
                     _intersectionsByRoadName[collidingRoadName].Add(
                     new ZeroLaneIntersection(
-                        primaryDistance: leftStartCollisions[1].PrimarySegment.RoadLengthSofar,
-                        intersectionPoints:
+                        collisionPoints:
                             new ZeroCollisionInfo[]{
                              leftStartCollisions[1],
                              leftEndCollisions[1],
                              rightEndCollisions[1],
                              rightStartCollisions[1]},
                         primaryLane: this.PrimaryLane,
-                        intersectingLane: leftStartCollisions[1].CollidingSegment.ParentLane));
+                        collidingLane: leftStartCollisions[1].CollidingSegment.ParentLane));
                     // ZeroRenderer.RenderSphere(leftStartCollisions[1].CollisionPoint, sphereName: laneIntersectionName + "LS2", color: Color.green);
                     // ZeroRenderer.RenderSphere(rightStartCollisions[1].CollisionPoint, sphereName: laneIntersectionName + "RS2", color: Color.red);
                     // ZeroRenderer.RenderSphere(leftEndCollisions[1].CollisionPoint, sphereName: laneIntersectionName + "LE2", color: Color.blue);
@@ -363,13 +375,10 @@ public class ZeroCollisionMap
         foreach (string key in _intersectionsByRoadName.Keys)
         {
             intersectionsByRoadName[key] =
-           _intersectionsByRoadName[key]
-           .OrderBy(e => e.PrimaryDistance)
-           .ThenBy(e =>
-                (e.IntersectionPoints[0].CollisionPoint
-                - e.PrimaryLane.Segments[0].SegmentBounds.TopPlane[0])
-                .magnitude)
-           .ToArray();
+                _intersectionsByRoadName[key]
+                .OrderBy(e => e.PrimaryRoadLengthSoFar)
+                .ThenBy(e => e.L0DistanceFromOrigin)
+                .ToArray();
         }
         return intersectionsByRoadName;
     }

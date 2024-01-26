@@ -4,32 +4,34 @@ using UnityEngine;
 
 public class ZeroLaneIntersection
 {
-    public float PrimaryDistance;
-    public ZeroCollisionInfo[] IntersectionPoints;
+    public float PrimaryRoadLengthSoFar;
+    public float L0DistanceFromOrigin;
+    public ZeroCollisionInfo[] CollisonPoints;
     public ZeroRoadLane PrimaryLane;
-    public ZeroRoadLane IntersectingLane;
+    public ZeroRoadLane CollidingLane;
     // public int LaneIntersectionType;
 
     public ZeroLaneIntersection(
-        float primaryDistance,
-        ZeroCollisionInfo[] intersectionPoints,
+        ZeroCollisionInfo[] collisionPoints,
         ZeroRoadLane primaryLane,
-        ZeroRoadLane intersectingLane)
+        ZeroRoadLane collidingLane)
     {
-        this.PrimaryDistance = primaryDistance;
+        this.PrimaryRoadLengthSoFar = collisionPoints[0].PrimarySegment.RoadLengthSofar;
+        this.L0DistanceFromOrigin = collisionPoints[0].DistanceFromOrigin;
         // this.LaneIntersectionType = intersectionType;
-        this.IntersectionPoints = intersectionPoints;
+        this.CollisonPoints = collisionPoints;
         this.PrimaryLane = primaryLane;
-        this.IntersectingLane = intersectingLane;
+        this.CollidingLane = collidingLane;
     }
 
     public override string ToString()
     {
         return "ZeroLaneIntersection("
-        + "\n PrimaryDistance:" + this.PrimaryDistance
+        + "\n PrimaryRoadLengthSoFar:" + this.PrimaryRoadLengthSoFar
+        + "\n L0DistanceFromOrigin:" + this.L0DistanceFromOrigin
         + "\n PrimaryLane:" + this.PrimaryLane.ToString()
-        + "\n IntersectingLane:" + this.IntersectingLane.ToString()
-        + "\n IntersectionPoints:" + this.IntersectionPoints.ToString()
+        + "\n IntersectingLane:" + this.CollidingLane.ToString()
+        + "\n IntersectionPoints:" + this.CollisonPoints.ToString()
         + ")";
     }
 }

@@ -5,7 +5,7 @@ using UnityEngine;
 
 public class ZeroCameraMovement
 {
-    private static float _cameraInitialHeight = 1f;
+    private static float _cameraInitialHeight;
 
     public static float MainCameraMoveSpeed;
     public static float MainCameraSmoothing;
@@ -20,6 +20,7 @@ public class ZeroCameraMovement
 
     public static void Initialise()
     {
+        _cameraInitialHeight = 1f;
         InitConfig();
         Transform rootTransform = MainCameraRoot.transform;
         rootTransform.position = new Vector3(-67f, 0f, 33f);
@@ -47,7 +48,7 @@ public class ZeroCameraMovement
         MainCameraSmoothing = 2;
         MainCameraZoomSpeed = 50;
         MainCameraRotationSpeed = 50;
-        MainCameraTiltSpeed = 50;
+        MainCameraTiltSpeed = 1f;
         MainCameraTiltAngleThreshold = 10;
 
     }
@@ -142,7 +143,7 @@ public class ZeroCameraMovement
         Transform objectTransform = gameObject.transform;
         float currentVerticalAngle, targetVerticalAngle;
         currentVerticalAngle = targetVerticalAngle = objectTransform.eulerAngles.y;
-        targetVerticalAngle -= magnitude * rotationSpeed;
+        targetVerticalAngle += magnitude * rotationSpeed;
         var targetEurlerAngle =
             Mathf.Lerp(
                 a: currentVerticalAngle,

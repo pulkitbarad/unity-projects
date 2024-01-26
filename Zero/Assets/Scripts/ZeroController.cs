@@ -14,9 +14,9 @@ public class ZeroController : MonoBehaviour
     [SerializeField] public GameObject MainCameraHolder;
     [SerializeField] public Camera MainCamera;
     [SerializeField] public Material RoadSegmentMaterial;
-    public static bool IsPlayMode = true;
-    public static bool IsDebuggingEnabled = false;
-    public static string TestToGenerateData = "";
+    public static bool IsPlayMode;
+    public static bool IsDebuggingEnabled;
+    public static string TestToGenerateData;
 
     void Awake()
     {
@@ -25,18 +25,19 @@ public class ZeroController : MonoBehaviour
         ZeroCameraMovement.MainCameraRoot = MainCameraRoot;
         ZeroCameraMovement.MainCameraAnchor = MainCameraAnchor;
         ZeroRoadBuilder.RoadSegmentMaterial = RoadSegmentMaterial;
-    }
 
-    void Start()
-    {
         IsPlayMode = false;
         IsDebuggingEnabled = true;
+        TestToGenerateData = ZeroRoadTest.Test3;
         ZeroObjectManager.Initialise();
         ZeroRoadBuilder.Initialise();
         ZeroCameraMovement.Initialise();
         ZeroUIHandler.Initialise();
         ZeroRenderer.Initialise();
-        TestToGenerateData = ZeroRoadTest.Test2;
+    }
+
+    void Start()
+    {
         new ZeroRoadTest();
     }
 
