@@ -19,7 +19,8 @@ public class ZeroRoadTest
         {
             // RunTest1();
             // RunTest2();
-            RunTest3();
+            // RunTest3();
+            RunTest4();
         }
     }
 
@@ -27,8 +28,8 @@ public class ZeroRoadTest
     {
         Dictionary<string, Vector3> testData = ZeroController.LoadTestData(Test1);
 
-        AssertRoad(testData, Test1,  "R0", false);
-        AssertRoad(testData, Test1,  "R1", true);
+        AssertRoad(testData, Test1, "R0", false);
+        AssertRoad(testData, Test1, "R1", true);
 
         Debug.Log("Test 1 was successful.");
     }
@@ -39,18 +40,18 @@ public class ZeroRoadTest
         //R4 -> R2,R3, R0
         Dictionary<string, Vector3> testData = ZeroController.LoadTestData(Test2);
 
-        AssertRoad(testData, Test2,  "R0", false);
-        AssertRoad(testData, Test2,  "R1", false);
-        AssertRoad(testData, Test2,  "R2", false);
-        AssertRoad(testData, Test2,  "R3", false);
-        AssertRoad(testData, Test2,  "R4", false);
+        AssertRoad(testData, Test2, "R0", false);
+        AssertRoad(testData, Test2, "R1", false);
+        AssertRoad(testData, Test2, "R2", false);
+        AssertRoad(testData, Test2, "R3", false);
+        AssertRoad(testData, Test2, "R4", false);
 
         Debug.Log("Test 2 was successful.");
     }
 
     private void RunTest3()
     {
-        
+
         Dictionary<string, Vector3> testData = ZeroController.LoadTestData(Test3);
 
         AssertRoad(testData, Test3, "R0", true);
@@ -60,6 +61,20 @@ public class ZeroRoadTest
         AssertRoad(testData, Test3, "R4", true);
 
         Debug.Log("Test 3 was successful.");
+    }
+
+    private void RunTest4()
+    {
+
+        Dictionary<string, Vector3> testData = ZeroController.LoadTestData(Test4);
+
+        AssertRoad(testData, Test4, "R0", false);
+        AssertRoad(testData, Test4, "R1", false);
+        AssertRoad(testData, Test4, "R2", true);
+        AssertRoad(testData, Test4, "R3", true);
+        AssertRoad(testData, Test4, "R4", false);
+
+        Debug.Log("Test 4 was successful.");
     }
 
     private void AssertRoad(Dictionary<string, Vector3> expectedTestData, string testName, string roadName, bool isCurved)

@@ -46,7 +46,7 @@ public class ZeroCameraMovement
     {
         MainCameraMoveSpeed = 0.5f;
         MainCameraSmoothing = 2;
-        MainCameraZoomSpeed = 50;
+        MainCameraZoomSpeed = 100;
         MainCameraRotationSpeed = 50;
         MainCameraTiltSpeed = 1f;
         MainCameraTiltAngleThreshold = 10;
@@ -61,7 +61,8 @@ public class ZeroCameraMovement
         var input = (forward + right).normalized;
 
         float moveSpeed =
-            MainCameraMoveSpeed
+            0.5f
+            * MainCameraMoveSpeed
             * MainCameraHolder.transform.localPosition.y
             / _cameraInitialHeight;
 
