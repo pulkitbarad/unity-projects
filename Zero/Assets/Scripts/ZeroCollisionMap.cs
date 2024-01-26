@@ -289,18 +289,6 @@ public class ZeroCollisionMap
                 && leftStartCollisions.Count() == rightStartCollisions.Count()
             )
             {
-                leftStartCollisions.ToList().ForEach(
-                    (e) =>
-                    {
-                        Debug.LogFormat("PrimarSegment={0} CollisionSegment={1} roadLengthSoFar={2} distFromOrigin={3} position={4}",
-                        e.PrimarySegment.Name,
-                        e.CollidingSegment.Name,
-                        e.PrimarySegment.RoadLengthSofar,
-                        e.DistanceFromOrigin,
-                        e.CollisionPoint.ToString()
-                        );
-
-                    });
                 leftStartCollisions =
 
                     leftStartCollisions

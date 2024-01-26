@@ -42,7 +42,7 @@ public class ZeroRoadBuilder
     public static string BuiltRoadsObjectName = "BuiltRoads";
     public static string BuiltRoadSegmentsObjectName = "BuiltRoadSegments";
     public static string BuiltIntersectionsObjectName = "BuiltIntersections";
-    public static string RoadEdgeLaneMaskName = "RoadEdgeLaneMask";
+    public static string RoadLaneMaskName = "RoadLaneMask";
     public static string RoadSidewalkMaskName = "RoadSidewalkMask";
 
     public static void Initialise()

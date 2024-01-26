@@ -96,6 +96,7 @@ public class ZeroRoad
                 {
                     foreach (ZeroRoadIntersection intersection in entry.Value)
                     {
+                        Debug.LogFormat("intersecion={0} isValid={1}", intersection.Name, intersection.IsValid);
                         intersection.RenderLaneIntersections();
                         intersection.RenderSidewalks();
                         intersection.RenderCrosswalks();

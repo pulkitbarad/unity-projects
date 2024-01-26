@@ -158,11 +158,10 @@ public class ZeroRoadSegment
 
         ZeroRoadLane parentLane = ParentLane;
         ZeroRoad parentRoad = parentLane.ParentRoad;
-        int numOfLanes = parentRoad.NumberOfLanesExclSidewalks;
-        if (parentLane.LaneIndex == parentRoad.LeftSidewalkIndex || parentLane.LaneIndex == parentRoad.RightSidewalkIndex)
+        if (parentLane.IsLeftSidewalk || parentLane.IsRightSidewalk)
             segmentObject.layer = LayerMask.NameToLayer(ZeroRoadBuilder.RoadSidewalkMaskName);
-        else if (parentLane.LaneIndex == 0 || parentLane.LaneIndex == numOfLanes - 1)
-            segmentObject.layer = LayerMask.NameToLayer(ZeroRoadBuilder.RoadEdgeLaneMaskName);
+        else
+            segmentObject.layer = LayerMask.NameToLayer(ZeroRoadBuilder.RoadLaneMaskName);
 
         SegmentObject = segmentObject;
         RegisterToLookups();
