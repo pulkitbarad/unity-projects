@@ -75,19 +75,17 @@ public class ZeroRoadIntersection
                 E: out Vector3[] E,
                 _L: out ZeroCollisionInfo[] _L,
                 _R: out ZeroCollisionInfo[] _R);
-            //
             Vector3 edgeMidpoint = E[0] + 0.5f * (E[3] - E[0]);
 
-            // IsValid = IsRoadIntersectionValid(
-            //     leftIntersectionPosition: GetLeftIntersectionPosition(intersectionSideIndex),
-            //     edgeMidPoint: edgeMidpoint,
-            //     L0: L[0],
-            //     R3: R[3],
-            //     leftIntersectionL0: _L[0]);
-            IsValid = true;
+            IsValid = ValidateIntersectionSide(
+                leftIntersectionPosition: GetLeftIntersectionPosition(intersectionSideIndex),
+                edgeMidPoint: edgeMidpoint,
+                L: L,
+                R: R,
+                leftIntersectionL0: _L[0]);
+
             if (!IsValid)
                 break;
-
             Vector3[] mainSquare = new Vector3[] { E[0], L[1], L[2], R[1], R[2], E[3] };
             Vector3[] crosswalk = new Vector3[] { L[3], L[2], R[1], R[0] };
             middleSquare.Add(L[2]);
@@ -223,31 +221,146 @@ public class ZeroRoadIntersection
             return 3;
     }
 
-    // private bool IsRoadIntersectionValid(
-    //     int leftIntersectionPosition,
-    //     Vector3 edgeMidPoint,
-    //     Vector3 L0,
-    //     Vector3 R3,
-    //     ZeroCollisionInfo leftIntersectionL0)
-    // {
-    //     Vector3 controlPointToTest;
-    //     if (leftIntersectionPosition == 0)
-    //         controlPointToTest = PrimaryRoad.ControlPoints[0];
-    //     else if (leftIntersectionPosition == 2)
-    //         controlPointToTest = PrimaryRoad.ControlPoints[^1];
-    //     // else if (leftIntersectionPosition == 1 || leftIntersectionPosition == 3)
-    //     else
-    //     {
-    //         if (leftIntersectionL0.CollidingSegment.ParentLane.IsLeftSidewalk)
-    //             controlPointToTest = CollidingRoad.ControlPoints[0];
-    //         else
-    //             controlPointToTest = CollidingRoad.ControlPoints[^1];
-    //     }
-    //     controlPointToTest = PrimaryRoad.ControlPoints[^1];
-    //     float thresholdAngle = Vector3.Angle(L0 - edgeMidPoint, R3 - edgeMidPoint);
-    //     float controlPointAngle = Vector3.Angle(L0 - controlPointToTest, R3 - controlPointToTest);
-    //     return controlPointAngle <= thresholdAngle;
-    // }
+
+    private bool ValidateIntersectionSide(
+        int leftIntersectionPosition,
+        Vector3 edgeMidPoint,
+        Vector3[] L,
+        Vector3[] R,
+        ZeroCollisionInfo leftIntersectionL0)
+    {
+        Debug.LogFormat("leftIntersectionPosition ={0}",
+            leftIntersectionPosition);
+        if (leftIntersectionPosition == 0)
+        {
+            return
+                BuildNewRoadEndingAtIntersection(
+                    edgeMidPoint: edgeMidPoint,
+                    L: L,
+                    R: R,
+                    oldRoad: PrimaryRoad,
+                    isDirectionReversed: false);
+
+        }
+        else if (leftIntersectionPosition == 2)
+        {
+            return
+                BuildNewRoadEndingAtIntersection(
+                    edgeMidPoint: edgeMidPoint,
+                    L: L,
+                    R: R,
+                    oldRoad: PrimaryRoad,
+                    isDirectionReversed: true);
+        }
+        // else if (leftIntersectionPosition == 1 || leftIntersectionPosition == 3)
+        else
+        {
+            if (leftIntersectionL0.CollidingSegment.ParentLane.IsLeftSidewalk)
+                return
+                BuildNewRoadEndingAtIntersection(
+                    edgeMidPoint: edgeMidPoint,
+                    L: L,
+                    R: R,
+                    oldRoad: CollidingRoad,
+                    isDirectionReversed: false);
+            else
+                return
+                BuildNewRoadEndingAtIntersection(
+                    edgeMidPoint: edgeMidPoint,
+                    L: L,
+                    R: R,
+                    oldRoad: CollidingRoad,
+                    isDirectionReversed: true);
+        }
+    }
+
+    private bool BuildNewRoadEndingAtIntersection(
+        Vector3 edgeMidPoint,
+        Vector3[] L,
+        Vector3[] R,
+        ZeroRoad oldRoad,
+        bool isDirectionReversed)
+    {
+        List<Vector3> newCenterVertices = new();
+
+        Vector3[] newControlPoints =
+            isDirectionReversed ?
+            oldRoad.ControlPoints.Reverse().ToArray()
+            : oldRoad.ControlPoints;
+        Vector3[] currentCenterVertices =
+            isDirectionReversed ?
+            oldRoad.CenterVertices.Reverse().ToArray()
+            : oldRoad.CenterVertices;
+
+        ZeroRenderer.RenderSphere(edgeMidPoint,"Mid");
+        ZeroRenderer.RenderSphere(L[0],"L0");
+        ZeroRenderer.RenderSphere(R[3],"R3");
+        float thresholdAngle = Vector3.Angle(L[0] - edgeMidPoint, R[3] - edgeMidPoint);
+        for (int i = 0; i < currentCenterVertices.Count(); i++)
+        {
+        ZeroRenderer.RenderSphere(currentCenterVertices[i],"V"+i);
+            if (i > 0)
+            {
+                float AngleBetweenCurrToL0AndReverse =
+                    Vector3.Angle(
+                        currentCenterVertices[i - 1] - currentCenterVertices[i],
+                        L[0] - currentCenterVertices[i]);
+                Debug.LogFormat("OldRoad ={0} AngleBetweenCurrToL0AndReverse={1}",
+                    oldRoad.Name,
+                    AngleBetweenCurrToL0AndReverse);
+                if (AngleBetweenCurrToL0AndReverse < 90)
+                {
+                    //Current vertex is at least the second vertex of the road 
+                    //And it is on the right of the road edge
+                    //normal case=> the previous vertex was the new end vertex
+                    newControlPoints[^1] = currentCenterVertices[i - 1];
+                    break;
+                }
+            }
+            float currentAngleWithEdgePoints =
+                Vector3.Angle(
+                    L[0] - currentCenterVertices[i],
+                    R[3] - currentCenterVertices[i]);
+            Debug.LogFormat("OldRoad ={0} currentAngleWithEdgePoints={1}",
+                oldRoad.Name,
+                currentAngleWithEdgePoints);
+            if (currentAngleWithEdgePoints >= thresholdAngle)
+            {
+                //Current vertex is right of the road edge 
+                if (i == 0)
+                    //error case=> And if start of the road is right of the road edge 
+                    return false;
+                else
+                {
+                    //normal case=> the previous vertex was the new end vertex. 
+                    newControlPoints[^1] = currentCenterVertices[i - 1];
+                    break;
+                }
+            }
+            newCenterVertices.Add(currentCenterVertices[i]);
+        }
+
+        Debug.LogFormat("OldRoad ={0} newCenterVertices.Count()={1}",
+                oldRoad.Name,
+                newCenterVertices.Count());
+        if (newCenterVertices.Count() > 1)
+        {
+            if (!ZeroRoadBuilder.RoadsToBeDeleted.ContainsKey(oldRoad.Name))
+                ZeroRoadBuilder.RoadsToBeDeleted[oldRoad.Name] = oldRoad;
+
+            Debug.LogFormat("Adding new road={0}",
+                newControlPoints.Select(e => e.ToString()).ToCommaSeparatedString());
+            ZeroRoadBuilder.RoadsToBeCreated.Add(
+                new(
+                sourceRoad: oldRoad,
+                centerVertices: newCenterVertices.ToArray(),
+                controlPoints: newControlPoints
+                ));
+            return true;
+        }
+        //error case=> new road does not have any valid vertex 
+        else return false;
+    }
 
 
     private Vector3[] GetRoadEdgePoints(

@@ -27,6 +27,8 @@ public class ZeroRoadBuilder
     public static GameObject ControlObject;
     public static GameObject EndObject;
     public static ZeroRoad ActiveRoad;
+    public static Dictionary<string, ZeroRoad> RoadsToBeDeleted;
+    public static List<ZeroRoad> RoadsToBeCreated;
     public static Dictionary<string, ZeroRoadIntersection> ActiveIntersections;
     public static Dictionary<string, Vector3> InitialStaticLocalScale;
     public static Dictionary<string, ZeroRoad> BuiltRoadsByName;
@@ -53,6 +55,8 @@ public class ZeroRoadBuilder
         BuiltRoadSegmentsByLane = new();
         BuiltRoadSegmentsByName = new();
         BuiltRoadIntersections = new();
+        RoadsToBeDeleted = new();
+        RoadsToBeCreated = new();
 
         InitialiseConfig();
         RoadControlsParent = new GameObject(RoadControlsObjectName);
@@ -225,7 +229,7 @@ public class ZeroRoadBuilder
 
 
             if (roadStartChanged || roadControlChanged || roadEndChanged)
-                ActiveRoad.Build(controlPoints.ToArray(), false);
+                ActiveRoad.Build(controlPoints.ToArray());
         }
     }
 

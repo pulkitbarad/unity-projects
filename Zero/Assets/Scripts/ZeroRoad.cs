@@ -14,7 +14,7 @@ public class ZeroRoad
     public float WidthInclSidewalks;
     public float Height;
     public float SidewalkHeight;
-    public int VertexCount;
+    public Vector3[] CenterVertices;
     public int NumberOfLanesExclSidewalks;
     public int NumberOfLanesInclSidewalks;
     public int NumberOfSegmentsPerLane;
@@ -23,6 +23,7 @@ public class ZeroRoad
     public bool IsCurved;
     public bool HasBusLane;
     public bool IsRoadAngleChangeValid;
+    private bool _forceSyncTransform;
     public Vector3[] ControlPoints;
     public ZeroRoadLane[] Lanes;
     public ZeroRoadLane[] Sidewalks;
@@ -37,62 +38,92 @@ public class ZeroRoad
         bool forceSyncTransform,
         Vector3[] controlPoints)
     {
+        InitialiseRoad(
+            isCurved,
+            hasBusLane,
+            numberOfLanesExclSidewalks,
+            height,
+            sidewalkHeight,
+            forceSyncTransform);
+        Build(controlPoints);
+    }
 
-        this.Name = "R" + ZeroRoadBuilder.BuiltRoadsByName.Count();
-        this.IsCurved = isCurved;
-        this.NumberOfLanesExclSidewalks = numberOfLanesExclSidewalks;
-        this.NumberOfLanesInclSidewalks = numberOfLanesExclSidewalks + 2;
-        this.LeftSidewalkIndex = 0;
-        this.RightSidewalkIndex = NumberOfLanesInclSidewalks - 1;
-        this.WidthExclSidewalks = numberOfLanesExclSidewalks * ZeroRoadBuilder.RoadLaneWidth;
-        this.WidthInclSidewalks = (numberOfLanesExclSidewalks + 2) * ZeroRoadBuilder.RoadLaneWidth;
-        this.Height = height;
-        this.SidewalkHeight = sidewalkHeight;
-        this.HasBusLane = hasBusLane && numberOfLanesExclSidewalks > 1;
+    public ZeroRoad(
+        ZeroRoad sourceRoad,
+        Vector3[] centerVertices,
+        Vector3[] controlPoints)
+    {
+        InitialiseRoad(
+            sourceRoad.IsCurved,
+            sourceRoad.HasBusLane,
+            sourceRoad.NumberOfLanesExclSidewalks,
+            sourceRoad.Height,
+            sourceRoad.SidewalkHeight,
+            sourceRoad._forceSyncTransform);
+
+        Build(
+            controlPoints: controlPoints,
+            centerVertices: centerVertices);
+    }
+
+    private void InitialiseRoad(
+        bool isCurved,
+        bool hasBusLane,
+        int numberOfLanesExclSidewalks,
+        float height,
+        float sidewalkHeight,
+        bool forceSyncTransform)
+    {
+        Name = "R" + ZeroRoadBuilder.BuiltRoadsByName.Count();
+        IsCurved = isCurved;
+        NumberOfLanesExclSidewalks = numberOfLanesExclSidewalks;
+        NumberOfLanesInclSidewalks = numberOfLanesExclSidewalks + 2;
+        LeftSidewalkIndex = 0;
+        RightSidewalkIndex = NumberOfLanesInclSidewalks - 1;
+        WidthExclSidewalks = numberOfLanesExclSidewalks * ZeroRoadBuilder.RoadLaneWidth;
+        WidthInclSidewalks = (numberOfLanesExclSidewalks + 2) * ZeroRoadBuilder.RoadLaneWidth;
+        Height = height;
+        SidewalkHeight = sidewalkHeight;
+        HasBusLane = hasBusLane && numberOfLanesExclSidewalks > 1;
+        _forceSyncTransform = forceSyncTransform;
         InitRoadObject();
-
-        if (!this.IsCurved)
-            VertexCount = 4;
-
-        this.Build(controlPoints, forceSyncTransform);
     }
 
     private void InitRoadObject()
     {
-        ZeroRoadBuilder.BuiltRoadsByName[this.Name] = this;
+        ZeroRoadBuilder.BuiltRoadsByName[Name] = this;
     }
 
     public void Hide()
     {
-        foreach (ZeroRoadLane lane in this.Lanes)
+        foreach (ZeroRoadLane lane in Lanes)
             lane.HideAllSegments();
     }
 
-    public void Build(Vector3[] controlPoints, bool forceSyncTransform)
+    public void Build(Vector3[] controlPoints)
     {
         IntersectionsByRoadName = new();
-        this.ControlPoints = controlPoints;
+        ControlPoints = controlPoints;
         (Vector3[], float) bazierResult =
                ZeroCurvedLine.FindBazierLinePoints(
                    controlPoints);
 
-        this.NumberOfSegmentsPerLane = bazierResult.Item1.Length;
+        CenterVertices = bazierResult.Item1;
+        NumberOfSegmentsPerLane = CenterVertices.Length;
 
-        this.Lanes =
-           GetLanes(
-               centerVertices: bazierResult.Item1);
-        this.IsRoadAngleChangeValid = true;
+        Lanes = GetLanes();
+        IsRoadAngleChangeValid = true;
 
-        foreach (var lane in this.Lanes)
-            this.IsRoadAngleChangeValid &= lane.IsLaneAngleChangeValid;
+        foreach (var lane in Lanes)
+            IsRoadAngleChangeValid &= lane.IsLaneAngleChangeValid;
 
-        Debug.LogFormat("Road={0} roadAngleChangeValid={1}", this.Name, IsRoadAngleChangeValid);
-        if (this.IsRoadAngleChangeValid)
+        Debug.LogFormat("Road={0} roadAngleChangeValid={1}", Name, IsRoadAngleChangeValid);
+        if (IsRoadAngleChangeValid)
         {
-            this.IntersectionsByRoadName = GetRoadIntersectionsByRoad();
+            IntersectionsByRoadName = GetRoadIntersectionsByRoad();
             if (IntersectionsByRoadName.Count() > 0)
             {
-                foreach (var entry in this.IntersectionsByRoadName)
+                foreach (var entry in IntersectionsByRoadName)
                 {
                     foreach (ZeroRoadIntersection intersection in entry.Value)
                     {
@@ -105,8 +136,32 @@ public class ZeroRoad
                     }
                 }
             }
+            foreach (var roadToBeDeleted in ZeroRoadBuilder.RoadsToBeDeleted.Values)
+            {
+                Debug.LogFormat("Primary road={0} Deleting road={1}",
+                    this.Name,
+                    roadToBeDeleted.Name);
+                    
+                roadToBeDeleted.Hide();
+                ZeroRoadBuilder.BuiltRoadsByName.Remove(roadToBeDeleted.Name);
+            }
         }
-        if (forceSyncTransform)
+        if (_forceSyncTransform)
+            Physics.SyncTransforms();
+    }
+
+    public void Build(
+        Vector3[] controlPoints,
+        Vector3[] centerVertices)
+    {
+        IntersectionsByRoadName = new();
+        ControlPoints = controlPoints;
+        CenterVertices = centerVertices;
+        NumberOfSegmentsPerLane = CenterVertices.Length;
+        Lanes = GetLanes();
+        IsRoadAngleChangeValid = true;
+
+        if (_forceSyncTransform)
             Physics.SyncTransforms();
     }
 
@@ -115,14 +170,14 @@ public class ZeroRoad
         Dictionary<string, Vector3> testData = new();
         if (testName.Length > 0)
         {
-            for (int i = 0; i < this.ControlPoints.Length; i++)
-                testData[this.Name + "Control" + i.ToString()] = this.ControlPoints[i];
+            for (int i = 0; i < ControlPoints.Length; i++)
+                testData[Name + "Control" + i.ToString()] = ControlPoints[i];
         }
-        foreach (var lane in this.Lanes)
+        foreach (var lane in Lanes)
         {
             if (testName == ZeroRoadTest.Test1)
             {
-                this.Lanes
+                Lanes
                     .Select(
                         e => e.GetSegmentVertexLogs())
                     .SelectMany(e => e)
@@ -130,7 +185,7 @@ public class ZeroRoad
                     .ForEach(e => testData[e.Key] = e.Value);
             }
         }
-        foreach (var entry in this.IntersectionsByRoadName)
+        foreach (var entry in IntersectionsByRoadName)
         {
             foreach (ZeroRoadIntersection intersection in entry.Value)
             {
@@ -161,32 +216,32 @@ public class ZeroRoad
         return testData;
     }
 
-    private ZeroRoadLane[] GetLanes(Vector3[] centerVertices)
+    private ZeroRoadLane[] GetLanes()
     {
-        Vector3[][] allLaneVertices = new Vector3[this.NumberOfLanesInclSidewalks * 2 + 1][];
+        Vector3[][] allLaneVertices = new Vector3[NumberOfLanesInclSidewalks * 2 + 1][];
 
-        allLaneVertices[this.NumberOfLanesInclSidewalks] = centerVertices;
+        allLaneVertices[NumberOfLanesInclSidewalks] = CenterVertices;
         for (
-            int leftIndex = this.NumberOfLanesInclSidewalks - 1, rightIndex = this.NumberOfLanesInclSidewalks + 1, distMultiplier = 1;
+            int leftIndex = NumberOfLanesInclSidewalks - 1, rightIndex = NumberOfLanesInclSidewalks + 1, distMultiplier = 1;
             leftIndex >= 0;
             leftIndex--, rightIndex++, distMultiplier++)
         {
             Vector3[][] parallelLines = GetParallelLines(
-                 vertices: centerVertices,
+                 vertices: CenterVertices,
                  distance: distMultiplier * 0.5f * ZeroRoadBuilder.RoadLaneWidth);
 
             allLaneVertices[leftIndex] = parallelLines[0];
             allLaneVertices[rightIndex] = parallelLines[1];
         }
 
-        ZeroRoadLane[] lanes = new ZeroRoadLane[this.NumberOfLanesInclSidewalks];
+        ZeroRoadLane[] lanes = new ZeroRoadLane[NumberOfLanesInclSidewalks];
 
         int laneIndex = 0;
-        for (; laneIndex < this.NumberOfLanesInclSidewalks; laneIndex++)
+        for (; laneIndex < NumberOfLanesInclSidewalks; laneIndex++)
         {
-            float height = this.Height;
-            if (laneIndex == this.LeftSidewalkIndex || laneIndex == this.RightSidewalkIndex)
-                height = this.SidewalkHeight;
+            float height = Height;
+            if (laneIndex == LeftSidewalkIndex || laneIndex == RightSidewalkIndex)
+                height = SidewalkHeight;
 
             ZeroRoadLane newLane =
                 new(
@@ -200,20 +255,6 @@ public class ZeroRoad
             lanes[laneIndex] = newLane;
         }
         return lanes;
-    }
-
-    private static Vector3[] GetLeftParallelLine(
-        Vector3[] vertices,
-        float distance)
-    {
-        return GetParallelLines(vertices, distance)[0];
-    }
-
-    private static Vector3[] GetRightParallelLine(
-        Vector3[] vertices,
-        float distance)
-    {
-        return GetParallelLines(vertices, distance)[1];
     }
 
     private static Vector3[][] GetParallelLines(
@@ -270,14 +311,14 @@ public class ZeroRoad
         Dictionary<string, List<ZeroRoadIntersection>> intersectionsByRoadName = new();
         Dictionary<string, ZeroLaneIntersection[]> leftIntersectionsByRoadName =
             new ZeroCollisionMap(
-            roadName: this.Name,
-            primaryLane: this.Lanes[this.LeftSidewalkIndex],
+            roadName: Name,
+            primaryLane: Lanes[LeftSidewalkIndex],
             layerMaskName: ZeroRoadBuilder.RoadSidewalkMaskName)
             .GetLaneIntersectionsByRoadName();
         Dictionary<string, ZeroLaneIntersection[]> rightIntersectionsByRoadName =
             new ZeroCollisionMap(
-            roadName: this.Name,
-            primaryLane: this.Lanes[this.RightSidewalkIndex],
+            roadName: Name,
+            primaryLane: Lanes[RightSidewalkIndex],
             layerMaskName: ZeroRoadBuilder.RoadSidewalkMaskName)
             .GetLaneIntersectionsByRoadName();
 
@@ -310,9 +351,9 @@ public class ZeroRoad
 
             intersectionsByRoadName[collidingRoadName].AddRange(
                 ZeroRoadIntersection.GetRoadIntersections(
-                    this.Height,
+                    Height,
                     collidingRoad.Height,
-                    this.ControlPoints,
+                    ControlPoints,
                     leftIntersections,
                     rightIntersections));
         }
