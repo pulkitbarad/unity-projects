@@ -90,9 +90,7 @@ public class ZeroUIHandler
         {
             Vector2 currentTouch0 = _touch0Action.ReadValue<Vector2>();
             if (_isRoadMenuActive)
-                ZeroRoadBuilder.HandleControlDrag(
-                    isCurved: ZeroRoadBuilder.ActiveRoad.IsCurved,
-                    touchPosition: currentTouch0);
+                ZeroRoadBuilder.HandleControlDrag(touchPosition: currentTouch0);
         }
 
         // if (_doubleTouchAction.phase == InputActionPhase.Performed)
@@ -133,13 +131,13 @@ public class ZeroUIHandler
     public static void OnCurvedRoadPerformed(InputAction.CallbackContext context)
     {
         _isRoadMenuActive = true;
-        ZeroRoadBuilder.StartBuilding(true);
+        ZeroRoadBuilder.StartBuilding(true,ZeroRoadBuilder.ResetControlObjects(true));
     }
 
     public static void OnStraightRoadPerformed(InputAction.CallbackContext context)
     {
         _isRoadMenuActive = true;
-        ZeroRoadBuilder.StartBuilding(false);
+        ZeroRoadBuilder.StartBuilding(false,ZeroRoadBuilder.ResetControlObjects(false));
     }
 
     public static void OnConfirmPerformed(InputAction.CallbackContext context)

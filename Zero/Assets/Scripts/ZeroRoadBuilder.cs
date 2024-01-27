@@ -26,9 +26,8 @@ public class ZeroRoadBuilder
     public static GameObject StartObject;
     public static GameObject ControlObject;
     public static GameObject EndObject;
-    public static ZeroRoad ActiveRoad;
-    public static Dictionary<string, ZeroRoad> RoadsToBeDeleted;
-    public static List<ZeroRoad> RoadsToBeCreated;
+    public static ZeroRoad ActivePrimaryRoad;
+    public static Dictionary<string, ZeroRoad> ActiveSecondaryRoads;
     public static Dictionary<string, ZeroRoadIntersection> ActiveIntersections;
     public static Dictionary<string, Vector3> InitialStaticLocalScale;
     public static Dictionary<string, ZeroRoad> BuiltRoadsByName;
@@ -55,8 +54,7 @@ public class ZeroRoadBuilder
         BuiltRoadSegmentsByLane = new();
         BuiltRoadSegmentsByName = new();
         BuiltRoadIntersections = new();
-        RoadsToBeDeleted = new();
-        RoadsToBeCreated = new();
+        ActiveSecondaryRoads = new();
 
         InitialiseConfig();
         RoadControlsParent = new GameObject(RoadControlsObjectName);
@@ -126,36 +124,50 @@ public class ZeroRoadBuilder
             return startPosition + scaledStartToEnd;
     }
 
-    public static void StartBuilding(bool isCurved)
+    public static void StartBuilding(bool isCurved, Vector3[] controlPoints)
     {
-        ActiveRoad = new ZeroRoad(
+        ResetActiveRoadConfig(hideActiveRoad: false);
+        ActivePrimaryRoad = new ZeroRoad(
             isCurved: isCurved,
             hasBusLane: true,
             numberOfLanesExclSidewalks: 2,
             height: RoadLaneHeight,
             sidewalkHeight: RoadSideWalkHeight,
             forceSyncTransform: false,
-            controlPoints: ResetControlObjects(isCurved));
+            controlPoints: controlPoints);
     }
 
 
+    private static void ResetActiveRoadConfig(bool hideActiveRoad)
+    {
+        ActiveIntersections.Clear();
+        if (hideActiveRoad)
+            ActivePrimaryRoad?.Hide();
+        foreach (var newSecondaryRoad in ActiveSecondaryRoads.Values)
+            newSecondaryRoad.Hide();
+        ActivePrimaryRoad = null;
+        ActiveSecondaryRoads = new();
+    }
     public static void CancelBuilding()
     {
         HideControlObjects();
-        ActiveIntersections.Clear();
-        ActiveRoad?.Hide();
-        ActiveRoad = null;
+        ResetActiveRoadConfig(true);
     }
 
     public static void ConfirmBuilding()
     {
+        BuiltRoadsByName[ActivePrimaryRoad.Name] = ActivePrimaryRoad;
         foreach (var intersectionTempName in ActiveIntersections.Keys)
             BuiltRoadIntersections[intersectionTempName] = ActiveIntersections[intersectionTempName];
         if (ZeroController.TestToGenerateData.Length > 0)
-            ZeroController.AppendToTestDataFile(ActiveRoad.GenerateTestData(ZeroController.TestToGenerateData));
-        ActiveIntersections.Clear();
+        {
+            ZeroController.AppendToTestDataFile(ActivePrimaryRoad.GenerateTestData(ZeroController.TestToGenerateData));
+            foreach (var newSecondaryRoad in ActiveSecondaryRoads.Values)
+                ZeroController.AppendToTestDataFile(newSecondaryRoad.GenerateTestData(ZeroController.TestToGenerateData));
+        }
+
         HideControlObjects();
-        ActiveRoad = null;
+        ResetActiveRoadConfig(false);
     }
 
     public static void HideControlObjects()
@@ -164,7 +176,6 @@ public class ZeroRoadBuilder
         ControlObject.SetActive(false);
         EndObject.SetActive(false);
     }
-
 
     public static Vector3[] ResetControlObjects(bool isCurved)
     {
@@ -202,9 +213,10 @@ public class ZeroRoadBuilder
     }
 
 
-    public static void HandleControlDrag(bool isCurved, Vector2 touchPosition)
+    public static void HandleControlDrag(Vector2 touchPosition)
     {
         List<Vector3> controlPoints = new();
+
 
         if (!EventSystem.current.IsPointerOverGameObject())
         {
@@ -213,7 +225,8 @@ public class ZeroRoadBuilder
                 && ZeroUIHandler.HandleGameObjectDrag(StartObject, touchPosition);
 
             var roadControlChanged =
-                isCurved
+
+                ActivePrimaryRoad.IsCurved
                 && !ControlObject.transform.position.Equals(Vector3.zero)
                 && ZeroUIHandler.HandleGameObjectDrag(ControlObject, touchPosition);
 
@@ -223,13 +236,12 @@ public class ZeroRoadBuilder
 
             controlPoints.Add(StartObject.transform.position);
 
-            if (isCurved)
+            if (ActivePrimaryRoad.IsCurved)
                 controlPoints.Add(ControlObject.transform.position);
             controlPoints.Add(EndObject.transform.position);
 
-
             if (roadStartChanged || roadControlChanged || roadEndChanged)
-                ActiveRoad.Build(controlPoints.ToArray());
+                StartBuilding(ActivePrimaryRoad.IsCurved, controlPoints.ToArray());
         }
     }
 

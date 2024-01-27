@@ -235,6 +235,7 @@ public class ZeroRoadIntersection
         {
             return
                 BuildNewRoadEndingAtIntersection(
+          leftIntersectionPosition,
                     edgeMidPoint: edgeMidPoint,
                     L: L,
                     R: R,
@@ -246,6 +247,7 @@ public class ZeroRoadIntersection
         {
             return
                 BuildNewRoadEndingAtIntersection(
+          leftIntersectionPosition,
                     edgeMidPoint: edgeMidPoint,
                     L: L,
                     R: R,
@@ -258,6 +260,7 @@ public class ZeroRoadIntersection
             if (leftIntersectionL0.CollidingSegment.ParentLane.IsLeftSidewalk)
                 return
                 BuildNewRoadEndingAtIntersection(
+          leftIntersectionPosition,
                     edgeMidPoint: edgeMidPoint,
                     L: L,
                     R: R,
@@ -266,6 +269,7 @@ public class ZeroRoadIntersection
             else
                 return
                 BuildNewRoadEndingAtIntersection(
+          leftIntersectionPosition,
                     edgeMidPoint: edgeMidPoint,
                     L: L,
                     R: R,
@@ -275,6 +279,7 @@ public class ZeroRoadIntersection
     }
 
     private bool BuildNewRoadEndingAtIntersection(
+          int leftIntersectionPosition,
         Vector3 edgeMidPoint,
         Vector3[] L,
         Vector3[] R,
@@ -283,37 +288,28 @@ public class ZeroRoadIntersection
     {
         List<Vector3> newCenterVertices = new();
 
-        Vector3[] newControlPoints =
-            isDirectionReversed ?
-            oldRoad.ControlPoints.Reverse().ToArray()
-            : oldRoad.ControlPoints;
         Vector3[] currentCenterVertices =
             isDirectionReversed ?
             oldRoad.CenterVertices.Reverse().ToArray()
             : oldRoad.CenterVertices;
 
-        ZeroRenderer.RenderSphere(edgeMidPoint,"Mid");
-        ZeroRenderer.RenderSphere(L[0],"L0");
-        ZeroRenderer.RenderSphere(R[3],"R3");
+        // ZeroRenderer.RenderSphere(edgeMidPoint, "Mid");
+        // ZeroRenderer.RenderSphere(L[0], "L0");
+        // ZeroRenderer.RenderSphere(R[3], "R3");
         float thresholdAngle = Vector3.Angle(L[0] - edgeMidPoint, R[3] - edgeMidPoint);
         for (int i = 0; i < currentCenterVertices.Count(); i++)
         {
-        ZeroRenderer.RenderSphere(currentCenterVertices[i],"V"+i);
             if (i > 0)
             {
                 float AngleBetweenCurrToL0AndReverse =
                     Vector3.Angle(
                         currentCenterVertices[i - 1] - currentCenterVertices[i],
                         L[0] - currentCenterVertices[i]);
-                Debug.LogFormat("OldRoad ={0} AngleBetweenCurrToL0AndReverse={1}",
-                    oldRoad.Name,
-                    AngleBetweenCurrToL0AndReverse);
                 if (AngleBetweenCurrToL0AndReverse < 90)
                 {
                     //Current vertex is at least the second vertex of the road 
                     //And it is on the right of the road edge
                     //normal case=> the previous vertex was the new end vertex
-                    newControlPoints[^1] = currentCenterVertices[i - 1];
                     break;
                 }
             }
@@ -321,9 +317,6 @@ public class ZeroRoadIntersection
                 Vector3.Angle(
                     L[0] - currentCenterVertices[i],
                     R[3] - currentCenterVertices[i]);
-            Debug.LogFormat("OldRoad ={0} currentAngleWithEdgePoints={1}",
-                oldRoad.Name,
-                currentAngleWithEdgePoints);
             if (currentAngleWithEdgePoints >= thresholdAngle)
             {
                 //Current vertex is right of the road edge 
@@ -333,29 +326,38 @@ public class ZeroRoadIntersection
                 else
                 {
                     //normal case=> the previous vertex was the new end vertex. 
-                    newControlPoints[^1] = currentCenterVertices[i - 1];
                     break;
                 }
             }
+            Debug.LogFormat("i={0} OldRoad ={1} leftIntersectionPosition={2}",
+                i,
+                oldRoad.Name,
+                leftIntersectionPosition);
             newCenterVertices.Add(currentCenterVertices[i]);
         }
+        newCenterVertices.Add(edgeMidPoint);
 
-        Debug.LogFormat("OldRoad ={0} newCenterVertices.Count()={1}",
-                oldRoad.Name,
-                newCenterVertices.Count());
         if (newCenterVertices.Count() > 1)
         {
-            if (!ZeroRoadBuilder.RoadsToBeDeleted.ContainsKey(oldRoad.Name))
-                ZeroRoadBuilder.RoadsToBeDeleted[oldRoad.Name] = oldRoad;
+            Vector3[] newControlPoints = new Vector3[] { newCenterVertices[0], newCenterVertices[^1] };
 
             Debug.LogFormat("Adding new road={0}",
-                newControlPoints.Select(e => e.ToString()).ToCommaSeparatedString());
-            ZeroRoadBuilder.RoadsToBeCreated.Add(
-                new(
+                newCenterVertices.Select(e => e.ToString()).ToCommaSeparatedString());
+            for (int j = 0; j < newCenterVertices.Count(); j++)
+            {
+                ZeroRenderer.RenderSphere(newCenterVertices[j], leftIntersectionPosition + "V" + j);
+            }
+            for (int j = 0; j < newControlPoints.Count(); j++)
+            {
+                ZeroRenderer.RenderSphere(newControlPoints[j], leftIntersectionPosition + "C" + j);
+            }
+
+            ZeroRoad secondaryRoad = new(
                 sourceRoad: oldRoad,
                 centerVertices: newCenterVertices.ToArray(),
                 controlPoints: newControlPoints
-                ));
+            );
+            ZeroRoadBuilder.ActiveSecondaryRoads[secondaryRoad.Name] = secondaryRoad;
             return true;
         }
         //error case=> new road does not have any valid vertex 
