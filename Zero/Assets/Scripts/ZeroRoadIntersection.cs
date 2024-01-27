@@ -231,14 +231,17 @@ public class ZeroRoadIntersection
     {
         Debug.LogFormat("leftIntersectionPosition ={0}",
             leftIntersectionPosition);
+        Vector3 __edgeMidPoint = edgeMidPoint - 0.5f * Height * Vector3.up;
+        Vector3[] __L = L.Select(e => e - 0.5f * Height * Vector3.up).ToArray();
+        Vector3[] __R = R.Select(e => e - 0.5f * Height * Vector3.up).ToArray();
         if (leftIntersectionPosition == 0)
         {
             return
                 BuildNewRoadEndingAtIntersection(
           leftIntersectionPosition,
-                    edgeMidPoint: edgeMidPoint,
-                    L: L,
-                    R: R,
+                    edgeMidPoint: __edgeMidPoint,
+                    L: __L,
+                    R: __R,
                     oldRoad: PrimaryRoad,
                     isDirectionReversed: false);
 
@@ -248,9 +251,9 @@ public class ZeroRoadIntersection
             return
                 BuildNewRoadEndingAtIntersection(
           leftIntersectionPosition,
-                    edgeMidPoint: edgeMidPoint,
-                    L: L,
-                    R: R,
+                    edgeMidPoint: __edgeMidPoint,
+                    L: __L,
+                    R: __R,
                     oldRoad: PrimaryRoad,
                     isDirectionReversed: true);
         }
@@ -261,18 +264,18 @@ public class ZeroRoadIntersection
                 return
                 BuildNewRoadEndingAtIntersection(
           leftIntersectionPosition,
-                    edgeMidPoint: edgeMidPoint,
-                    L: L,
-                    R: R,
+                    edgeMidPoint: __edgeMidPoint,
+                    L: __L,
+                    R: __R,
                     oldRoad: CollidingRoad,
                     isDirectionReversed: false);
             else
                 return
                 BuildNewRoadEndingAtIntersection(
           leftIntersectionPosition,
-                    edgeMidPoint: edgeMidPoint,
-                    L: L,
-                    R: R,
+                    edgeMidPoint: __edgeMidPoint,
+                    L: __L,
+                    R: __R,
                     oldRoad: CollidingRoad,
                     isDirectionReversed: true);
         }
@@ -345,11 +348,7 @@ public class ZeroRoadIntersection
                 newCenterVertices.Select(e => e.ToString()).ToCommaSeparatedString());
             for (int j = 0; j < newCenterVertices.Count(); j++)
             {
-                ZeroRenderer.RenderSphere(newCenterVertices[j], leftIntersectionPosition + "V" + j);
-            }
-            for (int j = 0; j < newControlPoints.Count(); j++)
-            {
-                ZeroRenderer.RenderSphere(newControlPoints[j], leftIntersectionPosition + "C" + j);
+                ZeroRenderer.RenderSphere(newCenterVertices[j], "RI" + leftIntersectionPosition + "V" + j);
             }
 
             ZeroRoad secondaryRoad = new(
