@@ -312,13 +312,13 @@ public class ZeroCollisionMap
                     .ThenBy(e => -e.DistanceFromOrigin)
                     .ToList();
 
-                string collidingRoadName = leftStartCollisions[0].CollidingSegment.ParentLane.ParentRoad.Name;
+                string intersectingRoadName = leftStartCollisions[0].CollidingSegment.ParentLane.ParentRoad.Name;
 
-                if (!_intersectionsByRoadName.ContainsKey(collidingRoadName))
+                if (!_intersectionsByRoadName.ContainsKey(intersectingRoadName))
                 {
-                    _intersectionsByRoadName[collidingRoadName] = new();
+                    _intersectionsByRoadName[intersectingRoadName] = new();
                 }
-                _intersectionsByRoadName[collidingRoadName].Add(
+                _intersectionsByRoadName[intersectingRoadName].Add(
                 new ZeroLaneIntersection(
                     collisionPoints:
                         new ZeroCollisionInfo[]{
@@ -339,7 +339,7 @@ public class ZeroCollisionMap
                 //Vice versa, left (and right) end points farther from their ray origin point used in collision detection   
                 if (leftStartCollisions.Count() == 2)
                 {
-                    _intersectionsByRoadName[collidingRoadName].Add(
+                    _intersectionsByRoadName[intersectingRoadName].Add(
                     new ZeroLaneIntersection(
                         collisionPoints:
                             new ZeroCollisionInfo[]{

@@ -43,7 +43,7 @@ public class ZeroCurvedLine
                     maxAngle = currAngle;
             }
         }
-        bazierLinePoints.Add(controlPoints[^1]);
+        bazierLinePoints.Add(controlPoints.Last());
         return (bazierLinePoints.ToArray(), maxAngle);
     }
 
