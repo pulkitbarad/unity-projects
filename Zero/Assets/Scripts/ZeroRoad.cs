@@ -127,7 +127,6 @@ public class ZeroRoad
         foreach (var lane in Lanes)
             IsRoadAngleChangeValid &= lane.IsLaneAngleChangeValid;
 
-        Debug.LogFormat("Road={0} roadAngleChangeValid={1}", Name, IsRoadAngleChangeValid);
         if (IsRoadAngleChangeValid)
         {
             ZeroCollisionMap leftCollisionMap =
@@ -146,7 +145,7 @@ public class ZeroRoad
                leftIntersectionsByRoadName: leftCollisionMap.GetLaneIntersectionsByRoadName(),
                rightIntersectionsByRoadName: rightCollisionMap.GetLaneIntersectionsByRoadName());
 
-            if (IsValid)
+            if (IsValid && Intersections != null)
             {
                 foreach (ZeroRoadIntersection intersection in Intersections)
                 {
@@ -158,9 +157,8 @@ public class ZeroRoad
                     intersection.RenderMainSquare();
                 }
             }
-            else
-                Debug.LogFormat("Road={0} is invalid", Name);
         }
+        Debug.LogFormat("Road={0} roadAngleChangeValid={1} isValid={2}", Name, IsRoadAngleChangeValid, IsValid);
         if (_forceSyncTransform)
             Physics.SyncTransforms();
     }

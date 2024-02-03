@@ -303,7 +303,7 @@ public partial class @ZeroActions: IInputActionCollection2, IDisposable
                 {
                     ""name"": """",
                     ""id"": ""055827ed-19c9-48a7-87b8-1c813b882bb5"",
-                    ""path"": ""<Keyboard>/#(X)"",
+                    ""path"": ""<Keyboard>/#(Z)"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
@@ -325,7 +325,7 @@ public partial class @ZeroActions: IInputActionCollection2, IDisposable
                 {
                     ""name"": """",
                     ""id"": ""227b8433-e761-4417-af58-416c053452a6"",
-                    ""path"": ""<Keyboard>/#(Z)"",
+                    ""path"": ""<Keyboard>/#(X)"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
