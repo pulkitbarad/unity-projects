@@ -16,10 +16,10 @@ public class ZeroRoad
     public float SidewalkHeight;
     public float Length;
     public bool IsValid;
+    public bool IsPrimaryRoad;
     public Vector3[] CenterVertices;
     public int NumberOfLanesExclSidewalks;
     public int NumberOfLanesInclSidewalks;
-    public int NumberOfSegmentsPerLane;
     public int LeftSidewalkIndex;
     public int RightSidewalkIndex;
     public bool IsCurved;
@@ -41,33 +41,31 @@ public class ZeroRoad
         bool forceSyncTransform,
         Vector3[] controlPoints)
     {
-        ControlPoints = controlPoints;
-        (Vector3[], float) bazierResult =
-               ZeroCurvedLine.FindBazierLinePoints(controlPoints);
-
-        CenterVertices = bazierResult.Item1;
-        NumberOfSegmentsPerLane = CenterVertices.Length;
+        IsPrimaryRoad = true;
         InitialiseRoad(
+            controlPoints: controlPoints,
             isCurved: isCurved,
             hasBusLane: hasBusLane,
             numberOfLanesExclSidewalks: numberOfLanesExclSidewalks,
             height: height,
             sidewalkHeight: sidewalkHeight,
             forceSyncTransform: forceSyncTransform);
+        Build();
 
-        Build(buildIntersections: true);
     }
 
     public ZeroRoad(
         ZeroRoad sourceRoad,
-        Vector3[] centerVertices)
+        Vector3 start,
+        Vector3 end)
     {
-        CenterVertices = centerVertices;
-        InitialiseRoad(sourceRoad);
-        Build(buildIntersections: false);
+        IsPrimaryRoad = false;
+        InitialiseRoad(sourceRoad, start, end);
+        Build();
     }
 
     private void InitialiseRoad(
+        Vector3[] controlPoints,
         bool isCurved,
         bool hasBusLane,
         int numberOfLanesExclSidewalks,
@@ -77,6 +75,7 @@ public class ZeroRoad
     {
         Name = "R" + ZeroRoadBuilder.BuiltRoadsByName.Count();
 
+        ControlPoints = controlPoints;
         IsCurved = isCurved;
         NumberOfLanesExclSidewalks = numberOfLanesExclSidewalks;
         NumberOfLanesInclSidewalks = numberOfLanesExclSidewalks + 2;
@@ -90,7 +89,10 @@ public class ZeroRoad
         _forceSyncTransform = forceSyncTransform;
     }
 
-    private void InitialiseRoad(ZeroRoad sourceRoad)
+    private void InitialiseRoad(
+        ZeroRoad sourceRoad,
+        Vector3 start,
+        Vector3 end)
     {
 
         Name =
@@ -99,6 +101,10 @@ public class ZeroRoad
                 1/*active road*/
                 + ZeroRoadBuilder.BuiltRoadsByName.Count()
                 + ZeroRoadBuilder.ActiveSecondaryRoads.Count()).ToString();
+        if (sourceRoad.IsCurved)
+            ControlPoints = new Vector3[] { start, end };
+        else
+            ControlPoints = new Vector3[] { start, end };
         IsCurved = sourceRoad.IsCurved;
         NumberOfLanesExclSidewalks = sourceRoad.NumberOfLanesExclSidewalks;
         NumberOfLanesInclSidewalks = sourceRoad.NumberOfLanesInclSidewalks;
@@ -118,12 +124,15 @@ public class ZeroRoad
             lane.HideAllSegments();
     }
 
-    public void Build(bool buildIntersections)
+    public void Build()
     {
 
+        (Vector3[], float) bazierResult =
+               ZeroCurvedLine.FindBazierLinePoints(ControlPoints);
+        CenterVertices = bazierResult.Item1;
+        ZeroRoadIntersection.RenderVertices(CenterVertices, Name + "Center", Color.black);
         if (GetLength(CenterVertices) > ZeroRoadBuilder.RoadMinimumLength)
         {
-            NumberOfSegmentsPerLane = CenterVertices.Length;
             Lanes = GetLanes();
             Length = Lanes.First().Segments.Last().RoadLengthSofar;
             IsRoadAngleChangeValid = true;
@@ -131,10 +140,12 @@ public class ZeroRoad
             foreach (var lane in Lanes)
                 IsRoadAngleChangeValid &= lane.IsLaneAngleChangeValid;
 
-            if (buildIntersections && IsRoadAngleChangeValid)
+            if (IsPrimaryRoad && IsRoadAngleChangeValid)
                 BuildIntersections();
             else
                 Intersections = null;
+            if (!IsPrimaryRoad)
+                ZeroRoadBuilder.ActiveSecondaryRoads[Name] = this;
             if (_forceSyncTransform)
                 Physics.SyncTransforms();
         }
@@ -257,12 +268,6 @@ public class ZeroRoad
             if (laneIndex == LeftSidewalkIndex || laneIndex == RightSidewalkIndex)
                 height = SidewalkHeight;
 
-            for (int j = 0; j < allLaneVertices[laneIndex * 2].Count(); j++)
-            {
-                // ZeroRenderer.RenderSphere(allLaneVertices[laneIndex * 2][j], Name + "_L" + laneIndex + "_LV_" + j);
-                ZeroRenderer.RenderSphere(allLaneVertices[laneIndex * 2 + 1][j], Name + "_L" + laneIndex + "_CV_" + j);
-                // ZeroRenderer.RenderSphere(allLaneVertices[laneIndex * 2 + 2][j], Name + "_L" + laneIndex + "_RV_" + j);
-            }
             ZeroRoadLane newLane =
                 new(
                     laneIndex: laneIndex,

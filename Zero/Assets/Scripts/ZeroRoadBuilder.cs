@@ -227,7 +227,6 @@ public class ZeroRoadBuilder
                 && ZeroUIHandler.HandleGameObjectDrag(StartObject, touchPosition);
 
             var roadControlChanged =
-
                 ActivePrimaryRoad.IsCurved
                 && !ControlObject.transform.position.Equals(Vector3.zero)
                 && ZeroUIHandler.HandleGameObjectDrag(ControlObject, touchPosition);
