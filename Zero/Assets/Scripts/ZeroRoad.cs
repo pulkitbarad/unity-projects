@@ -41,37 +41,33 @@ public class ZeroRoad
         bool forceSyncTransform,
         Vector3[] controlPoints)
     {
+        ControlPoints = controlPoints;
+        (Vector3[], float) bazierResult =
+               ZeroCurvedLine.FindBazierLinePoints(controlPoints);
+
+        CenterVertices = bazierResult.Item1;
+        NumberOfSegmentsPerLane = CenterVertices.Length;
         InitialiseRoad(
-            isPrimaryRoad: true,
             isCurved: isCurved,
             hasBusLane: hasBusLane,
             numberOfLanesExclSidewalks: numberOfLanesExclSidewalks,
             height: height,
             sidewalkHeight: sidewalkHeight,
             forceSyncTransform: forceSyncTransform);
-        Build(controlPoints);
+
+        Build(buildIntersections: true);
     }
 
     public ZeroRoad(
         ZeroRoad sourceRoad,
         Vector3[] centerVertices)
     {
-        InitialiseRoad(
-            isPrimaryRoad: false,
-            isCurved: sourceRoad.IsCurved,
-            hasBusLane: sourceRoad.HasBusLane,
-            numberOfLanesExclSidewalks: sourceRoad.NumberOfLanesExclSidewalks,
-            height: sourceRoad.Height,
-            sidewalkHeight: sourceRoad.SidewalkHeight,
-            forceSyncTransform: sourceRoad._forceSyncTransform);
-
-        Build(
-            controlPoints: new Vector3[] { },
-            centerVertices: centerVertices);
+        CenterVertices = centerVertices;
+        InitialiseRoad(sourceRoad);
+        Build(buildIntersections: false);
     }
 
     private void InitialiseRoad(
-        bool isPrimaryRoad,
         bool isCurved,
         bool hasBusLane,
         int numberOfLanesExclSidewalks,
@@ -79,14 +75,8 @@ public class ZeroRoad
         float sidewalkHeight,
         bool forceSyncTransform)
     {
-        if (isPrimaryRoad)
-            Name = "R" + ZeroRoadBuilder.BuiltRoadsByName.Count();
-        else
-            Name = "R"
-            + (
-                1/*active road*/
-                + ZeroRoadBuilder.BuiltRoadsByName.Count()
-                + ZeroRoadBuilder.ActiveSecondaryRoads.Count()).ToString();
+        Name = "R" + ZeroRoadBuilder.BuiltRoadsByName.Count();
+
         IsCurved = isCurved;
         NumberOfLanesExclSidewalks = numberOfLanesExclSidewalks;
         NumberOfLanesInclSidewalks = numberOfLanesExclSidewalks + 2;
@@ -98,11 +88,28 @@ public class ZeroRoad
         SidewalkHeight = sidewalkHeight;
         HasBusLane = hasBusLane && numberOfLanesExclSidewalks > 1;
         _forceSyncTransform = forceSyncTransform;
-        InitRoadObject();
     }
 
-    private void InitRoadObject()
+    private void InitialiseRoad(ZeroRoad sourceRoad)
     {
+
+        Name =
+            "R"
+            + (
+                1/*active road*/
+                + ZeroRoadBuilder.BuiltRoadsByName.Count()
+                + ZeroRoadBuilder.ActiveSecondaryRoads.Count()).ToString();
+        IsCurved = sourceRoad.IsCurved;
+        NumberOfLanesExclSidewalks = sourceRoad.NumberOfLanesExclSidewalks;
+        NumberOfLanesInclSidewalks = sourceRoad.NumberOfLanesInclSidewalks;
+        LeftSidewalkIndex = sourceRoad.LeftSidewalkIndex;
+        RightSidewalkIndex = sourceRoad.RightSidewalkIndex;
+        WidthExclSidewalks = sourceRoad.WidthExclSidewalks;
+        WidthInclSidewalks = sourceRoad.WidthInclSidewalks;
+        Height = sourceRoad.Height;
+        SidewalkHeight = sourceRoad.SidewalkHeight;
+        HasBusLane = sourceRoad.HasBusLane;
+        _forceSyncTransform = sourceRoad._forceSyncTransform;
     }
 
     public void Hide()
@@ -111,72 +118,58 @@ public class ZeroRoad
             lane.HideAllSegments();
     }
 
-    public void Build(Vector3[] controlPoints)
+    public void Build(bool buildIntersections)
     {
-        ControlPoints = controlPoints;
-        (Vector3[], float) bazierResult =
-               ZeroCurvedLine.FindBazierLinePoints(
-                   controlPoints);
 
-        CenterVertices = bazierResult.Item1;
-        NumberOfSegmentsPerLane = CenterVertices.Length;
-
-        Lanes = GetLanes();
-        IsRoadAngleChangeValid = true;
-
-        foreach (var lane in Lanes)
-            IsRoadAngleChangeValid &= lane.IsLaneAngleChangeValid;
-
-        if (IsRoadAngleChangeValid)
+        if (GetLength(CenterVertices) > ZeroRoadBuilder.RoadMinimumLength)
         {
-            ZeroCollisionMap leftCollisionMap =
-                new(
-                    roadName: Name,
-                    primaryLane: Lanes[LeftSidewalkIndex],
-                    layerMaskName: ZeroRoadBuilder.RoadSidewalkMaskName);
-            ZeroCollisionMap rightCollisionMap =
-                new(
-                    roadName: Name,
-                    primaryLane: Lanes[RightSidewalkIndex],
-                    layerMaskName: ZeroRoadBuilder.RoadSidewalkMaskName);
+            NumberOfSegmentsPerLane = CenterVertices.Length;
+            Lanes = GetLanes();
+            Length = Lanes.First().Segments.Last().RoadLengthSofar;
+            IsRoadAngleChangeValid = true;
 
-            IsValid = ZeroRoadIntersection.GetRoadIntersectionsForPrimary(
-               primaryRoad: this,
-               leftIntersectionsByRoadName: leftCollisionMap.GetLaneIntersectionsByRoadName(),
-               rightIntersectionsByRoadName: rightCollisionMap.GetLaneIntersectionsByRoadName());
+            foreach (var lane in Lanes)
+                IsRoadAngleChangeValid &= lane.IsLaneAngleChangeValid;
 
-            if (IsValid && Intersections != null)
-            {
-                foreach (ZeroRoadIntersection intersection in Intersections)
-                {
-                    Debug.LogFormat("intersecion={0} isValid={1}", intersection.Name, intersection.IsValid);
-                    intersection.RenderLaneIntersections();
-                    intersection.RenderSidewalks();
-                    intersection.RenderCrosswalks();
-                    intersection.RenderRoadEdges();
-                    intersection.RenderMainSquare();
-                }
-            }
+            if (buildIntersections && IsRoadAngleChangeValid)
+                BuildIntersections();
+            else
+                Intersections = null;
+            if (_forceSyncTransform)
+                Physics.SyncTransforms();
         }
-        Debug.LogFormat("Road={0} roadAngleChangeValid={1} isValid={2}", Name, IsRoadAngleChangeValid, IsValid);
-        if (_forceSyncTransform)
-            Physics.SyncTransforms();
     }
 
-    public void Build(
-        Vector3[] controlPoints,
-        Vector3[] centerVertices)
+    public void BuildIntersections()
     {
-        Intersections = null;
-        ControlPoints = controlPoints;
-        CenterVertices = centerVertices;
-        NumberOfSegmentsPerLane = CenterVertices.Length;
-        Lanes = GetLanes();
-        Length = Lanes.First().Segments.Last().RoadLengthSofar;
-        IsRoadAngleChangeValid = true;
+        ZeroCollisionMap leftCollisionMap =
+            new(
+                roadName: Name,
+                primaryLane: Lanes[LeftSidewalkIndex],
+                layerMaskName: ZeroRoadBuilder.RoadSidewalkMaskName);
+        ZeroCollisionMap rightCollisionMap =
+            new(
+                roadName: Name,
+                primaryLane: Lanes[RightSidewalkIndex],
+                layerMaskName: ZeroRoadBuilder.RoadSidewalkMaskName);
 
-        if (_forceSyncTransform)
-            Physics.SyncTransforms();
+        IsValid = ZeroRoadIntersection.GetRoadIntersectionsForPrimary(
+           primaryRoad: this,
+           leftIntersectionsByRoadName: leftCollisionMap.GetLaneIntersectionsByRoadName(),
+           rightIntersectionsByRoadName: rightCollisionMap.GetLaneIntersectionsByRoadName());
+
+        if (IsValid && Intersections != null)
+        {
+            foreach (ZeroRoadIntersection intersection in Intersections)
+            {
+                Debug.LogFormat("intersecion={0} isValid={1}", intersection.Name, intersection.IsValid);
+                intersection.RenderLaneIntersections();
+                intersection.RenderSidewalks();
+                intersection.RenderCrosswalks();
+                intersection.RenderRoadEdges();
+                intersection.RenderMainSquare();
+            }
+        }
     }
 
     public Dictionary<string, Vector3> GenerateTestData(string testName)
@@ -324,6 +317,13 @@ public class ZeroRoad
 
         leftPoint = originPoint + (leftVector * distance);
         rightPoint = originPoint - (leftVector * distance);
+    }
+    public static float GetLength(Vector3[] vertices)
+    {
+        float totalDistance = 0;
+        for (int i = 1; i < vertices.Length; i++)
+            totalDistance += (vertices[i] - vertices[i - 1]).magnitude;
+        return totalDistance;
     }
 
 }

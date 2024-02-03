@@ -13,7 +13,10 @@ public class ZeroRoadIntersection
     public Vector3[][] MainSquare;
     public Vector3[][] RoadEdges;
     public Vector3[] EdgeMidpoints;
-    public List<(Vector3[], int)> BranchVerticesTypePairs;
+    public Vector3[] BranchBottomVertices;
+    public Vector3[] BranchTopVertices;
+    public Vector3[] BranchLeftVertices;
+    public Vector3[] BranchRightVertices;
     public ZeroLaneIntersection[] LaneIntersections;
     public Vector3[][] LaneIntersectionPoints;
     public ZeroRoad PrimaryRoad;
@@ -78,7 +81,7 @@ public class ZeroRoadIntersection
                 _R: out ZeroCollisionInfo[] _R);
             Vector3 edgeMidpoint = E[0] + 0.5f * (E[3] - E[0]);
 
-            GetBranchRoad(
+            GetBranchVertices(
                leftIntersectionPosition: GetLeftIntersectionPosition(intersectionSideIndex),
                edgeMidPoint: edgeMidpoint,
                L: L,
@@ -129,7 +132,8 @@ public class ZeroRoadIntersection
         _R = new ZeroCollisionInfo[4];
 
         int leftIntersectionPosition = GetLeftIntersectionPosition(intersectionSideIndex);
-        Debug.LogFormat("n={6} this.RoadIntersectionType={0} leftIntersectionPosition={1} leftIntersection=[{2}-{3}] rightIntersection=[{4}-{5}]",
+        Debug.LogFormat(
+            "n={6} this.RoadIntersectionType={0} leftIntersectionPosition={1} leftIntersection=[{2}-{3}] rightIntersection=[{4}-{5}]",
             RoadIntersectionType,
             leftIntersectionPosition,
             leftIntersection.PrimaryLane.Name,
@@ -224,7 +228,7 @@ public class ZeroRoadIntersection
     }
 
 
-    private void GetBranchRoad(
+    private void GetBranchVertices(
         int leftIntersectionPosition,
         Vector3 edgeMidPoint,
         Vector3[] L,
@@ -235,56 +239,54 @@ public class ZeroRoadIntersection
         Vector3 __edgeMidPoint = edgeMidPoint - 0.5f * Height * Vector3.up;
         Vector3[] __L = L.Select(e => e - 0.5f * Height * Vector3.up).ToArray();
         Vector3[] __R = R.Select(e => e - 0.5f * Height * Vector3.up).ToArray();
-        Vector3[] branchVertices;
         if (leftIntersectionPosition == 0)
-            GetBranchRoad(
+            GetBranchVertices(
                 leftIntersectionPosition,
                 edgeMidPoint: __edgeMidPoint,
                 L: __L,
                 R: __R,
                 oldCenterVertices: PrimaryRoad.CenterVertices,
                 isDirectionReversed: false,
-                newCenterVertices: out branchVertices,
+                newCenterVertices: out BranchLeftVertices,
                 isIntersectionValid: out isValid);
 
         else if (leftIntersectionPosition == 2)
-            GetBranchRoad(
+            GetBranchVertices(
                 leftIntersectionPosition,
                 edgeMidPoint: __edgeMidPoint,
                 L: __L,
                 R: __R,
                 oldCenterVertices: PrimaryRoad.CenterVertices,
                 isDirectionReversed: true,
-                newCenterVertices: out branchVertices,
+                newCenterVertices: out BranchRightVertices,
                 isIntersectionValid: out isValid);
         // else if (leftIntersectionPosition == 1 || leftIntersectionPosition == 3)
         else
         {
             if (leftIntersectionL0.CollidingSegment.ParentLane.IsLeftSidewalk)
-                GetBranchRoad(
+                GetBranchVertices(
                     leftIntersectionPosition,
                     edgeMidPoint: __edgeMidPoint,
                     L: __L,
                     R: __R,
                     oldCenterVertices: IntersectingRoad.CenterVertices,
                     isDirectionReversed: false,
-                    newCenterVertices: out branchVertices,
+                    newCenterVertices: out BranchTopVertices,
                     isIntersectionValid: out isValid);
             else
-                GetBranchRoad(
+                GetBranchVertices(
                     leftIntersectionPosition,
                     edgeMidPoint: __edgeMidPoint,
                     L: __L,
                     R: __R,
                     oldCenterVertices: IntersectingRoad.CenterVertices,
                     isDirectionReversed: true,
-                    newCenterVertices: out branchVertices,
+                    newCenterVertices: out BranchBottomVertices,
                     isIntersectionValid: out isValid);
         }
-        BranchVerticesTypePairs.Add((branchVertices, leftIntersectionPosition));
     }
 
-    private void GetBranchRoad(
+    private void GetBranchVertices(
         int leftIntersectionPosition,
         Vector3 edgeMidPoint,
         Vector3[] L,
@@ -565,14 +567,13 @@ public class ZeroRoadIntersection
                     rightIntersections));
         }
 
-
         if (intersections.Exists(e => !e.IsValid))
             return false;
 
         if (intersections.Count() > 0)
         {
             primaryRoad.Intersections = intersections.ToArray();
-            if (GetBranchRoadVertices(
+            if (GetBranchRoadsForPrimary(
                     primaryRoad,
                     out List<ZeroRoad> branchRoads))
                 primaryRoad.IntersectionBranchRoads = branchRoads.ToArray();
@@ -741,66 +742,117 @@ public class ZeroRoadIntersection
             throw new Exception("Unrecognised road intersection type");
     }
 
-    private static bool GetBranchRoadVertices(
+    private static bool GetBranchRoadsForPrimary(
         ZeroRoad primaryRoad,
         out List<ZeroRoad> branchRoads)
     {
         branchRoads = new();
         ZeroRoadIntersection[] intersections = primaryRoad.Intersections;
+        Dictionary<string,
+            List<ZeroRoadIntersection>> intersectionsByIntersectingRoad = new();
+
+        foreach (var intersecion in intersections)
+        {
+            string intersectingRoadName = intersecion.IntersectingRoad.Name;
+            if (!intersectionsByIntersectingRoad
+                .ContainsKey(intersectingRoadName))
+                intersectionsByIntersectingRoad[intersectingRoadName] = new();
+            intersectionsByIntersectingRoad[intersectingRoadName].Add(intersecion);
+        }
+
         List<string> visitedIntersectingRoads = new();
         if (intersections.Length == 0)
             return true;
-        else if (intersections.Length == 1)
-            new ZeroRoad(
-                sourceRoad: primaryRoad,
-                centerVertices:
-                    intersections.First()
-                    .BranchVerticesTypePairs.First().Item1
-                    .ToArray());
-        else
-        {
-            for (int i = 1; i < intersections.Length; i++)
-            {
-                ZeroRoadIntersection currIntersection = intersections[i];
-                ZeroRoadIntersection prevIntersection = intersections[i - 1];
 
-                ZeroRoad intersectingRoad = currIntersection.IntersectingRoad;
-                List<Vector3> branchRoadVertices;
-                if (visitedIntersectingRoads.Contains(intersectingRoad.Name))
+        for (int i = 1; i < intersections.Length; i++)
+        {
+            List<int> leftIntersectionPositions = new() { 1 };
+            if (i == 0)
+                leftIntersectionPositions.Add(0);
+            if (i == intersections.Length - 1)
+                leftIntersectionPositions.Add(2);
+
+            ZeroRoadIntersection currIntersection = intersections[i];
+            ZeroRoadIntersection prevIntersection = intersections[i - 1];
+            ZeroRoad currIntersectingRoad = currIntersection.IntersectingRoad;
+
+            string intersectingRoadName = currIntersectingRoad.Name;
+            List<Vector3> branchRoadVertices;
+
+            if (intersectionsByIntersectingRoad.ContainsKey(intersectingRoadName)
+                && !visitedIntersectingRoads.Contains(intersectingRoadName))
+            {
+                var intersectionsForThisIntersectingRoad = intersectionsByIntersectingRoad[intersectingRoadName];
+                if (intersectionsForThisIntersectingRoad.Count() == 2)
                 {
                     if (!GetOverlappingSection(
-                            leftVertices: currIntersection.BranchBottomVertices,
-                            rightVertices: prevIntersection.BranchBottomVertices,
+                            leftVertices:
+                                intersectionsForThisIntersectingRoad
+                                .Last()
+                                .BranchBottomVertices,
+                            rightVertices:
+                                intersectionsForThisIntersectingRoad
+                                .First()
+                                .BranchBottomVertices,
                             primaryRoadLength: primaryRoad.Length,
-                            out branchRoadVertices)
-                        )
+                            out branchRoadVertices))
                         return false;
 
                     branchRoads.Add(
                         new ZeroRoad(
-                            sourceRoad: primaryRoad,
-                            centerVertices: branchRoadVertices.ToArray())
-                    );
+                            sourceRoad: currIntersectingRoad,
+                            centerVertices: branchRoadVertices.ToArray()));
+                    visitedIntersectingRoads.Add(intersectingRoadName);
                 }
                 else
-                    visitedIntersectingRoads.Add(currIntersection.IntersectingRoad.Name);
+                    leftIntersectionPositions.Add(3);
+            }
 
-                if (!GetOverlappingSection(
-                        leftVertices: currIntersection.BranchLeftVertices,
-                        rightVertices: prevIntersection.BranchRightVertices,
-                        primaryRoadLength: primaryRoad.Length,
-                            out branchRoadVertices))
-                    return false;
+            if (!GetOverlappingSection(
+                    leftVertices: currIntersection.BranchLeftVertices,
+                    rightVertices: prevIntersection.BranchRightVertices,
+                    primaryRoadLength: primaryRoad.Length,
+                        out branchRoadVertices))
+                return false;
 
+            branchRoads.Add(
+                new ZeroRoad(
+                    sourceRoad: primaryRoad,
+                    centerVertices: branchRoadVertices.ToArray()));
+        }
+        return true;
+    }
+
+    private static ZeroRoad[] GetBranchRoadsForIntersection(
+        ZeroRoadIntersection intersection,
+        int[] leftIntersectionPositions)
+    {
+        List<ZeroRoad> branchRoads = new();
+
+        for (int i = 0; i < leftIntersectionPositions.Length; i++)
+        {
+            if (leftIntersectionPositions[i] == 0 && intersection.BranchLeftVertices != null)
                 branchRoads.Add(
                     new ZeroRoad(
-                        sourceRoad: primaryRoad,
-                        centerVertices: branchRoadVertices.ToArray())
-                );
-            }
+                        intersection.PrimaryRoad,
+                        intersection.BranchLeftVertices));
+            else if (leftIntersectionPositions[i] == 1 && intersection.BranchTopVertices != null)
+                branchRoads.Add(
+                    new ZeroRoad(
+                        intersection.IntersectingRoad,
+                        intersection.BranchTopVertices));
+            else if (leftIntersectionPositions[i] == 2 && intersection.BranchRightVertices != null)
+                branchRoads.Add(
+                    new ZeroRoad(
+                        intersection.PrimaryRoad,
+                        intersection.BranchRightVertices));
+            else if (leftIntersectionPositions[i] == 3 && intersection.BranchBottomVertices != null)
+                branchRoads.Add(
+                    new ZeroRoad(
+                        intersection.IntersectingRoad,
+                        intersection.BranchBottomVertices));
         }
-
-        return true;
+        return branchRoads.ToArray();
     }
 
     private static bool GetOverlappingSection(
@@ -811,14 +863,13 @@ public class ZeroRoadIntersection
     {
         overlappingVertices = new();
         Vector3 rightEnd = rightVertices.Last();
-        if (leftVertices == null
-            || rightVertices == null)
+        if (leftVertices == null || rightVertices == null)
             return false;
-        if (
-            GetLength(leftVertices)
-                + GetLength(rightVertices)
-            <= primaryRoadLength)
+        if (ZeroRoad.GetLength(leftVertices)
+            + ZeroRoad.GetLength(rightVertices)
+            < primaryRoadLength)
             return false;
+
         bool overlapStarted = false;
         for (int i = 0; i < leftVertices.Length; i++)
         {
@@ -830,15 +881,6 @@ public class ZeroRoadIntersection
         }
         return true;
     }
-
-    private static float GetLength(Vector3[] vertices)
-    {
-        float totalDistance = 0;
-        for (int i = 1; i < vertices.Length; i++)
-            totalDistance += (vertices[i] - vertices[i - 1]).magnitude;
-        return totalDistance;
-    }
-
 
     public void RenderLaneIntersections(Color? color = null)
     {

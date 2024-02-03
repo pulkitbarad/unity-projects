@@ -19,6 +19,7 @@ public class ZeroRoadBuilder
     public static float RoadLaneWidth;
     public static float RoadSideWalkHeight;
     public static float RoadCrossWalkLength;
+    public static float RoadMinimumLength;
     public static GameObject RoadControlsParent;
     public static GameObject BuiltRoadsParent;
     public static GameObject BuiltRoadSegmentsParent;
@@ -74,6 +75,7 @@ public class ZeroRoadBuilder
         RoadLaneHeight = 0.02f;
         RoadLaneWidth = 3;
         RoadSideWalkHeight = 0.3f;
+        RoadMinimumLength = 1f;
     }
 
     public static void InitControlObjects(bool isCurved)
