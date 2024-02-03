@@ -119,6 +119,7 @@ public class ZeroRoadTest
 
         return
             new(
+                isPrimaryRoad: true,
                 isCurved: isCurved,
                 hasBusLane: true,
                 numberOfLanesExclSidewalks: 2,

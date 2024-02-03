@@ -130,6 +130,7 @@ public class ZeroRoadBuilder
     {
         ResetActiveRoadConfig(hideActiveRoad: false);
         ActivePrimaryRoad = new ZeroRoad(
+            isPrimaryRoad: true,
             isCurved: isCurved,
             hasBusLane: true,
             numberOfLanesExclSidewalks: 2,

@@ -33,34 +33,34 @@ public class ZeroRoad
     public ZeroRoad[] IntersectionBranchRoads;
 
     public ZeroRoad(
-        bool isCurved,
-        bool hasBusLane,
-        int numberOfLanesExclSidewalks,
-        float height,
-        float sidewalkHeight,
-        bool forceSyncTransform,
-        Vector3[] controlPoints)
+        bool isPrimaryRoad,
+        bool isCurved = false,
+        bool hasBusLane = false,
+        int numberOfLanesExclSidewalks = -1,
+        float height = -1,
+        float sidewalkHeight = -1,
+        bool forceSyncTransform = false,
+        Vector3[] controlPoints = null,
+        Vector3[] centerVertices = null,
+        ZeroRoad sourceRoad = null)
     {
-        IsPrimaryRoad = true;
-        InitialiseRoad(
-            controlPoints: controlPoints,
-            isCurved: isCurved,
-            hasBusLane: hasBusLane,
-            numberOfLanesExclSidewalks: numberOfLanesExclSidewalks,
-            height: height,
-            sidewalkHeight: sidewalkHeight,
-            forceSyncTransform: forceSyncTransform);
-        Build();
-
-    }
-
-    public ZeroRoad(
-        ZeroRoad sourceRoad,
-        Vector3 start,
-        Vector3 end)
-    {
-        IsPrimaryRoad = false;
-        InitialiseRoad(sourceRoad, start, end);
+        if (isPrimaryRoad)
+        {
+            IsPrimaryRoad = isPrimaryRoad;
+            InitialiseRoad(
+                controlPoints: controlPoints,
+                isCurved: isCurved,
+                hasBusLane: hasBusLane,
+                numberOfLanesExclSidewalks: numberOfLanesExclSidewalks,
+                height: height,
+                sidewalkHeight: sidewalkHeight,
+                forceSyncTransform: forceSyncTransform);
+        }
+        else
+        {
+            IsPrimaryRoad = isPrimaryRoad;
+            InitialiseRoad(sourceRoad, centerVertices);
+        }
         Build();
     }
 
@@ -91,20 +91,15 @@ public class ZeroRoad
 
     private void InitialiseRoad(
         ZeroRoad sourceRoad,
-        Vector3 start,
-        Vector3 end)
+        Vector3[] centerVertices)
     {
-
         Name =
             "R"
             + (
                 1/*active road*/
                 + ZeroRoadBuilder.BuiltRoadsByName.Count()
                 + ZeroRoadBuilder.ActiveSecondaryRoads.Count()).ToString();
-        if (sourceRoad.IsCurved)
-            ControlPoints = new Vector3[] { start, end };
-        else
-            ControlPoints = new Vector3[] { start, end };
+        CenterVertices = centerVertices;
         IsCurved = sourceRoad.IsCurved;
         NumberOfLanesExclSidewalks = sourceRoad.NumberOfLanesExclSidewalks;
         NumberOfLanesInclSidewalks = sourceRoad.NumberOfLanesInclSidewalks;
@@ -126,10 +121,12 @@ public class ZeroRoad
 
     public void Build()
     {
-
-        (Vector3[], float) bazierResult =
-               ZeroCurvedLine.FindBazierLinePoints(ControlPoints);
-        CenterVertices = bazierResult.Item1;
+        if (IsPrimaryRoad)
+        {
+            (Vector3[], float) bazierResult =
+                   ZeroCurvedLine.FindBazierLinePoints(ControlPoints);
+            CenterVertices = bazierResult.Item1;
+        }
         ZeroRoadIntersection.RenderVertices(CenterVertices, Name + "Center", Color.black);
         if (GetLength(CenterVertices) > ZeroRoadBuilder.RoadMinimumLength)
         {
