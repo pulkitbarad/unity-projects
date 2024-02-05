@@ -385,7 +385,7 @@ public class ZeroCollisionMap
         return true;
     }
 
-    private static bool IsPointOnLineSegment(Vector3 point, Vector3 start, Vector3 end)
+    public static bool IsPointOnLineSegment(Vector3 point, Vector3 start, Vector3 end)
     {
         return Math.Round(Vector3.Cross(point - start, end - point).magnitude, 2) == 0;
 

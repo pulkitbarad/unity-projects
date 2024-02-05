@@ -127,7 +127,6 @@ public class ZeroRoad
                    ZeroCurvedLine.FindBazierLinePoints(ControlPoints);
             CenterVertices = bazierResult.Item1;
         }
-        ZeroRoadIntersection.RenderVertices(CenterVertices, Name + "Center", Color.black);
         if (GetLength(CenterVertices) > ZeroRoadBuilder.RoadMinimumLength)
         {
             Lanes = GetLanes();
@@ -139,8 +138,7 @@ public class ZeroRoad
 
             if (IsPrimaryRoad && IsRoadAngleChangeValid)
                 BuildIntersections();
-            else
-                Intersections = null;
+
             if (!IsPrimaryRoad)
                 ZeroRoadBuilder.ActiveSecondaryRoads[Name] = this;
             if (_forceSyncTransform)
@@ -170,12 +168,11 @@ public class ZeroRoad
         {
             foreach (ZeroRoadIntersection intersection in Intersections)
             {
-                Debug.LogFormat("intersecion={0} isValid={1}", intersection.Name, intersection.IsValid);
                 intersection.RenderLaneIntersections();
-                intersection.RenderSidewalks();
-                intersection.RenderCrosswalks();
-                intersection.RenderRoadEdges();
-                intersection.RenderMainSquare();
+                // intersection.RenderSidewalks();
+                // intersection.RenderCrosswalks();
+                // intersection.RenderRoadEdges();
+                // intersection.RenderMainSquare();
             }
         }
     }
