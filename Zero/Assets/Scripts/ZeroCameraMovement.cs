@@ -23,7 +23,7 @@ public class ZeroCameraMovement
         _cameraInitialHeight = 1f;
         InitConfig();
         Transform rootTransform = MainCameraRoot.transform;
-        rootTransform.position = new Vector3(-67f, 0f, 33f);
+        rootTransform.position = new Vector3(45f, 0f, 65f);
 
         Transform anchorTransform = MainCameraAnchor.transform;
         anchorTransform.localPosition = Vector3.zero;

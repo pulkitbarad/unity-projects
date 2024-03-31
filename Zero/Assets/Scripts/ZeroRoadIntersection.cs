@@ -78,18 +78,24 @@ public class ZeroRoadIntersection
                 _R: out ZeroCollisionInfo[] _R);
             Vector3 edgeMidpoint = E[0] + 0.5f * (E[3] - E[0]);
 
-            GetBranchVertices(
-               leftIntersectionPosition: GetLeftIntersectionPosition(intersectionSideIndex),
+            int leftIntersectionPosition =
+                GetLeftIntersectionPosition(intersectionSideIndex);
+
+            bool isBranchOppositeToRoad =
+                (leftIntersectionPosition == 2)
+                || ((leftIntersectionPosition == 1 || leftIntersectionPosition == 3)
+                    && _L[0].CollidingSegment.ParentLane.IsRightSidewalk);
+
+            PopulateBranchVertices(
+               leftIntersectionPosition: leftIntersectionPosition,
                edgeMidPoint: edgeMidpoint,
-               L: L,
-               R: R,
-               leftIntersectionL0: _L[0],
+               L0: L[0],
+               R3: R[3],
+               isBranchOppositeToRoad: isBranchOppositeToRoad,
                out IsValid);
 
-            if (!IsValid)
-            {
-                break;
-            }
+            if (!IsValid) break;
+
             Vector3[] mainSquare = new Vector3[] { E[0], L[1], L[2], R[1], R[2], E[3] };
             Vector3[] crosswalk = new Vector3[] { L[3], L[2], R[1], R[0] };
             middleSquare.Add(L[2]);
@@ -106,8 +112,7 @@ public class ZeroRoadIntersection
             edgeMidpoints.Add(edgeMidpoint);
 
             //If there are only two lane intersections (it's a T intersection), 
-            //then there should be only one iteration of this loop i.e. one crosswalk, 
-            //two sidewalks and one main square part
+            //then there should be only one iteration of this loop.
             if (n == 2) intersectionSideIndex++;
         }
         if (n == 4)
@@ -223,82 +228,75 @@ public class ZeroRoadIntersection
     }
 
 
-    private void GetBranchVertices(
+    private void PopulateBranchVertices(
         int leftIntersectionPosition,
         Vector3 edgeMidPoint,
-        Vector3[] L,
-        Vector3[] R,
-        ZeroCollisionInfo leftIntersectionL0,
+        Vector3 L0,
+        Vector3 R3,
+        bool isBranchOppositeToRoad,
         out bool isValid)
     {
         Vector3 __edgeMidPoint = edgeMidPoint - 0.5f * Height * Vector3.up;
-        Vector3[] __L = L.Select(e => e - 0.5f * Height * Vector3.up).ToArray();
-        Vector3[] __R = R.Select(e => e - 0.5f * Height * Vector3.up).ToArray();
         if (leftIntersectionPosition == 0)
             GetBranchVertices(
-                leftIntersectionPosition,
                 edgeMidPoint: __edgeMidPoint,
-                L: __L,
-                R: __R,
+                L0: L0,
+                R3: R3,
                 oldCenterVertices: PrimaryRoad.CenterVertices,
-                leftIntersectionL0: leftIntersectionL0,
+                isBranchOppositeToRoad: isBranchOppositeToRoad,
                 newCenterVertices: out BranchLeftVertices,
                 isIntersectionValid: out isValid);
 
         else if (leftIntersectionPosition == 2)
             GetBranchVertices(
-                leftIntersectionPosition,
                 edgeMidPoint: __edgeMidPoint,
-                L: __L,
-                R: __R,
+                L0: L0,
+                R3: R3,
                 oldCenterVertices: PrimaryRoad.CenterVertices,
-                leftIntersectionL0: leftIntersectionL0,
+                isBranchOppositeToRoad: isBranchOppositeToRoad,
                 newCenterVertices: out BranchRightVertices,
                 isIntersectionValid: out isValid);
         else if (leftIntersectionPosition == 1)
             GetBranchVertices(
-                leftIntersectionPosition,
                 edgeMidPoint: __edgeMidPoint,
-                L: __L,
-                R: __R,
+                L0: L0,
+                R3: R3,
                 oldCenterVertices: IntersectingRoad.CenterVertices,
-                leftIntersectionL0: leftIntersectionL0,
+                isBranchOppositeToRoad: isBranchOppositeToRoad,
                 newCenterVertices: out BranchUpVertices,
                 isIntersectionValid: out isValid);
         // else if (leftIntersectionPosition == 3)
         else
             GetBranchVertices(
-                leftIntersectionPosition,
                 edgeMidPoint: __edgeMidPoint,
-                L: __L,
-                R: __R,
+                L0: L0,
+                R3: R3,
                 oldCenterVertices: IntersectingRoad.CenterVertices,
-                leftIntersectionL0: leftIntersectionL0,
+                isBranchOppositeToRoad: isBranchOppositeToRoad,
                 newCenterVertices: out BranchDownVertices,
                 isIntersectionValid: out isValid);
 
     }
 
     private void GetBranchVertices(
-        int leftIntersectionPosition,
         Vector3 edgeMidPoint,
-        Vector3[] L,
-        Vector3[] R,
+        Vector3 L0,
+        Vector3 R3,
         Vector3[] oldCenterVertices,
-        ZeroCollisionInfo leftIntersectionL0,
+        bool isBranchOppositeToRoad,
         out Vector3[] newCenterVertices,
         out bool isIntersectionValid)
     {
+        Vector3 __L0 = L0 - 0.5f * Height * Vector3.up;
+        Vector3 __R3 = R3 - 0.5f * Height * Vector3.up;
         List<Vector3> newCenterVerticesList = new();
 
         Vector3[] currentCenterVertices = oldCenterVertices;
 
-        if (leftIntersectionPosition == 2
-            || ((leftIntersectionPosition == 1 || leftIntersectionPosition == 3)
-                && leftIntersectionL0.CollidingSegment.ParentLane.IsRightSidewalk))
+        if (isBranchOppositeToRoad)
             currentCenterVertices = oldCenterVertices.Reverse().ToArray();
 
-        float thresholdAngle = Vector3.Angle(L[0] - edgeMidPoint, R[3] - edgeMidPoint);
+        float thresholdAngle = Vector3.Angle(__L0 - edgeMidPoint, __R3 - edgeMidPoint);
         for (int i = 0; i < currentCenterVertices.Count(); i++)
         {
             if (i > 0)
@@ -306,7 +304,7 @@ public class ZeroRoadIntersection
                 float AngleBetweenCurrToL0AndReverse =
                     Vector3.Angle(
                         currentCenterVertices[i - 1] - currentCenterVertices[i],
-                        L[0] - currentCenterVertices[i]);
+                        __L0 - currentCenterVertices[i]);
                 if (AngleBetweenCurrToL0AndReverse < 90)
                 {
                     //Current vertex is at least the second vertex of the road 
@@ -317,8 +315,8 @@ public class ZeroRoadIntersection
             }
             float currentAngleWithEdgePoints =
                 Vector3.Angle(
-                    L[0] - currentCenterVertices[i],
-                    R[3] - currentCenterVertices[i]);
+                    __L0 - currentCenterVertices[i],
+                    __R3 - currentCenterVertices[i]);
             if (currentAngleWithEdgePoints >= thresholdAngle)
             {
                 //Current vertex is right of the road edge 
@@ -333,7 +331,7 @@ public class ZeroRoadIntersection
         }
         newCenterVerticesList.Add(edgeMidPoint);
 
-        RenderVertices(newCenterVerticesList.ToArray(), Name + leftIntersectionPosition + "New", Color.yellow);
+        // RenderVertices(newCenterVerticesList.ToArray(), Name + leftIntersectionPosition + "New", Color.yellow);
         if (newCenterVerticesList.Count() > 1)
         {
             isIntersectionValid = true;
@@ -564,7 +562,7 @@ public class ZeroRoadIntersection
             return false;
         }
 
-        primaryRoad.Intersections = intersections.OrderBy(e=>e.PrimaryRoadLengthSoFar).ToArray();
+        primaryRoad.Intersections = intersections.OrderBy(e => e.PrimaryRoadLengthSoFar).ToArray();
         if (intersections.Count() > 0)
         {
             if (GetBranchRoadsForPrimary(
@@ -906,6 +904,10 @@ public class ZeroRoadIntersection
         out List<Vector3> overlappingVertices)
     {
         overlappingVertices = new();
+        Debug.LogFormat("left length={0} right length={1} road length={2}",
+            ZeroRoad.GetLength(leftVertices),
+            ZeroRoad.GetLength(rightVertices),
+            sourceRoadLength);
         if (leftVertices == null || rightVertices == null)
             return false;
 
