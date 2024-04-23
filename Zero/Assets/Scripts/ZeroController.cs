@@ -38,7 +38,7 @@ public class ZeroController : MonoBehaviour
             Vector3.zero,
             rowCount: 50,
             columnCount: 50,
-            cellGap: 0.25f,
+            cellGap: 1f,
             cellSize: 3,
             cellHeight: 0.1f);
     }

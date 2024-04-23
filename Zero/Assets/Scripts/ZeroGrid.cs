@@ -10,10 +10,12 @@ public class ZeroGrid
     private float _cellGap;
     private float _cellHeight;
     private Grid _grid;
+    private GameObject[][] _gridNodes;
     private GameObject[] _gridLinesHorizontal;
     private GameObject[] _gridLinesVertical;
 
     private GameObject _gridParent = new(name: "GridParent");
+    private GameObject _gridNodesParent = new(name: "GridNodesParent");
     private GameObject _gridLinesParent = new(name: "GridLinesParent");
 
     public ZeroGrid(
@@ -42,6 +44,42 @@ public class ZeroGrid
         _gridLinesVertical = new GameObject[_columnCount];
 
         _gridLinesParent.transform.SetParent(_gridParent.transform);
+        CreateNodes(location);
+
+    }
+
+    private void CreateNodes(Vector3 location)
+    {
+
+        float cellX = location.x + _cellSize / 2 + _cellGap;
+        float cellZ = location.z + _cellSize / 2 + _cellGap;
+        _gridNodes = new GameObject[_rowCount][];
+        for (int rowIndex = 0; rowIndex < _rowCount - 1; rowIndex++)
+        {
+            cellZ += _cellSize + _cellGap;
+            cellX = location.x + _cellSize / 2 + _cellGap;
+            _gridNodes[rowIndex] = new GameObject[_rowCount];
+            for (int columnIndex = 0; columnIndex < _columnCount - 1; columnIndex++)
+            {
+                cellX += _cellSize + _cellGap;
+                GameObject newNode = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                newNode.name = "GridNode[" + rowIndex + "][" + columnIndex + "]";
+                newNode.transform.localScale = new Vector3(1, 0.01f, 1);
+                newNode.transform.position = new Vector3(cellX, 0.005f, cellZ);
+                var renderer = newNode.GetComponent<Renderer>();
+                Color c = new(0, 1, 0,0.40f);
+                // {
+                //     a = 0.38f
+                // };
+                renderer.material.color = c;
+                newNode.transform.SetParent(_gridNodesParent.transform);
+                _gridNodes[rowIndex][columnIndex] = newNode;
+            }
+        }
+    }
+
+    private void CreateGrid(Vector3 location)
+    {
 
         float gridWidth = (_columnCount * (_cellSize + _cellGap)) + _cellGap;
         float gridDepth = (_rowCount * (_cellSize + _cellGap)) + _cellGap;
